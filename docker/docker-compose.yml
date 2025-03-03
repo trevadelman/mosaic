@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws
+    depends_on:
+      - backend
+    networks:
+      - mosaic-network
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app/backend
+      - ../setup.py:/app/setup.py
+      - ../__init__.py:/app/__init__.py
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=sqlite:///./database/mosaic.db
+      - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    env_file:
+      - ../.env
+    networks:
+      - mosaic-network
+
+  agent-runner:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    volumes:
+      - ../backend:/app/backend
+      - ../setup.py:/app/setup.py
+      - ../__init__.py:/app/__init__.py
+    environment:
+      - ENVIRONMENT=development
+      - AGENT_MODE=true
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    env_file:
+      - ../.env
+    depends_on:
+      - backend
+    networks:
+      - mosaic-network
+    command: ["python", "-m", "backend.app.agent_runner"]
+
+networks:
+  mosaic-network:
+    driver: bridge

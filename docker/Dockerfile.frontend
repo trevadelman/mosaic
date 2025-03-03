@@ -1,0 +1,22 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies
+COPY frontend/package.json ./
+RUN npm install
+
+# Copy source code
+COPY frontend/ ./
+
+# Copy the Docker-specific env file
+COPY frontend/.env.docker ./.env.local
+
+# Build the application
+RUN npm run build
+
+# Expose port
+EXPOSE 3000
+
+# Start the application
+CMD ["npm", "run", "dev"]

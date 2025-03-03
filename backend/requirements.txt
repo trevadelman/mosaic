@@ -1,0 +1,18 @@
+# Use latest versions of all packages
+fastapi
+uvicorn
+pydantic
+sqlalchemy
+python-dotenv
+websockets
+python-multipart
+httpx
+requests
+websocket-client
+
+# LLM and agent packages
+openai
+langchain
+langchain-openai
+langgraph
+langgraph-supervisor

@@ -1,0 +1,728 @@
+from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+import logging
+import os
+import uuid
+import asyncio
+from typing import List, Dict, Any, Optional
+from datetime import datetime
+import json
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%H:%M:%S",
+)
+logger = logging.getLogger("mosaic_api")
+
+# Initialize FastAPI app
+app = FastAPI(
+    title="MOSAIC API",
+    description="API for Multi-agent Orchestration System for Adaptive Intelligent Collaboration",
+    version="0.1.0",
+)
+
+# Configure CORS
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://frontend:3000").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# WebSocket connection manager
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[str, List[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, client_id: str, query_id: Optional[str] = None):
+        await websocket.accept()
+        if query_id:
+            if query_id not in self.active_connections:
+                self.active_connections[query_id] = []
+            self.active_connections[query_id].append(websocket)
+            logger.info(f"Client {client_id} joined room {query_id}")
+        else:
+            if "broadcast" not in self.active_connections:
+                self.active_connections["broadcast"] = []
+            self.active_connections["broadcast"].append(websocket)
+            logger.info(f"Client {client_id} connected to broadcast")
+
+    def disconnect(self, websocket: WebSocket, query_id: Optional[str] = None):
+        if query_id and query_id in self.active_connections:
+            self.active_connections[query_id].remove(websocket)
+            logger.info(f"Client disconnected from room {query_id}")
+        elif "broadcast" in self.active_connections:
+            self.active_connections["broadcast"].remove(websocket)
+            logger.info("Client disconnected from broadcast")
+
+    async def send_log(self, log: str, query_id: str):
+        if query_id in self.active_connections:
+            for connection in self.active_connections[query_id]:
+                await connection.send_json({
+                    "type": "log_update",
+                    "log": log,
+                    "timestamp": datetime.now().isoformat()
+                })
+
+    async def send_agent_response(self, agent: str, content: str, query_id: str):
+        if query_id in self.active_connections:
+            for connection in self.active_connections[query_id]:
+                await connection.send_json({
+                    "type": "agent_response",
+                    "agent": agent,
+                    "content": content,
+                    "timestamp": datetime.now().isoformat()
+                })
+
+    async def send_status_update(self, status: str, message: str, query_id: str):
+        if query_id in self.active_connections:
+            for connection in self.active_connections[query_id]:
+                await connection.send_json({
+                    "type": "status_update",
+                    "status": status,
+                    "message": message,
+                    "timestamp": datetime.now().isoformat()
+                })
+
+manager = ConnectionManager()
+
+# Models
+class Query(BaseModel):
+    query: str
+
+class QueryResponse(BaseModel):
+    query_id: str
+    status: str
+    message: str
+
+# Models for agents and messages
+class Agent(BaseModel):
+    id: str
+    name: str
+    description: str
+    type: str
+    capabilities: List[str]
+    icon: Optional[str] = None
+
+class MessageContent(BaseModel):
+    content: str
+
+class Message(BaseModel):
+    id: str
+    role: str
+    content: str
+    timestamp: int
+    agentId: Optional[str] = None
+    status: Optional[str] = None
+    error: Optional[str] = None
+
+# Import the agent registry
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.agents.base import agent_registry
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.agents.base import agent_registry
+
+# Log the agent registry
+logger.info(f"Agent registry at import: {agent_registry.list_agents()}")
+
+# Message storage
+MESSAGE_STORE = {}
+
+# Routes
+@app.get("/")
+async def root():
+    return {"message": "Welcome to MOSAIC API"}
+
+@app.get("/api/debug/agents")
+async def debug_agents():
+    """Debug endpoint to check the initialized agents."""
+    return {
+        "initialized_agents": list(initialized_agents.keys()),
+        "registry_agents": agent_registry.list_agents(),
+        "openai_api_key_set": bool(os.getenv("OPENAI_API_KEY")),
+        "environment": os.getenv("ENVIRONMENT", "unknown"),
+        "cors_origins": os.getenv("CORS_ORIGINS", "").split(",")
+    }
+
+# Agent routes
+@app.get("/api/agents")
+async def get_agents():
+    """Get a list of all available agents."""
+    try:
+        agents = []
+        for agent_id, agent in initialized_agents.items():
+            agents.append({
+                "id": agent.name,
+                "name": agent.name.capitalize(),
+                "description": agent.description,
+                "type": "Utility",
+                "capabilities": ["Basic Math", "Equations", "Unit Conversion"] if agent.name == "calculator" else [],
+                "icon": "🧮" if agent.name == "calculator" else "🤖"
+            })
+        return agents
+    except Exception as e:
+        logger.error(f"Error getting agents: {str(e)}")
+        return []
+
+@app.get("/api/agents/{agent_id}")
+async def get_agent(agent_id: str):
+    """Get information about a specific agent."""
+    agent = initialized_agents.get(agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    return {
+        "id": agent.name,
+        "name": agent.name.capitalize(),
+        "description": agent.description,
+        "type": "Utility",
+        "capabilities": ["Basic Math", "Equations", "Unit Conversion"] if agent.name == "calculator" else [],
+        "icon": "🧮" if agent.name == "calculator" else "🤖"
+    }
+
+# Chat routes
+@app.get("/api/chat/{agent_id}/messages")
+async def get_messages(agent_id: str):
+    """Get all messages for a specific agent."""
+    if agent_id not in MESSAGE_STORE:
+        MESSAGE_STORE[agent_id] = []
+    return MESSAGE_STORE[agent_id]
+
+@app.post("/api/chat/{agent_id}/messages")
+async def send_message(agent_id: str, message: MessageContent):
+    """Send a message to an agent and get a response."""
+    if agent_id not in MESSAGE_STORE:
+        MESSAGE_STORE[agent_id] = []
+    
+    # Create user message
+    user_message = {
+        "id": str(uuid.uuid4()),
+        "role": "user",
+        "content": message.content,
+        "timestamp": int(datetime.now().timestamp() * 1000),
+        "agentId": agent_id,
+        "status": "sent"
+    }
+    
+    # Add user message to history
+    MESSAGE_STORE[agent_id].append(user_message)
+    
+    # Get the agent from the initialized agents
+    agent = initialized_agents.get(agent_id)
+    
+    if agent:
+        try:
+            # Initialize the conversation state
+            state = {"messages": []}
+            
+            # Add the user message to the state
+            state["messages"].append({
+                "role": "user",
+                "content": message.content
+            })
+            
+            # Invoke the agent
+            logger.info(f"Invoking {agent_id} agent")
+            result = agent.invoke(state)
+            logger.info(f"{agent_id} agent completed processing")
+            
+            # Extract the agent response
+            agent_response = "No response from agent"
+            messages = result.get("messages", [])
+            
+            # Log the message types for debugging
+            logger.info(f"Result messages types: {[type(msg).__name__ for msg in messages]}")
+            
+            # Log all messages for debugging
+            for i, msg in enumerate(messages):
+                if isinstance(msg, dict):
+                    logger.info(f"Message {i} (dict): {msg}")
+                else:
+                    msg_type = getattr(msg, "type", "N/A")
+                    msg_content = getattr(msg, "content", "N/A")
+                    
+                    # Log tool usage more explicitly
+                    if msg_type == "tool":
+                        tool_name = getattr(msg, "name", "unknown_tool")
+                        logger.info(f"Message {i} (ToolMessage): TOOL USED: {tool_name}, result={msg_content}")
+                    else:
+                        logger.info(f"Message {i} ({type(msg).__name__}): content={msg_content}, type={msg_type}, role={getattr(msg, 'role', 'N/A')}")
+            
+            # First try to find the last AIMessage
+            for message_item in reversed(messages):
+                # Check if it's a LangChain message object
+                if hasattr(message_item, "content"):
+                    # Check for AIMessage
+                    if hasattr(message_item, "type") and message_item.type == "ai":
+                        agent_response = message_item.content
+                        logger.info(f"Found AI response in object (reversed): {agent_response[:50]}...")
+                        break
+            
+            # If no AIMessage found, try other message types
+            if agent_response == "No response from agent":
+                for message_item in messages:
+                    # Check if the message is a dictionary
+                    if isinstance(message_item, dict):
+                        if message_item.get("role") == "assistant":
+                            agent_response = message_item.get("content", "")
+                            logger.info(f"Found assistant response in dict: {agent_response[:50]}...")
+                            break
+                    # Check if it's a LangChain message object
+                    elif hasattr(message_item, "content"):
+                        # Check for AIMessage, HumanMessage, etc.
+                        msg_type = getattr(message_item, "type", None)
+                        msg_role = getattr(message_item, "role", None)
+                        
+                        if msg_type == "assistant" or msg_role == "assistant":
+                            agent_response = message_item.content
+                            logger.info(f"Found assistant response in object: {agent_response[:50]}...")
+                            break
+                        elif msg_type == "ai" or msg_role == "ai":
+                            agent_response = message_item.content
+                            logger.info(f"Found AI response in object: {agent_response[:50]}...")
+                            break
+            
+            # Create the agent message
+            agent_message = {
+                "id": str(uuid.uuid4()),
+                "role": "assistant",
+                "content": agent_response,
+                "timestamp": int(datetime.now().timestamp() * 1000),
+                "agentId": agent_id
+            }
+            
+        except Exception as e:
+            logger.error(f"Error invoking {agent_id} agent: {str(e)}")
+            
+            # Create error message
+            agent_message = {
+                "id": str(uuid.uuid4()),
+                "role": "assistant",
+                "content": f"Error: {str(e)}",
+                "timestamp": int(datetime.now().timestamp() * 1000),
+                "agentId": agent_id,
+                "status": "error",
+                "error": str(e)
+            }
+    else:
+        # Agent not found
+        logger.warning(f"Agent {agent_id} not found in registry")
+        
+        # Create error message
+        agent_message = {
+            "id": str(uuid.uuid4()),
+            "role": "assistant",
+            "content": f"Error: Agent '{agent_id}' not found",
+            "timestamp": int(datetime.now().timestamp() * 1000),
+            "agentId": agent_id,
+            "status": "error",
+            "error": f"Agent '{agent_id}' not found"
+        }
+    
+    # Add agent message to history
+    MESSAGE_STORE[agent_id].append(agent_message)
+    
+    # Return the user message
+    return user_message
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    client_id = str(uuid.uuid4())
+    await manager.connect(websocket, client_id)
+    
+    try:
+        while True:
+            data = await websocket.receive_json()
+            
+            if data.get("action") == "join":
+                query_id = data.get("query_id")
+                if query_id:
+                    await manager.connect(websocket, client_id, query_id)
+            
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        logger.info(f"Client {client_id} disconnected")
+
+# Import the agent registry
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.agents.base import agent_registry
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.agents.base import agent_registry
+
+# Custom log handler for WebSocket
+class WebSocketLogHandler(logging.Handler):
+    """Custom log handler to capture logs and send them to the client via WebSocket."""
+    
+    def __init__(self, websocket: WebSocket, message_id: str):
+        super().__init__()
+        self.websocket = websocket
+        self.message_id = message_id
+        
+    def emit(self, record):
+        log_entry = self.format(record)
+        asyncio.create_task(self.send_log(log_entry))
+    
+    async def send_log(self, log_entry: str):
+        try:
+            await self.websocket.send_json({
+                "type": "log_update",
+                "log": log_entry,
+                "messageId": self.message_id
+            })
+        except Exception as e:
+            # Don't raise exceptions from the log handler
+            pass
+
+@app.websocket("/ws/chat/{agent_id}")
+async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
+    client_id = str(uuid.uuid4())
+    
+    try:
+        await websocket.accept()
+        logger.info(f"Client {client_id} connected to chat with agent {agent_id}")
+        
+        while True:
+            data = await websocket.receive_json()
+            
+            if data.get("type") == "message":
+                message_data = data.get("message", {})
+                
+                # Create user message
+                user_message = {
+                    "id": str(uuid.uuid4()),
+                    "role": "user",
+                    "content": message_data.get("content", ""),
+                    "timestamp": int(datetime.now().timestamp() * 1000),
+                    "agentId": agent_id,
+                    "status": "sent"
+                }
+                
+                # Add user message to history
+                if agent_id not in MESSAGE_STORE:
+                    MESSAGE_STORE[agent_id] = []
+                MESSAGE_STORE[agent_id].append(user_message)
+                
+                # Send confirmation back to client
+                await websocket.send_json({
+                    "type": "message",
+                    "message": user_message
+                })
+                
+                # Create agent response with a unique ID
+                agent_message_id = str(uuid.uuid4())
+                
+                # Send initial log messages
+                await websocket.send_json({
+                    "type": "log_update",
+                    "log": f"{datetime.now().strftime('%H:%M:%S')} - Starting processing with {agent_id} agent",
+                    "messageId": agent_message_id
+                })
+                
+                # Get the agent from the initialized agents
+                agent = initialized_agents.get(agent_id)
+                
+                if agent:
+                    # Set up a custom log handler to capture logs
+                    ws_handler = WebSocketLogHandler(websocket, agent_message_id)
+                    ws_handler.setLevel(logging.INFO)
+                    ws_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', '%H:%M:%S'))
+                    
+                    # Add the handler to the agent's logger
+                    agent_logger = logging.getLogger(f"mosaic.agents.{agent_id}")
+                    agent_logger.addHandler(ws_handler)
+                    
+                    try:
+                        # Initialize the conversation state
+                        state = {"messages": []}
+                        
+                        # Add the user message to the state
+                        state["messages"].append({
+                            "role": "user",
+                            "content": message_data.get("content", "")
+                        })
+                        
+                        # Invoke the agent
+                        logger.info(f"Invoking {agent_id} agent")
+                        result = agent.invoke(state)
+                        logger.info(f"{agent_id} agent completed processing")
+                        
+                        # Extract the agent response
+                        agent_response = "No response from agent"
+                        messages = result.get("messages", [])
+                        
+                        # Log the message types for debugging
+                        logger.info(f"Result messages types: {[type(msg).__name__ for msg in messages]}")
+                        
+                        # Log all messages for debugging
+                        for i, msg in enumerate(messages):
+                            if isinstance(msg, dict):
+                                logger.info(f"Message {i} (dict): {msg}")
+                            else:
+                                msg_type = getattr(msg, "type", "N/A")
+                                msg_content = getattr(msg, "content", "N/A")
+                                
+                                # Log tool usage more explicitly
+                                if msg_type == "tool":
+                                    tool_name = getattr(msg, "name", "unknown_tool")
+                                    logger.info(f"Message {i} (ToolMessage): TOOL USED: {tool_name}, result={msg_content}")
+                                else:
+                                    logger.info(f"Message {i} ({type(msg).__name__}): content={msg_content}, type={msg_type}, role={getattr(msg, 'role', 'N/A')}")
+                        
+                        # First try to find the last AIMessage
+                        for message_item in reversed(messages):
+                            # Check if it's a LangChain message object
+                            if hasattr(message_item, "content"):
+                                # Check for AIMessage
+                                if hasattr(message_item, "type") and message_item.type == "ai":
+                                    agent_response = message_item.content
+                                    logger.info(f"Found AI response in object (reversed): {agent_response[:50]}...")
+                                    break
+                        
+                        # If no AIMessage found, try other message types
+                        if agent_response == "No response from agent":
+                            for message_item in messages:
+                                # Check if the message is a dictionary
+                                if isinstance(message_item, dict):
+                                    if message_item.get("role") == "assistant":
+                                        agent_response = message_item.get("content", "")
+                                        logger.info(f"Found assistant response in dict: {agent_response[:50]}...")
+                                        break
+                                # Check if it's a LangChain message object
+                                elif hasattr(message_item, "content"):
+                                    # Check for AIMessage, HumanMessage, etc.
+                                    msg_type = getattr(message_item, "type", None)
+                                    msg_role = getattr(message_item, "role", None)
+                                    
+                                    if msg_type == "assistant" or msg_role == "assistant":
+                                        agent_response = message_item.content
+                                        logger.info(f"Found assistant response in object: {agent_response[:50]}...")
+                                        break
+                                    elif msg_type == "ai" or msg_role == "ai":
+                                        agent_response = message_item.content
+                                        logger.info(f"Found AI response in object: {agent_response[:50]}...")
+                                        break
+                        
+                        # Create the agent message
+                        agent_message = {
+                            "id": agent_message_id,
+                            "role": "assistant",
+                            "content": agent_response,
+                            "timestamp": int(datetime.now().timestamp() * 1000),
+                            "agentId": agent_id
+                        }
+                        
+                        # Add agent message to history
+                        MESSAGE_STORE[agent_id].append(agent_message)
+                        
+                        # Send agent response back to client
+                        await websocket.send_json({
+                            "type": "message",
+                            "message": agent_message
+                        })
+                    
+                    except Exception as e:
+                        logger.error(f"Error invoking {agent_id} agent: {str(e)}")
+                        
+                        # Send error message
+                        error_message = {
+                            "id": agent_message_id,
+                            "role": "assistant",
+                            "content": f"Error: {str(e)}",
+                            "timestamp": int(datetime.now().timestamp() * 1000),
+                            "agentId": agent_id,
+                            "status": "error",
+                            "error": str(e)
+                        }
+                        
+                        # Add error message to history
+                        MESSAGE_STORE[agent_id].append(error_message)
+                        
+                        # Send error message back to client
+                        await websocket.send_json({
+                            "type": "message",
+                            "message": error_message
+                        })
+                    
+                    finally:
+                        # Remove the custom log handler
+                        if ws_handler in agent_logger.handlers:
+                            agent_logger.removeHandler(ws_handler)
+                
+                else:
+                    # Agent not found
+                    logger.warning(f"Agent {agent_id} not found in registry")
+                    
+                    # Create error message
+                    agent_message = {
+                        "id": agent_message_id,
+                        "role": "assistant",
+                        "content": f"Error: Agent '{agent_id}' not found",
+                        "timestamp": int(datetime.now().timestamp() * 1000),
+                        "agentId": agent_id,
+                        "status": "error",
+                        "error": f"Agent '{agent_id}' not found"
+                    }
+                    
+                    # Add agent message to history
+                    MESSAGE_STORE[agent_id].append(agent_message)
+                    
+                    # Send agent response back to client
+                    await websocket.send_json({
+                        "type": "message",
+                        "message": agent_message
+                    })
+            
+    except WebSocketDisconnect:
+        logger.info(f"Client {client_id} disconnected from chat with agent {agent_id}")
+
+async def simulate_agent_processing(websocket: WebSocket, agent_id: str, content: str, message_id: str):
+    """Simulate agent processing with log messages."""
+    # Initial planning phase
+    await websocket.send_json({
+        "type": "log_update",
+        "log": f"{datetime.now().strftime('%H:%M:%S')} - {agent_id}: Planning response strategy",
+        "messageId": message_id
+    })
+    await asyncio.sleep(0.5)
+    
+    # Agent-specific processing logs
+    if agent_id == "calculator":
+        await websocket.send_json({
+            "type": "log_update",
+            "log": f"{datetime.now().strftime('%H:%M:%S')} - {agent_id}: Parsing mathematical expression",
+            "messageId": message_id
+        })
+        await asyncio.sleep(0.3)
+        
+        await websocket.send_json({
+            "type": "log_update",
+            "log": f"{datetime.now().strftime('%H:%M:%S')} - {agent_id}: Evaluating expression",
+            "messageId": message_id
+        })
+        await asyncio.sleep(0.3)
+        
+    elif agent_id == "safety":
+        await websocket.send_json({
+            "type": "log_update",
+            "log": f"{datetime.now().strftime('%H:%M:%S')} - {agent_id}: Analyzing content for safety concerns",
+            "messageId": message_id
+        })
+        await asyncio.sleep(0.3)
+        
+        await websocket.send_json({
+            "type": "log_update",
+            "log": f"{datetime.now().strftime('%H:%M:%S')} - {agent_id}: Checking against security rules",
+            "messageId": message_id
+        })
+        await asyncio.sleep(0.3)
+        
+    elif agent_id == "writer":
+        await websocket.send_json({
+            "type": "log_update",
+            "log": f"{datetime.now().strftime('%H:%M:%S')} - {agent_id}: Analyzing file operation request",
+            "messageId": message_id
+        })
+        await asyncio.sleep(0.3)
+        
+        await websocket.send_json({
+            "type": "log_update",
+            "log": f"{datetime.now().strftime('%H:%M:%S')} - {agent_id}: Validating file paths and permissions",
+            "messageId": message_id
+        })
+        await asyncio.sleep(0.3)
+        
+    elif agent_id == "developer":
+        await websocket.send_json({
+            "type": "log_update",
+            "log": f"{datetime.now().strftime('%H:%M:%S')} - {agent_id}: Analyzing code requirements",
+            "messageId": message_id
+        })
+        await asyncio.sleep(0.3)
+        
+        await websocket.send_json({
+            "type": "log_update",
+            "log": f"{datetime.now().strftime('%H:%M:%S')} - {agent_id}: Generating code solution",
+            "messageId": message_id
+        })
+        await asyncio.sleep(0.3)
+    
+    # Final processing phase
+    await websocket.send_json({
+        "type": "log_update",
+        "log": f"{datetime.now().strftime('%H:%M:%S')} - {agent_id}: Formulating response",
+        "messageId": message_id
+    })
+    await asyncio.sleep(0.3)
+    
+    await websocket.send_json({
+        "type": "log_update",
+        "log": f"{datetime.now().strftime('%H:%M:%S')} - {agent_id}: Response ready",
+        "messageId": message_id
+    })
+
+# Global variable to store the initialized agents
+initialized_agents = {}
+
+# Initialize the agents
+def initialize_agents():
+    """Initialize the agents and register them with the agent registry."""
+    global initialized_agents
+    
+    try:
+        # Try importing with the full package path (for local development)
+        from mosaic.backend.agents import register_calculator_agent
+        from langchain_openai import ChatOpenAI
+    except ImportError:
+        try:
+            # Fall back to relative import (for Docker environment)
+            from backend.agents import register_calculator_agent
+            from langchain_openai import ChatOpenAI
+        except ImportError:
+            logger.error("Failed to import agent modules. Agents will not be available.")
+            return
+    
+    try:
+        # Check if the OpenAI API key is set
+        if not os.getenv("OPENAI_API_KEY"):
+            logger.warning("OPENAI_API_KEY not set. Agents will not be available.")
+            return
+        
+        # Initialize the language model
+        logger.info("Initializing language model")
+        model = ChatOpenAI(model="gpt-4o-mini")
+        
+        # Register the calculator agent
+        logger.info("Registering calculator agent")
+        calculator = register_calculator_agent(model)
+        initialized_agents["calculator"] = calculator
+        
+        # Log the registered agents
+        logger.info(f"Registered agents: {agent_registry.list_agents()}")
+        logger.info(f"Initialized agents: {list(initialized_agents.keys())}")
+        
+        logger.info("Agents initialized and registered successfully")
+    except Exception as e:
+        logger.error(f"Error initializing agents: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+
+# Initialize the agents on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize the agents on startup."""
+    initialize_agents()
+
+# Run the application
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
