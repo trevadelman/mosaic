@@ -66,30 +66,27 @@ def test_backend_api():
         logger.error(f"Root endpoint test failed: {str(e)}")
         return False
     
-    # Test the query endpoint
+    # Test the agents endpoint
     try:
-        query_data = {"query": "What is 2 + 2?"}
-        response = requests.post(f"{BACKEND_URL}/api/query", json=query_data)
+        response = requests.get(f"{BACKEND_URL}/api/agents")
         assert response.status_code == 200
         data = response.json()
-        assert "query_id" in data
-        assert "status" in data
-        assert data["status"] == "success"
-        logger.info(f"Query endpoint test passed: {data}")
+        assert isinstance(data, list)
+        logger.info(f"Agents endpoint test passed: {data}")
     except Exception as e:
-        logger.error(f"Query endpoint test failed: {str(e)}")
+        logger.error(f"Agents endpoint test failed: {str(e)}")
         return False
     
-    # Test the history endpoint
+    # Test the debug endpoint
     try:
-        response = requests.get(f"{BACKEND_URL}/api/history")
+        response = requests.get(f"{BACKEND_URL}/api/debug/agents")
         assert response.status_code == 200
         data = response.json()
-        assert "status" in data
-        assert data["status"] == "success"
-        logger.info(f"History endpoint test passed: {data}")
+        assert "initialized_agents" in data
+        assert "registry_agents" in data
+        logger.info(f"Debug endpoint test passed: {data}")
     except Exception as e:
-        logger.error(f"History endpoint test failed: {str(e)}")
+        logger.error(f"Debug endpoint test failed: {str(e)}")
         return False
     
     return True
@@ -99,14 +96,16 @@ def on_message(ws, message):
     logger.info(f"Received WebSocket message: {message}")
     data = json.loads(message)
     assert "type" in data
-    if data["type"] == "status_update":
-        assert "status" in data
+    if data["type"] == "message":
         assert "message" in data
-    elif data["type"] == "agent_response":
-        assert "agent" in data
-        assert "content" in data
+        message_data = data["message"]
+        assert "id" in message_data
+        assert "role" in message_data
+        assert "content" in message_data
+        assert "timestamp" in message_data
     elif data["type"] == "log_update":
         assert "log" in data
+        assert "messageId" in data
 
 def on_error(ws, error):
     """Handle WebSocket errors."""
@@ -119,8 +118,15 @@ def on_close(ws, close_status_code, close_msg):
 def on_open(ws):
     """Handle WebSocket connection open."""
     logger.info("WebSocket connection opened")
-    # Join a test room
-    ws.send(json.dumps({"action": "join", "query_id": "test_query"}))
+    # Send a test message
+    ws.send(json.dumps({
+        "type": "message",
+        "message": {
+            "role": "user",
+            "content": "What is 2+2?",
+            "agentId": "calculator"
+        }
+    }))
 
 def test_websocket():
     """Test the WebSocket connection."""
@@ -129,7 +135,7 @@ def test_websocket():
     try:
         # Connect to the WebSocket
         ws = websocket.WebSocketApp(
-            WEBSOCKET_URL,
+            f"{WEBSOCKET_URL}/chat/calculator",
             on_open=on_open,
             on_message=on_message,
             on_error=on_error,
