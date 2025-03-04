@@ -4,12 +4,14 @@ import { useRef, useEffect } from "react"
 import { Message as MessageType, Agent } from "@/lib/types"
 import { Message } from "./message"
 import { ChatInput } from "./chat-input"
-import { AlertCircle, Loader2, Wifi, WifiOff } from "lucide-react"
+import { AlertCircle, Loader2, Wifi, WifiOff, Trash2 } from "lucide-react"
 import { ConnectionState } from "@/lib/contexts/websocket-context"
+import { Button } from "@/components/ui/button"
 
 interface ChatInterfaceProps {
   messages: MessageType[]
   onSendMessage: (message: string) => void
+  onClearChat?: () => void
   isProcessing?: boolean
   selectedAgent: Agent | null
   error?: string | null
@@ -19,6 +21,7 @@ interface ChatInterfaceProps {
 export function ChatInterface({
   messages,
   onSendMessage,
+  onClearChat,
   isProcessing = false,
   selectedAgent,
   error,
@@ -45,32 +48,49 @@ export function ChatInterface({
             {selectedAgent ? selectedAgent.name : "Chat"}
           </h2>
           
-          {/* Connection status indicator */}
-          {connectionState && (
-            <div className="flex items-center gap-1 text-xs">
-              {connectionState === ConnectionState.CONNECTED ? (
-                <>
-                  <Wifi className="h-3 w-3 text-green-500" />
-                  <span className="text-green-500">Connected</span>
-                </>
-              ) : connectionState === ConnectionState.CONNECTING ? (
-                <>
-                  <Loader2 className="h-3 w-3 animate-spin text-yellow-500" />
-                  <span className="text-yellow-500">Connecting</span>
-                </>
-              ) : connectionState === ConnectionState.RECONNECTING ? (
-                <>
-                  <Loader2 className="h-3 w-3 animate-spin text-yellow-500" />
-                  <span className="text-yellow-500">Reconnecting</span>
-                </>
-              ) : (
-                <>
-                  <WifiOff className="h-3 w-3 text-destructive" />
-                  <span className="text-destructive">Disconnected</span>
-                </>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            {/* Clear chat button */}
+            {messages.length > 0 && onClearChat && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                onClick={onClearChat}
+                disabled={isProcessing}
+                title="Clear conversation"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                <span className="text-xs">Clear</span>
+              </Button>
+            )}
+            
+            {/* Connection status indicator */}
+            {connectionState && (
+              <div className="flex items-center gap-1 text-xs">
+                {connectionState === ConnectionState.CONNECTED ? (
+                  <>
+                    <Wifi className="h-3 w-3 text-green-500" />
+                    <span className="text-green-500">Connected</span>
+                  </>
+                ) : connectionState === ConnectionState.CONNECTING ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin text-yellow-500" />
+                    <span className="text-yellow-500">Connecting</span>
+                  </>
+                ) : connectionState === ConnectionState.RECONNECTING ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin text-yellow-500" />
+                    <span className="text-yellow-500">Reconnecting</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="h-3 w-3 text-destructive" />
+                    <span className="text-destructive">Disconnected</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         
         {selectedAgent && (

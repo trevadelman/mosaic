@@ -278,9 +278,45 @@ export function useChat(agentId?: string) {
     [agentId, connectionState, wsSendMessage, messages, sentMessageContents]
   )
 
+  // Clear chat history
+  const clearChat = useCallback(async () => {
+    if (!agentId) return
+    
+    try {
+      // Try to clear via WebSocket first
+      if (connectionState === ConnectionState.CONNECTED) {
+        console.log("Clearing chat via WebSocket")
+        const cleared = await wsSendMessage(agentId, "", "clear_conversation")
+        
+        if (cleared) {
+          // Reset messages
+          setMessages([])
+          setError(null)
+          return
+        }
+      }
+      
+      // Fallback to API
+      console.log("Clearing chat via API")
+      const response = await chatApi.clearMessages(agentId)
+      
+      if (response.error) {
+        setError(response.error)
+      } else {
+        // Reset messages
+        setMessages([])
+        setError(null)
+      }
+    } catch (error) {
+      console.error("Error clearing chat:", error)
+      setError("Failed to clear chat")
+    }
+  }, [agentId, connectionState, wsSendMessage])
+
   return {
     messages,
     sendMessage,
+    clearChat,
     isProcessing,
     error,
     connectionState

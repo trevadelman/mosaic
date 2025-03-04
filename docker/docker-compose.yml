@@ -29,6 +29,7 @@ services:
       - ../backend:/app/backend
       - ../setup.py:/app/setup.py
       - ../__init__.py:/app/__init__.py
+      - mosaic-db-data:/app/database  # Persist database across container rebuilds
     environment:
       - ENVIRONMENT=development
       - DATABASE_URL=sqlite:///./database/mosaic.db
@@ -62,3 +63,6 @@ services:
 networks:
   mosaic-network:
     driver: bridge
+
+volumes:
+  mosaic-db-data:  # Named volume for persisting the database

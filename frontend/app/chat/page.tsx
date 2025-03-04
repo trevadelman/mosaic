@@ -11,6 +11,7 @@ export default function ChatPage() {
   const { 
     messages, 
     sendMessage, 
+    clearChat,
     isProcessing, 
     error,
     connectionState
@@ -43,6 +44,7 @@ export default function ChatPage() {
         <ChatInterface
           messages={messages}
           onSendMessage={sendMessage}
+          onClearChat={clearChat}
           isProcessing={isProcessing}
           selectedAgent={selectedAgent}
           error={error}

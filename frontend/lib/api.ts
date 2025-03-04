@@ -56,6 +56,12 @@ export const chatApi = {
       method: "POST",
       body: JSON.stringify({ content }),
     }),
+    
+  // Clear chat history with a specific agent
+  clearMessages: (agentId: string) =>
+    fetchApi<{status: string, message: string}>(`/chat/${agentId}/messages`, {
+      method: "DELETE",
+    }),
 }
 
 /**

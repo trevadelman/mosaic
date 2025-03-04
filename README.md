@@ -164,7 +164,7 @@ This is useful for verifying that the backend is correctly set up and can handle
 
 3. Open your browser to http://localhost:3000 to access the MOSAIC interface.
 
-#### Option 2: Running with Docker
+#### Option 3: Running with Docker
 
 1. Make sure you have Docker and Docker Compose installed on your system.
 
@@ -185,6 +185,39 @@ This is useful for verifying that the backend is correctly set up and can handle
    ```bash
    docker-compose -f docker/docker-compose.yml down
    ```
+
+6. To rebuild the containers while preserving conversation history:
+   ```bash
+   # Stop containers but keep volumes
+   docker-compose -f docker/docker-compose.yml down
+
+   # Rebuild and start containers
+   docker-compose -f docker/docker-compose.yml up --build
+   ```
+
+   The system uses a named Docker volume (`mosaic-db-data`) to persist the database across container rebuilds. This ensures your conversation history is preserved even when you rebuild the containers with updated code.
+
+   Note: Anonymous volumes (like the one used for frontend node_modules) are automatically removed when you run `docker-compose down` without the `-v` flag.
+
+7. If you want to completely reset the database and start fresh:
+   ```bash
+   # Stop containers and remove ALL volumes (including database)
+   docker-compose -f docker/docker-compose.yml down -v
+
+   # Rebuild and start containers
+   docker-compose -f docker/docker-compose.yml up --build
+   ```
+
+8. For development with frequent frontend package changes:
+   ```bash
+   # Remove only frontend container and its anonymous volumes
+   docker-compose -f docker/docker-compose.yml rm -f -s -v frontend
+
+   # Rebuild only the frontend
+   docker-compose -f docker/docker-compose.yml up -d --build frontend
+   ```
+
+   This approach allows you to rebuild the frontend with fresh node_modules while preserving the database and other containers.
 
 ## Project Structure
 

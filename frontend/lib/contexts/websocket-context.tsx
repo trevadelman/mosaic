@@ -23,7 +23,7 @@ interface QueuedMessage {
 // WebSocket context type
 interface WebSocketContextType {
   connectionState: ConnectionState
-  sendMessage: (agentId: string, content: string) => Promise<boolean>
+  sendMessage: (agentId: string, content: string, type?: string) => Promise<boolean>
   addEventListener: (callback: (event: WebSocketEvent) => void) => () => void
   connect: (agentId?: string) => void
   disconnect: () => void
@@ -264,7 +264,8 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       agentId: string,
       content: string,
       id?: string,
-      timestamp?: number
+      timestamp?: number,
+      type: string = "message"
     ): Promise<boolean> => {
       if (!isConnected()) {
         console.log("WebSocket not connected, cannot send message")
@@ -272,17 +273,26 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       }
       
       try {
-        socketRef.current!.send(JSON.stringify({
-          type: "message",
-          message: {
-            role: "user",
-            content,
-            agentId,
-            id,
-            timestamp
-          }
-        }))
-        console.log("Message sent successfully via WebSocket")
+        if (type === "clear_conversation") {
+          // Send clear conversation message
+          socketRef.current!.send(JSON.stringify({
+            type: "clear_conversation"
+          }))
+          console.log("Clear conversation message sent successfully via WebSocket")
+        } else {
+          // Send regular message
+          socketRef.current!.send(JSON.stringify({
+            type: "message",
+            message: {
+              role: "user",
+              content,
+              agentId,
+              id,
+              timestamp
+            }
+          }))
+          console.log("Message sent successfully via WebSocket")
+        }
         return true
       } catch (error) {
         console.error("Error sending message:", error)
@@ -294,21 +304,29 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
 
   // Send message (public API)
   const sendMessage = useCallback(
-    async (agentId: string, content: string): Promise<boolean> => {
+    async (agentId: string, content: string, type: string = "message"): Promise<boolean> => {
+      // If sending a clear_conversation message and connected, send it directly
+      if (type === "clear_conversation" && isConnected()) {
+        return sendMessageInternal(agentId, content, undefined, undefined, type)
+      }
+      
       // If not connected, add to queue and try to connect
       if (!isConnected()) {
         console.log("WebSocket not connected, queueing message")
         
-        // Add to queue
-        const queuedMessage: QueuedMessage = {
-          agentId,
-          content,
-          retries: 0,
-          id: Math.random().toString(36).substring(2, 9),
-          timestamp: Date.now()
+        // Only queue regular messages, not clear_conversation
+        if (type === "message") {
+          // Add to queue
+          const queuedMessage: QueuedMessage = {
+            agentId,
+            content,
+            retries: 0,
+            id: Math.random().toString(36).substring(2, 9),
+            timestamp: Date.now()
+          }
+          
+          setMessageQueue(prev => [...prev, queuedMessage])
         }
-        
-        setMessageQueue(prev => [...prev, queuedMessage])
         
         // Try to connect
         connect(agentId)
@@ -317,7 +335,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       }
       
       // Send message directly
-      return sendMessageInternal(agentId, content)
+      return sendMessageInternal(agentId, content, undefined, undefined, type)
     },
     [connect, isConnected, sendMessageInternal]
   )

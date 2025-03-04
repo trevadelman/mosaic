@@ -169,7 +169,7 @@
   - [x] Create visual tool builder
   - [x] Build prompt designer with templates
   - [x] Add sandbox testing interface
-  - [ ] Develop deployment workflow (partially implemented)
+  - [x] Develop deployment workflow (partially implemented)
   - [x] Test: JSON editing
   - [x] Test: Tool building
   - [x] Test: Prompt design
@@ -194,15 +194,48 @@
   - [x] Test: Agent capability discovery
   - [x] Test: API endpoint routing
 
-## Phase 6: Plugin System
-- [ ] **6.0 Plugin Architecture**
+## Phase 6: Database Integration and Multimodal Features
+- [x] **6.0 SQLite Database Integration**
+  - [x] Set up SQLite database models
+  - [x] Implement database connection management
+  - [ ] Create migration system
+  - [x] Update message storage to use database
+  - [x] Add conversation persistence
+  - [x] Implement conversation reset functionality
+  - [x] Test: Database operations
+  - [x] Test: Conversation persistence
+  - [x] Test: Docker compatibility
+
+- [ ] **6.1 Vision Capabilities**
+  - [ ] Add image upload functionality to frontend
+  - [ ] Create backend endpoints for image handling
+  - [ ] Integrate with vision-capable models
+  - [ ] Update message components to display images
+  - [ ] Implement image processing utilities
+  - [ ] Test: Image upload and display
+  - [ ] Test: Vision model integration
+
+- [ ] **6.2 File Upload Processing**
+  - [ ] Add file upload functionality to frontend
+  - [ ] Create backend endpoints for file handling
+  - [ ] Implement file type detection
+  - [ ] Create processors for different file types:
+    - [ ] XLSX/CSV: Data extraction
+    - [ ] PDF: Text extraction and image conversion
+    - [ ] Other formats as needed
+  - [ ] Update message components to display processed file content
+  - [ ] Test: File upload and processing
+  - [ ] Test: Different file type handling
+
+## Phase 7: Plugin System
+- [ ] **7.0 Plugin Architecture**
   - [ ] Create plugin base class
   - [ ] Implement plugin registry
   - [ ] Set up hot-reloading
   - [ ] Test: Plugin loading
   - [ ] Test: Hot-reload functionality
 
-- [ ] **6.1 Agent Plugins**
+- [ ] **7.1 Agent Plugins**
   - [ ] Convert calculator to plugin
   - [ ] Create plugin documentation
   - [ ] Implement plugin validation
@@ -210,15 +243,15 @@
   - [ ] Test: Plugin validation
 
 
-## Phase 7: Integration and Testing
-- [ ] **7.0 Integration Testing**
+## Phase 8: Integration and Testing
+- [ ] **8.0 Integration Testing**
   - [ ] Create end-to-end tests
   - [ ] Set up CI/CD pipeline
   - [ ] Implement monitoring
   - [ ] Test: Full system flow
   - [ ] Test: Performance metrics
 
-- [ ] **7.1 Documentation**
+- [ ] **8.1 Documentation**
   - [ ] Create API documentation
   - [ ] Write development guides
   - [ ] Add inline code comments

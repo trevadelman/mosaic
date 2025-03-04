@@ -10,6 +10,14 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import json
 
+# Import database modules
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.database import init_db, ChatService, AttachmentService
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.database import init_db, ChatService, AttachmentService
+
 # Import the agent creator API router
 try:
     # Try importing with the full package path (for local development)
@@ -217,147 +225,158 @@ async def get_agent(agent_id: str):
 @app.get("/api/chat/{agent_id}/messages")
 async def get_messages(agent_id: str):
     """Get all messages for a specific agent."""
-    if agent_id not in MESSAGE_STORE:
-        MESSAGE_STORE[agent_id] = []
-    return MESSAGE_STORE[agent_id]
+    try:
+        # Get messages from the database
+        messages = ChatService.get_conversation_messages(agent_id)
+        return messages
+    except Exception as e:
+        logger.error(f"Error getting messages for agent {agent_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting messages: {str(e)}")
+
+@app.delete("/api/chat/{agent_id}/messages")
+async def clear_messages(agent_id: str):
+    """Clear all messages for a specific agent."""
+    try:
+        # Clear the conversation in the database
+        success = ChatService.clear_conversation(agent_id)
+        if success:
+            return {"status": "success", "message": f"Conversation with agent {agent_id} cleared"}
+        else:
+            return {"status": "warning", "message": f"No active conversation found for agent {agent_id}"}
+    except Exception as e:
+        logger.error(f"Error clearing messages for agent {agent_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error clearing messages: {str(e)}")
 
 @app.post("/api/chat/{agent_id}/messages")
 async def send_message(agent_id: str, message: MessageContent):
     """Send a message to an agent and get a response."""
-    if agent_id not in MESSAGE_STORE:
-        MESSAGE_STORE[agent_id] = []
-    
-    # Create user message
-    user_message = {
-        "id": str(uuid.uuid4()),
-        "role": "user",
-        "content": message.content,
-        "timestamp": int(datetime.now().timestamp() * 1000),
-        "agentId": agent_id,
-        "status": "sent"
-    }
-    
-    # Add user message to history
-    MESSAGE_STORE[agent_id].append(user_message)
-    
-    # Get the agent from the initialized agents
-    initialized_agents = get_initialized_agents()
-    agent = initialized_agents.get(agent_id)
-    
-    if agent:
-        try:
-            # Initialize the conversation state
-            state = {"messages": []}
-            
-            # Add the user message to the state
-            state["messages"].append({
-                "role": "user",
-                "content": message.content
-            })
-            
-            # Invoke the agent
-            logger.info(f"Invoking {agent_id} agent")
-            result = agent.invoke(state)
-            logger.info(f"{agent_id} agent completed processing")
-            
-            # Extract the agent response
-            agent_response = "No response from agent"
-            messages = result.get("messages", [])
-            
-            # Log the message types for debugging
-            logger.info(f"Result messages types: {[type(msg).__name__ for msg in messages]}")
-            
-            # Log all messages for debugging
-            for i, msg in enumerate(messages):
-                if isinstance(msg, dict):
-                    logger.info(f"Message {i} (dict): {msg}")
-                else:
-                    msg_type = getattr(msg, "type", "N/A")
-                    msg_content = getattr(msg, "content", "N/A")
-                    
-                    # Log tool usage more explicitly
-                    if msg_type == "tool":
-                        tool_name = getattr(msg, "name", "unknown_tool")
-                        logger.info(f"Message {i} (ToolMessage): TOOL USED: {tool_name}, result={msg_content}")
-                    else:
-                        logger.info(f"Message {i} ({type(msg).__name__}): content={msg_content}, type={msg_type}, role={getattr(msg, 'role', 'N/A')}")
-            
-            # First try to find the last AIMessage
-            for message_item in reversed(messages):
-                # Check if it's a LangChain message object
-                if hasattr(message_item, "content"):
-                    # Check for AIMessage
-                    if hasattr(message_item, "type") and message_item.type == "ai":
-                        agent_response = message_item.content
-                        logger.info(f"Found AI response in object (reversed): {agent_response[:50]}...")
-                        break
-            
-            # If no AIMessage found, try other message types
-            if agent_response == "No response from agent":
-                for message_item in messages:
-                    # Check if the message is a dictionary
-                    if isinstance(message_item, dict):
-                        if message_item.get("role") == "assistant":
-                            agent_response = message_item.get("content", "")
-                            logger.info(f"Found assistant response in dict: {agent_response[:50]}...")
-                            break
-                    # Check if it's a LangChain message object
-                    elif hasattr(message_item, "content"):
-                        # Check for AIMessage, HumanMessage, etc.
-                        msg_type = getattr(message_item, "type", None)
-                        msg_role = getattr(message_item, "role", None)
-                        
-                        if msg_type == "assistant" or msg_role == "assistant":
-                            agent_response = message_item.content
-                            logger.info(f"Found assistant response in object: {agent_response[:50]}...")
-                            break
-                        elif msg_type == "ai" or msg_role == "ai":
-                            agent_response = message_item.content
-                            logger.info(f"Found AI response in object: {agent_response[:50]}...")
-                            break
-            
-            # Create the agent message
-            agent_message = {
-                "id": str(uuid.uuid4()),
-                "role": "assistant",
-                "content": agent_response,
-                "timestamp": int(datetime.now().timestamp() * 1000),
-                "agentId": agent_id
-            }
-            
-        except Exception as e:
-            logger.error(f"Error invoking {agent_id} agent: {str(e)}")
-            
-            # Create error message
-            agent_message = {
-                "id": str(uuid.uuid4()),
-                "role": "assistant",
-                "content": f"Error: {str(e)}",
-                "timestamp": int(datetime.now().timestamp() * 1000),
-                "agentId": agent_id,
-                "status": "error",
-                "error": str(e)
-            }
-    else:
-        # Agent not found
-        logger.warning(f"Agent {agent_id} not found in registry")
+    try:
+        # Create user message in the database
+        user_message_id = str(uuid.uuid4())
+        user_message = ChatService.add_message(
+            agent_id=agent_id,
+            role="user",
+            content=message.content,
+            timestamp=int(datetime.now().timestamp() * 1000),
+            status="sent",
+            message_id=user_message_id
+        )
         
-        # Create error message
-        agent_message = {
-            "id": str(uuid.uuid4()),
-            "role": "assistant",
-            "content": f"Error: Agent '{agent_id}' not found",
-            "timestamp": int(datetime.now().timestamp() * 1000),
-            "agentId": agent_id,
-            "status": "error",
-            "error": f"Agent '{agent_id}' not found"
-        }
-    
-    # Add agent message to history
-    MESSAGE_STORE[agent_id].append(agent_message)
-    
-    # Return the user message
-    return user_message
+        # Get the agent from the initialized agents
+        initialized_agents = get_initialized_agents()
+        agent = initialized_agents.get(agent_id)
+        
+        if agent:
+            try:
+                # Initialize the conversation state
+                state = {"messages": []}
+                
+                # Get all previous messages for context
+                previous_messages = ChatService.get_messages_for_agent_state(agent_id)
+                
+                # Add all messages to the state
+                state["messages"] = previous_messages
+                
+                # Invoke the agent
+                logger.info(f"Invoking {agent_id} agent with {len(previous_messages)} previous messages")
+                result = agent.invoke(state)
+                logger.info(f"{agent_id} agent completed processing")
+                
+                # Extract the agent response
+                agent_response = "No response from agent"
+                messages = result.get("messages", [])
+                
+                # Log the message types for debugging
+                logger.info(f"Result messages types: {[type(msg).__name__ for msg in messages]}")
+                
+                # Log all messages for debugging
+                for i, msg in enumerate(messages):
+                    if isinstance(msg, dict):
+                        logger.info(f"Message {i} (dict): {msg}")
+                    else:
+                        msg_type = getattr(msg, "type", "N/A")
+                        msg_content = getattr(msg, "content", "N/A")
+                        
+                        # Log tool usage more explicitly
+                        if msg_type == "tool":
+                            tool_name = getattr(msg, "name", "unknown_tool")
+                            logger.info(f"Message {i} (ToolMessage): TOOL USED: {tool_name}, result={msg_content}")
+                        else:
+                            logger.info(f"Message {i} ({type(msg).__name__}): content={msg_content}, type={msg_type}, role={getattr(msg, 'role', 'N/A')}")
+                
+                # First try to find the last AIMessage
+                for message_item in reversed(messages):
+                    # Check if it's a LangChain message object
+                    if hasattr(message_item, "content"):
+                        # Check for AIMessage
+                        if hasattr(message_item, "type") and message_item.type == "ai":
+                            agent_response = message_item.content
+                            logger.info(f"Found AI response in object (reversed): {agent_response[:50]}...")
+                            break
+                
+                # If no AIMessage found, try other message types
+                if agent_response == "No response from agent":
+                    for message_item in messages:
+                        # Check if the message is a dictionary
+                        if isinstance(message_item, dict):
+                            if message_item.get("role") == "assistant":
+                                agent_response = message_item.get("content", "")
+                                logger.info(f"Found assistant response in dict: {agent_response[:50]}...")
+                                break
+                        # Check if it's a LangChain message object
+                        elif hasattr(message_item, "content"):
+                            # Check for AIMessage, HumanMessage, etc.
+                            msg_type = getattr(message_item, "type", None)
+                            msg_role = getattr(message_item, "role", None)
+                            
+                            if msg_type == "assistant" or msg_role == "assistant":
+                                agent_response = message_item.content
+                                logger.info(f"Found assistant response in object: {agent_response[:50]}...")
+                                break
+                            elif msg_type == "ai" or msg_role == "ai":
+                                agent_response = message_item.content
+                                logger.info(f"Found AI response in object: {agent_response[:50]}...")
+                                break
+                
+                # Create the agent message in the database
+                agent_message = ChatService.add_message(
+                    agent_id=agent_id,
+                    role="assistant",
+                    content=agent_response,
+                    timestamp=int(datetime.now().timestamp() * 1000)
+                )
+                
+            except Exception as e:
+                logger.error(f"Error invoking {agent_id} agent: {str(e)}")
+                
+                # Create error message in the database
+                agent_message = ChatService.add_message(
+                    agent_id=agent_id,
+                    role="assistant",
+                    content=f"Error: {str(e)}",
+                    timestamp=int(datetime.now().timestamp() * 1000),
+                    status="error",
+                    error=str(e)
+                )
+        else:
+            # Agent not found
+            logger.warning(f"Agent {agent_id} not found in registry")
+            
+            # Create error message in the database
+            agent_message = ChatService.add_message(
+                agent_id=agent_id,
+                role="assistant",
+                content=f"Error: Agent '{agent_id}' not found",
+                timestamp=int(datetime.now().timestamp() * 1000),
+                status="error",
+                error=f"Agent '{agent_id}' not found"
+            )
+        
+        # Return the user message
+        return user_message
+    except Exception as e:
+        logger.error(f"Error sending message to agent {agent_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error sending message: {str(e)}")
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -399,14 +418,11 @@ class WebSocketLogHandler(logging.Handler):
     def emit(self, record):
         log_entry = self.format(record)
         
-        # Store log in message store directly (synchronously)
-        for agent_id, messages in MESSAGE_STORE.items():
-            for message in messages:
-                if message.get("id") == self.message_id:
-                    if "logs" not in message:
-                        message["logs"] = []
-                    message["logs"].append(log_entry)
-                    break
+        # Store log in database
+        try:
+            ChatService.add_log_to_message(self.message_id, log_entry)
+        except Exception as e:
+            print(f"Error storing log in database: {e}")
         
         # Add to queue
         self.log_queue.append(log_entry)
@@ -457,253 +473,271 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
             elif data.get("type") == "message":
                 message_data = data.get("message", {})
                 
-                # Create user message
-                user_message = {
-                    "id": str(uuid.uuid4()),
-                    "role": "user",
-                    "content": message_data.get("content", ""),
-                    "timestamp": int(datetime.now().timestamp() * 1000),
-                    "agentId": agent_id,
-                    "status": "sent",
-                    "clientMessageId": message_data.get("clientMessageId")  # Pass through client message ID
-                }
-                
-                # Add user message to history
-                if agent_id not in MESSAGE_STORE:
-                    MESSAGE_STORE[agent_id] = []
-                MESSAGE_STORE[agent_id].append(user_message)
-                
-                # Send confirmation back to client
-                await websocket.send_json({
-                    "type": "message",
-                    "message": user_message
-                })
-                
-                # Create agent response with a unique ID
-                agent_message_id = str(uuid.uuid4())
-                
-                # Create initial log message
-                initial_log = f"{datetime.now().strftime('%H:%M:%S')} - Starting processing with {agent_id} agent"
-                
-                # Send initial log message
-                await websocket.send_json({
-                    "type": "log_update",
-                    "log": initial_log,
-                    "messageId": agent_message_id
-                })
-                
-                # Get the agent from the initialized agents
-                initialized_agents = get_initialized_agents()
-                agent = initialized_agents.get(agent_id)
-                
-                if agent:
-                    # Set up a custom log handler to capture logs
-                    ws_handler = WebSocketLogHandler(websocket, agent_message_id)
-                    ws_handler.setLevel(logging.INFO)
-                    ws_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', '%H:%M:%S'))
+                try:
+                    # Create user message in the database
+                    user_message_id = str(uuid.uuid4())
+                    user_message = ChatService.add_message(
+                        agent_id=agent_id,
+                        role="user",
+                        content=message_data.get("content", ""),
+                        timestamp=int(datetime.now().timestamp() * 1000),
+                        status="sent",
+                        message_id=user_message_id,
+                        client_message_id=message_data.get("clientMessageId")
+                    )
                     
-                    # Add the handler to the agent's logger
-                    agent_logger = logging.getLogger(f"mosaic.agents.{agent_id}")
-                    agent_logger.addHandler(ws_handler)
+                    # Send confirmation back to client
+                    await websocket.send_json({
+                        "type": "message",
+                        "message": user_message
+                    })
                     
-                    # For research_supervisor, also add the handler to the specialized agents' loggers
-                    if agent_id == "research_supervisor":
-                        # Add handler to web_search logger
-                        web_search_logger = logging.getLogger("mosaic.agents.web_search")
-                        web_search_logger.addHandler(ws_handler)
-                        
-                        # Add handler to browser_interaction logger
-                        browser_interaction_logger = logging.getLogger("mosaic.agents.browser_interaction")
-                        browser_interaction_logger.addHandler(ws_handler)
-                        
-                        # Add handler to data_processing logger
-                        data_processing_logger = logging.getLogger("mosaic.agents.data_processing")
-                        data_processing_logger.addHandler(ws_handler)
-                        
-                        # Add handler to literature logger
-                        literature_logger = logging.getLogger("mosaic.agents.literature")
-                        literature_logger.addHandler(ws_handler)
-                        
-                        logger.info("Added log handlers to all specialized agents for research_supervisor")
+                    # Create agent response with a unique ID
+                    agent_message_id = str(uuid.uuid4())
                     
-                    try:
-                        # Initialize the conversation state
-                        state = {"messages": []}
+                    # Create initial log message
+                    initial_log = f"{datetime.now().strftime('%H:%M:%S')} - Starting processing with {agent_id} agent"
+                    
+                    # Add initial log to the database
+                    ChatService.add_log_to_message(agent_message_id, initial_log)
+                    
+                    # Send initial log message
+                    await websocket.send_json({
+                        "type": "log_update",
+                        "log": initial_log,
+                        "messageId": agent_message_id
+                    })
+                    
+                    # Get the agent from the initialized agents
+                    initialized_agents = get_initialized_agents()
+                    agent = initialized_agents.get(agent_id)
+                    
+                    if agent:
+                        # Set up a custom log handler to capture logs
+                        ws_handler = WebSocketLogHandler(websocket, agent_message_id)
+                        ws_handler.setLevel(logging.INFO)
+                        ws_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', '%H:%M:%S'))
                         
-                        # Add the user message to the state
-                        state["messages"].append({
-                            "role": "user",
-                            "content": message_data.get("content", "")
-                        })
+                        # Add the handler to the agent's logger
+                        agent_logger = logging.getLogger(f"mosaic.agents.{agent_id}")
+                        agent_logger.addHandler(ws_handler)
                         
-                        # Invoke the agent
-                        logger.info(f"Invoking {agent_id} agent")
-                        result = agent.invoke(state)
-                        logger.info(f"{agent_id} agent completed processing")
+                        # For research_supervisor, also add the handler to the specialized agents' loggers
+                        if agent_id == "research_supervisor":
+                            # Add handler to web_search logger
+                            web_search_logger = logging.getLogger("mosaic.agents.web_search")
+                            web_search_logger.addHandler(ws_handler)
+                            
+                            # Add handler to browser_interaction logger
+                            browser_interaction_logger = logging.getLogger("mosaic.agents.browser_interaction")
+                            browser_interaction_logger.addHandler(ws_handler)
+                            
+                            # Add handler to data_processing logger
+                            data_processing_logger = logging.getLogger("mosaic.agents.data_processing")
+                            data_processing_logger.addHandler(ws_handler)
+                            
+                            # Add handler to literature logger
+                            literature_logger = logging.getLogger("mosaic.agents.literature")
+                            literature_logger.addHandler(ws_handler)
+                            
+                            logger.info("Added log handlers to all specialized agents for research_supervisor")
                         
-                        # Extract the agent response
-                        agent_response = "No response from agent"
-                        messages = result.get("messages", [])
-                        
-                        # Log the message types for debugging
-                        logger.info(f"Result messages types: {[type(msg).__name__ for msg in messages]}")
-                        
-                        # Log all messages for debugging
-                        for i, msg in enumerate(messages):
-                            if isinstance(msg, dict):
-                                logger.info(f"Message {i} (dict): {msg}")
-                            else:
-                                msg_type = getattr(msg, "type", "N/A")
-                                msg_content = getattr(msg, "content", "N/A")
-                                
-                                # Log tool usage more explicitly
-                                if msg_type == "tool":
-                                    tool_name = getattr(msg, "name", "unknown_tool")
-                                    logger.info(f"Message {i} (ToolMessage): TOOL USED: {tool_name}, result={msg_content}")
+                        try:
+                            # Initialize the conversation state
+                            state = {"messages": []}
+                            
+                            # Get all previous messages for context
+                            previous_messages = ChatService.get_messages_for_agent_state(agent_id)
+                            
+                            # Add all messages to the state
+                            state["messages"] = previous_messages
+                            
+                            # Invoke the agent
+                            logger.info(f"Invoking {agent_id} agent with {len(previous_messages)} previous messages")
+                            result = agent.invoke(state)
+                            logger.info(f"{agent_id} agent completed processing")
+                            
+                            # Extract the agent response
+                            agent_response = "No response from agent"
+                            messages = result.get("messages", [])
+                            
+                            # Log the message types for debugging
+                            logger.info(f"Result messages types: {[type(msg).__name__ for msg in messages]}")
+                            
+                            # Log all messages for debugging
+                            for i, msg in enumerate(messages):
+                                if isinstance(msg, dict):
+                                    logger.info(f"Message {i} (dict): {msg}")
                                 else:
-                                    logger.info(f"Message {i} ({type(msg).__name__}): content={msg_content}, type={msg_type}, role={getattr(msg, 'role', 'N/A')}")
-                        
-                        # First try to find the last AIMessage
-                        for message_item in reversed(messages):
-                            # Check if it's a LangChain message object
-                            if hasattr(message_item, "content"):
-                                # Check for AIMessage
-                                if hasattr(message_item, "type") and message_item.type == "ai":
-                                    agent_response = message_item.content
-                                    logger.info(f"Found AI response in object (reversed): {agent_response[:50]}...")
-                                    break
-                        
-                        # If no AIMessage found, try other message types
-                        if agent_response == "No response from agent":
-                            for message_item in messages:
-                                # Check if the message is a dictionary
-                                if isinstance(message_item, dict):
-                                    if message_item.get("role") == "assistant":
-                                        agent_response = message_item.get("content", "")
-                                        logger.info(f"Found assistant response in dict: {agent_response[:50]}...")
-                                        break
-                                # Check if it's a LangChain message object
-                                elif hasattr(message_item, "content"):
-                                    # Check for AIMessage, HumanMessage, etc.
-                                    msg_type = getattr(message_item, "type", None)
-                                    msg_role = getattr(message_item, "role", None)
+                                    msg_type = getattr(msg, "type", "N/A")
+                                    msg_content = getattr(msg, "content", "N/A")
                                     
-                                    if msg_type == "assistant" or msg_role == "assistant":
+                                    # Log tool usage more explicitly
+                                    if msg_type == "tool":
+                                        tool_name = getattr(msg, "name", "unknown_tool")
+                                        logger.info(f"Message {i} (ToolMessage): TOOL USED: {tool_name}, result={msg_content}")
+                                    else:
+                                        logger.info(f"Message {i} ({type(msg).__name__}): content={msg_content}, type={msg_type}, role={getattr(msg, 'role', 'N/A')}")
+                            
+                            # First try to find the last AIMessage
+                            for message_item in reversed(messages):
+                                # Check if it's a LangChain message object
+                                if hasattr(message_item, "content"):
+                                    # Check for AIMessage
+                                    if hasattr(message_item, "type") and message_item.type == "ai":
                                         agent_response = message_item.content
-                                        logger.info(f"Found assistant response in object: {agent_response[:50]}...")
+                                        logger.info(f"Found AI response in object (reversed): {agent_response[:50]}...")
                                         break
-                                    elif msg_type == "ai" or msg_role == "ai":
-                                        agent_response = message_item.content
-                                        logger.info(f"Found AI response in object: {agent_response[:50]}...")
-                                        break
+                            
+                            # If no AIMessage found, try other message types
+                            if agent_response == "No response from agent":
+                                for message_item in messages:
+                                    # Check if the message is a dictionary
+                                    if isinstance(message_item, dict):
+                                        if message_item.get("role") == "assistant":
+                                            agent_response = message_item.get("content", "")
+                                            logger.info(f"Found assistant response in dict: {agent_response[:50]}...")
+                                            break
+                                    # Check if it's a LangChain message object
+                                    elif hasattr(message_item, "content"):
+                                        # Check for AIMessage, HumanMessage, etc.
+                                        msg_type = getattr(message_item, "type", None)
+                                        msg_role = getattr(message_item, "role", None)
+                                        
+                                        if msg_type == "assistant" or msg_role == "assistant":
+                                            agent_response = message_item.content
+                                            logger.info(f"Found assistant response in object: {agent_response[:50]}...")
+                                            break
+                                        elif msg_type == "ai" or msg_role == "ai":
+                                            agent_response = message_item.content
+                                            logger.info(f"Found AI response in object: {agent_response[:50]}...")
+                                            break
+                            
+                            # Create the agent message in the database
+                            agent_message = ChatService.add_message(
+                                agent_id=agent_id,
+                                role="assistant",
+                                content=agent_response,
+                                timestamp=int(datetime.now().timestamp() * 1000),
+                                message_id=agent_message_id
+                            )
+                            
+                            # Send agent response back to client with a small delay
+                            # This ensures the logs have time to be processed
+                            await asyncio.sleep(0.5)
+                            
+                            # Log that we're sending the response
+                            logger.info(f"Sending agent response back to client: {agent_message['id']}")
+                            
+                            # Add logs to the message for the response
+                            agent_message["logs"] = ws_handler.get_logs()
+                            
+                            await websocket.send_json({
+                                "type": "message",
+                                "message": agent_message
+                            })
                         
-                        # Get all logs from the message store
-                        logs = [initial_log]
-                        for agent_id_key, messages in MESSAGE_STORE.items():
-                            for message in messages:
-                                if message.get("id") == agent_message_id and "logs" in message:
-                                    logs = message.get("logs", [])
-                                    break
+                        except Exception as e:
+                            logger.error(f"Error invoking {agent_id} agent: {str(e)}")
+                            
+                            # Create error message in the database
+                            error_message = ChatService.add_message(
+                                agent_id=agent_id,
+                                role="assistant",
+                                content=f"Error: {str(e)}",
+                                timestamp=int(datetime.now().timestamp() * 1000),
+                                status="error",
+                                error=str(e),
+                                message_id=agent_message_id
+                            )
+                            
+                            # Add logs to the message for the response
+                            error_message["logs"] = ws_handler.get_logs()
+                            
+                            # Send error message back to client
+                            await websocket.send_json({
+                                "type": "message",
+                                "message": error_message
+                            })
                         
-                        # Create the agent message with logs
-                        agent_message = {
-                            "id": agent_message_id,
-                            "role": "assistant",
-                            "content": agent_response,
-                            "timestamp": int(datetime.now().timestamp() * 1000),
-                            "agentId": agent_id,
-                            "logs": ws_handler.get_logs()  # Include all logs from the handler
-                        }
+                        finally:
+                            # Remove the custom log handler from the agent's logger
+                            if ws_handler in agent_logger.handlers:
+                                agent_logger.removeHandler(ws_handler)
+                            
+                            # For research_supervisor, also remove the handler from the specialized agents' loggers
+                            if agent_id == "research_supervisor":
+                                # Remove handler from web_search logger
+                                web_search_logger = logging.getLogger("mosaic.agents.web_search")
+                                if ws_handler in web_search_logger.handlers:
+                                    web_search_logger.removeHandler(ws_handler)
+                                
+                                # Remove handler from browser_interaction logger
+                                browser_interaction_logger = logging.getLogger("mosaic.agents.browser_interaction")
+                                if ws_handler in browser_interaction_logger.handlers:
+                                    browser_interaction_logger.removeHandler(ws_handler)
+                                
+                                # Remove handler from data_processing logger
+                                data_processing_logger = logging.getLogger("mosaic.agents.data_processing")
+                                if ws_handler in data_processing_logger.handlers:
+                                    data_processing_logger.removeHandler(ws_handler)
+                                
+                                # Remove handler from literature logger
+                                literature_logger = logging.getLogger("mosaic.agents.literature")
+                                if ws_handler in literature_logger.handlers:
+                                    literature_logger.removeHandler(ws_handler)
+                                
+                                logger.info("Removed log handlers from all specialized agents for research_supervisor")
+                    
+                    else:
+                        # Agent not found
+                        logger.warning(f"Agent {agent_id} not found in registry")
                         
-                        # Add agent message to history
-                        MESSAGE_STORE[agent_id].append(agent_message)
+                        # Create error message in the database
+                        agent_message = ChatService.add_message(
+                            agent_id=agent_id,
+                            role="assistant",
+                            content=f"Error: Agent '{agent_id}' not found",
+                            timestamp=int(datetime.now().timestamp() * 1000),
+                            status="error",
+                            error=f"Agent '{agent_id}' not found",
+                            message_id=agent_message_id
+                        )
                         
-                        # Send agent response back to client with a small delay
-                        # This ensures the logs have time to be processed
-                        await asyncio.sleep(0.5)
-                        
-                        # Log that we're sending the response
-                        logger.info(f"Sending agent response back to client: {agent_message['id']}")
-                        
+                        # Send agent response back to client
                         await websocket.send_json({
                             "type": "message",
                             "message": agent_message
                         })
-                    
-                    except Exception as e:
-                        logger.error(f"Error invoking {agent_id} agent: {str(e)}")
-                        
-                        # Send error message
-                        error_message = {
-                            "id": agent_message_id,
-                            "role": "assistant",
-                            "content": f"Error: {str(e)}",
-                            "timestamp": int(datetime.now().timestamp() * 1000),
-                            "agentId": agent_id,
-                            "status": "error",
-                            "error": str(e)
-                        }
-                        
-                        # Add error message to history
-                        MESSAGE_STORE[agent_id].append(error_message)
-                        
-                        # Send error message back to client
-                        await websocket.send_json({
-                            "type": "message",
-                            "message": error_message
-                        })
-                    
-                    finally:
-                        # Remove the custom log handler from the agent's logger
-                        if ws_handler in agent_logger.handlers:
-                            agent_logger.removeHandler(ws_handler)
-                        
-                        # For research_supervisor, also remove the handler from the specialized agents' loggers
-                        if agent_id == "research_supervisor":
-                            # Remove handler from web_search logger
-                            web_search_logger = logging.getLogger("mosaic.agents.web_search")
-                            if ws_handler in web_search_logger.handlers:
-                                web_search_logger.removeHandler(ws_handler)
-                            
-                            # Remove handler from browser_interaction logger
-                            browser_interaction_logger = logging.getLogger("mosaic.agents.browser_interaction")
-                            if ws_handler in browser_interaction_logger.handlers:
-                                browser_interaction_logger.removeHandler(ws_handler)
-                            
-                            # Remove handler from data_processing logger
-                            data_processing_logger = logging.getLogger("mosaic.agents.data_processing")
-                            if ws_handler in data_processing_logger.handlers:
-                                data_processing_logger.removeHandler(ws_handler)
-                            
-                            # Remove handler from literature logger
-                            literature_logger = logging.getLogger("mosaic.agents.literature")
-                            if ws_handler in literature_logger.handlers:
-                                literature_logger.removeHandler(ws_handler)
-                            
-                            logger.info("Removed log handlers from all specialized agents for research_supervisor")
                 
-                else:
-                    # Agent not found
-                    logger.warning(f"Agent {agent_id} not found in registry")
+                except Exception as e:
+                    logger.error(f"Error processing message: {str(e)}")
                     
-                    # Create error message
-                    agent_message = {
-                        "id": agent_message_id,
-                        "role": "assistant",
-                        "content": f"Error: Agent '{agent_id}' not found",
-                        "timestamp": int(datetime.now().timestamp() * 1000),
-                        "agentId": agent_id,
-                        "status": "error",
-                        "error": f"Agent '{agent_id}' not found"
-                    }
-                    
-                    # Add agent message to history
-                    MESSAGE_STORE[agent_id].append(agent_message)
-                    
-                    # Send agent response back to client
+                    # Send error message back to client
                     await websocket.send_json({
-                        "type": "message",
-                        "message": agent_message
+                        "type": "error",
+                        "error": f"Error processing message: {str(e)}"
+                    })
+            
+            elif data.get("type") == "clear_conversation":
+                try:
+                    # Clear the conversation in the database
+                    success = ChatService.clear_conversation(agent_id)
+                    
+                    # Send confirmation back to client
+                    await websocket.send_json({
+                        "type": "conversation_cleared",
+                        "success": success,
+                        "timestamp": datetime.now().isoformat()
+                    })
+                
+                except Exception as e:
+                    logger.error(f"Error clearing conversation: {str(e)}")
+                    
+                    # Send error message back to client
+                    await websocket.send_json({
+                        "type": "error",
+                        "error": f"Error clearing conversation: {str(e)}"
                     })
             
     except WebSocketDisconnect:
@@ -827,8 +861,23 @@ except ImportError:
 # Initialize the agents on startup
 @app.on_event("startup")
 async def startup_event():
-    """Initialize the agents on startup."""
+    """Initialize the agents and database on startup."""
+    # Initialize the database
+    logger.info("Initializing database")
+    init_db()
+    logger.info("Database initialized")
+    
+    # Initialize the agents
     initialize_agents()
+
+# Close database connection on shutdown
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Close database connection on shutdown."""
+    from mosaic.backend.database import close_db_connection
+    logger.info("Closing database connection")
+    close_db_connection()
+    logger.info("Database connection closed")
 
 # Run the application
 if __name__ == "__main__":
