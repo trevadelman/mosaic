@@ -159,14 +159,33 @@ async def get_agents():
     try:
         agents = []
         for agent_id, agent in initialized_agents.items():
-            agents.append({
-                "id": agent.name,
-                "name": agent.name.capitalize(),
-                "description": agent.description,
-                "type": "Utility",
-                "capabilities": ["Basic Math", "Equations", "Unit Conversion"] if agent.name == "calculator" else [],
-                "icon": "🧮" if agent.name == "calculator" else "🤖"
-            })
+            if agent_id == "calculator":
+                agents.append({
+                    "id": agent.name,
+                    "name": agent.name.capitalize(),
+                    "description": agent.description,
+                    "type": "Utility",
+                    "capabilities": ["Basic Math", "Equations", "Unit Conversion"],
+                    "icon": "🧮"
+                })
+            elif agent_id == "research_supervisor":
+                agents.append({
+                    "id": agent_id,
+                    "name": "Research Assistant",
+                    "description": "Research assistant that can search the web, browse websites, process data, and find academic papers",
+                    "type": "Supervisor",
+                    "capabilities": ["Web Search", "Content Retrieval", "Data Processing", "Academic Research"],
+                    "icon": "🔍"
+                })
+            else:
+                agents.append({
+                    "id": agent.name,
+                    "name": agent.name.capitalize(),
+                    "description": agent.description,
+                    "type": "Utility",
+                    "capabilities": [],
+                    "icon": "🤖"
+                })
         return agents
     except Exception as e:
         logger.error(f"Error getting agents: {str(e)}")
@@ -179,14 +198,33 @@ async def get_agent(agent_id: str):
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
     
-    return {
-        "id": agent.name,
-        "name": agent.name.capitalize(),
-        "description": agent.description,
-        "type": "Utility",
-        "capabilities": ["Basic Math", "Equations", "Unit Conversion"] if agent.name == "calculator" else [],
-        "icon": "🧮" if agent.name == "calculator" else "🤖"
-    }
+    if agent_id == "calculator":
+        return {
+            "id": agent.name,
+            "name": agent.name.capitalize(),
+            "description": agent.description,
+            "type": "Utility",
+            "capabilities": ["Basic Math", "Equations", "Unit Conversion"],
+            "icon": "🧮"
+        }
+    elif agent_id == "research_supervisor":
+        return {
+            "id": agent_id,
+            "name": "Research Assistant",
+            "description": "Research assistant that can search the web, browse websites, process data, and find academic papers",
+            "type": "Supervisor",
+            "capabilities": ["Web Search", "Content Retrieval", "Data Processing", "Academic Research"],
+            "icon": "🔍"
+        }
+    else:
+        return {
+            "id": agent.name,
+            "name": agent.name.capitalize(),
+            "description": agent.description,
+            "type": "Utility",
+            "capabilities": [],
+            "icon": "🤖"
+        }
 
 # Chat routes
 @app.get("/api/chat/{agent_id}/messages")
@@ -479,6 +517,26 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                     agent_logger = logging.getLogger(f"mosaic.agents.{agent_id}")
                     agent_logger.addHandler(ws_handler)
                     
+                    # For research_supervisor, also add the handler to the specialized agents' loggers
+                    if agent_id == "research_supervisor":
+                        # Add handler to web_search logger
+                        web_search_logger = logging.getLogger("mosaic.agents.web_search")
+                        web_search_logger.addHandler(ws_handler)
+                        
+                        # Add handler to browser_interaction logger
+                        browser_interaction_logger = logging.getLogger("mosaic.agents.browser_interaction")
+                        browser_interaction_logger.addHandler(ws_handler)
+                        
+                        # Add handler to data_processing logger
+                        data_processing_logger = logging.getLogger("mosaic.agents.data_processing")
+                        data_processing_logger.addHandler(ws_handler)
+                        
+                        # Add handler to literature logger
+                        literature_logger = logging.getLogger("mosaic.agents.literature")
+                        literature_logger.addHandler(ws_handler)
+                        
+                        logger.info("Added log handlers to all specialized agents for research_supervisor")
+                    
                     try:
                         # Initialize the conversation state
                         state = {"messages": []}
@@ -607,9 +665,33 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                         })
                     
                     finally:
-                        # Remove the custom log handler
+                        # Remove the custom log handler from the agent's logger
                         if ws_handler in agent_logger.handlers:
                             agent_logger.removeHandler(ws_handler)
+                        
+                        # For research_supervisor, also remove the handler from the specialized agents' loggers
+                        if agent_id == "research_supervisor":
+                            # Remove handler from web_search logger
+                            web_search_logger = logging.getLogger("mosaic.agents.web_search")
+                            if ws_handler in web_search_logger.handlers:
+                                web_search_logger.removeHandler(ws_handler)
+                            
+                            # Remove handler from browser_interaction logger
+                            browser_interaction_logger = logging.getLogger("mosaic.agents.browser_interaction")
+                            if ws_handler in browser_interaction_logger.handlers:
+                                browser_interaction_logger.removeHandler(ws_handler)
+                            
+                            # Remove handler from data_processing logger
+                            data_processing_logger = logging.getLogger("mosaic.agents.data_processing")
+                            if ws_handler in data_processing_logger.handlers:
+                                data_processing_logger.removeHandler(ws_handler)
+                            
+                            # Remove handler from literature logger
+                            literature_logger = logging.getLogger("mosaic.agents.literature")
+                            if ws_handler in literature_logger.handlers:
+                                literature_logger.removeHandler(ws_handler)
+                            
+                            logger.info("Removed log handlers from all specialized agents for research_supervisor")
                 
                 else:
                     # Agent not found
@@ -709,6 +791,28 @@ async def simulate_agent_processing(websocket: WebSocket, agent_id: str, content
         })
         await asyncio.sleep(0.3)
     
+    elif agent_id == "research_supervisor":
+        await websocket.send_json({
+            "type": "log_update",
+            "log": f"{datetime.now().strftime('%H:%M:%S')} - {agent_id}: Analyzing research query",
+            "messageId": message_id
+        })
+        await asyncio.sleep(0.3)
+        
+        await websocket.send_json({
+            "type": "log_update",
+            "log": f"{datetime.now().strftime('%H:%M:%S')} - {agent_id}: Delegating to specialized agents",
+            "messageId": message_id
+        })
+        await asyncio.sleep(0.3)
+        
+        await websocket.send_json({
+            "type": "log_update",
+            "log": f"{datetime.now().strftime('%H:%M:%S')} - {agent_id}: Gathering information from multiple sources",
+            "messageId": message_id
+        })
+        await asyncio.sleep(0.3)
+    
     # Final processing phase
     await websocket.send_json({
         "type": "log_update",
@@ -734,11 +838,21 @@ def initialize_agents():
     try:
         # Try importing with the full package path (for local development)
         from mosaic.backend.agents import register_calculator_agent
+        from mosaic.backend.agents.web_search import register_web_search_agent
+        from mosaic.backend.agents.browser_interaction import register_browser_interaction_agent
+        from mosaic.backend.agents.data_processing import register_data_processing_agent
+        from mosaic.backend.agents.literature import register_literature_agent
+        from mosaic.backend.agents.supervisor import create_research_supervisor
         from langchain_openai import ChatOpenAI
     except ImportError:
         try:
             # Fall back to relative import (for Docker environment)
             from backend.agents import register_calculator_agent
+            from backend.agents.web_search import register_web_search_agent
+            from backend.agents.browser_interaction import register_browser_interaction_agent
+            from backend.agents.data_processing import register_data_processing_agent
+            from backend.agents.literature import register_literature_agent
+            from backend.agents.supervisor import create_research_supervisor
             from langchain_openai import ChatOpenAI
         except ImportError:
             logger.error("Failed to import agent modules. Agents will not be available.")
@@ -758,6 +872,18 @@ def initialize_agents():
         logger.info("Registering calculator agent")
         calculator = register_calculator_agent(model)
         initialized_agents["calculator"] = calculator
+        
+        # Register specialized agents for the research supervisor
+        logger.info("Registering specialized agents for research supervisor")
+        web_search = register_web_search_agent(model)
+        browser_interaction = register_browser_interaction_agent(model)
+        data_processing = register_data_processing_agent(model)
+        literature = register_literature_agent(model)
+        
+        # Create the research supervisor
+        logger.info("Creating research supervisor")
+        research_supervisor = create_research_supervisor(model)
+        initialized_agents["research_supervisor"] = research_supervisor
         
         # Log the registered agents
         logger.info(f"Registered agents: {agent_registry.list_agents()}")

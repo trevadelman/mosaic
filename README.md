@@ -40,7 +40,13 @@ MOSAIC is a production-ready system for creating, managing, and interacting with
 - **FastAPI Backend**: High-performance Python API with WebSocket support
 - **Agent Framework**: Flexible, extensible agent system built on LangChain and LangGraph
 - **Supervisor System**: Orchestrate multiple agents to solve complex problems
-- **Calculator Agent**: Example agent that can perform mathematical operations
+- **Specialized Agents**:
+  - **Calculator Agent**: Performs mathematical operations
+  - **Web Search Agent**: Searches the web and retrieves webpage content
+  - **Browser Interaction Agent**: Handles JavaScript-heavy websites
+  - **Data Processing Agent**: Extracts and normalizes information
+  - **Literature Agent**: Searches for academic papers and articles
+- **Research Supervisor**: Orchestrates multiple agents for comprehensive research tasks
 - **Docker Containerization**: Secure, isolated environments for development and deployment
 
 ## Getting Started
@@ -80,6 +86,26 @@ python -m mosaic.backend.test_calculator
 ```
 
 This will start an interactive session where you can test the calculator agent's capabilities.
+
+#### Research Supervisor Test
+
+To test the more advanced research supervisor that orchestrates multiple agents:
+
+```bash
+python -m mosaic.backend.test_research_supervisor
+```
+
+This will start an interactive session where you can test the research supervisor's capabilities, including:
+- Web search and content retrieval
+- Browser interaction with JavaScript-heavy sites
+- Data extraction and normalization
+- Academic literature search
+
+Example queries you can try:
+- "Research the latest iPhone model and its features"
+- "Find information about Tesla's newest electric vehicle"
+- "Research academic papers on machine learning for image recognition"
+- "Compare features of top gaming laptops"
 
 #### Integration Test
 

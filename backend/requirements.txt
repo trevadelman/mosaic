@@ -16,3 +16,11 @@ langchain
 langchain-openai
 langgraph
 langgraph-supervisor
+
+# Web search and content parsing
+duckduckgo_search
+beautifulsoup4
+lxml
+
+# Data processing
+regex

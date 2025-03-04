@@ -19,16 +19,20 @@ The base agent framework provides the foundation for creating specialized agents
 Specialized agents are built on top of the base agent framework and provide specific capabilities:
 
 - **CalculatorAgent**: Performs basic mathematical operations
-- **SafetyAgent**: Validates agent actions for safety (coming soon)
-- **WriterAgent**: Handles file operations (coming soon)
-- **DeveloperAgent**: Creates and modifies code (coming soon)
+- **WebSearchAgent**: Searches the web and retrieves webpage content
+- **BrowserInteractionAgent**: Handles JavaScript-heavy websites
+- **DataProcessingAgent**: Extracts and normalizes information
+- **LiteratureAgent**: Searches for academic papers and articles
+- **SafetyAgent**: Validates agent actions for safety
+- **WriterAgent**: Handles file operations
 
 ### Supervisor System
 
 The supervisor system orchestrates multiple agents to solve complex problems:
 
-- **Calculator Supervisor**: Orchestrates the calculator agent
-- **Multi-Agent Supervisor**: Orchestrates multiple specialized agents
+- **Calculator Supervisor**: Orchestrates the calculator agent to solve mathematical problems
+- **Research Supervisor**: Orchestrates web search, browser interaction, data processing, and literature agents for comprehensive research tasks
+- **Multi-Agent Supervisor**: Generic supervisor that can orchestrate any combination of specialized agents
 
 ## Usage
 
@@ -77,10 +81,14 @@ result = supervisor.invoke({"messages": [{"role": "user", "content": "..."}]})
 
 ## Testing
 
-Each agent includes a test script that demonstrates its capabilities. For example, to test the calculator agent:
+Each agent includes a test script that demonstrates its capabilities:
 
 ```bash
+# Test the calculator agent
 python -m mosaic.backend.test_calculator
+
+# Test the research supervisor (orchestrates multiple agents)
+python -m mosaic.backend.test_research_supervisor
 ```
 
 ## Adding New Tools
@@ -136,6 +144,91 @@ class MyAgent(BaseAgent):
 2. Make sure tool names are unique across the system
 3. Include detailed docstrings for each tool, as they are used by the LLM to understand the tool's purpose
 4. When updating tool names, make sure to update any references in supervisor prompts
+5. When handling message objects in test scripts or UI code, always check the object type before accessing properties:
+   ```python
+   # Correct way to handle different message types
+   if isinstance(message, dict) and message.get("role") == "user":
+       # Handle dictionary-style messages
+       content = message.get("content", "")
+   elif hasattr(message, "content"):
+       # Handle object-style messages (like HumanMessage, AIMessage)
+       content = message.content
+   ```
+
+## Logging Best Practices
+
+Proper logging is essential for debugging and monitoring agent behavior, especially for supervisor agents that orchestrate multiple specialized agents. The MOSAIC platform includes a WebSocket-based logging system that captures logs from agents and displays them in the UI.
+
+### Logging in Tools
+
+When creating tools for agents, use the logger to log important information:
+
+```python
+import logging
+
+# Configure logging
+logger = logging.getLogger("mosaic.agents.my_agent")
+
+@tool
+def my_tool(param: str) -> str:
+    """
+    A tool that does something.
+    
+    Args:
+        param: The parameter
+        
+    Returns:
+        The result
+    """
+    logger.info(f"Processing parameter: {param}")
+    
+    # Do something with the parameter
+    result = process_param(param)
+    
+    logger.info(f"Result: {result}")
+    return result
+```
+
+### Logging in Supervisor Agents
+
+For supervisor agents that orchestrate multiple specialized agents, it's important to ensure that logs from all specialized agents are captured and displayed in the UI. The WebSocket log handler in the main.py file is set up to capture logs from the supervisor agent and all its specialized agents.
+
+When creating a new supervisor agent, make sure to follow this pattern in the main.py file:
+
+```python
+# Add the handler to the agent's logger
+agent_logger = logging.getLogger(f"mosaic.agents.{agent_id}")
+agent_logger.addHandler(ws_handler)
+
+# For supervisor agents, also add the handler to the specialized agents' loggers
+if agent_id == "my_supervisor":
+    # Add handler to each specialized agent's logger
+    for specialized_agent_name in ["agent1", "agent2", "agent3"]:
+        specialized_agent_logger = logging.getLogger(f"mosaic.agents.{specialized_agent_name}")
+        specialized_agent_logger.addHandler(ws_handler)
+    
+    logger.info(f"Added log handlers to all specialized agents for {agent_id}")
+```
+
+And in the cleanup code:
+
+```python
+# Remove the custom log handler from the agent's logger
+if ws_handler in agent_logger.handlers:
+    agent_logger.removeHandler(ws_handler)
+
+# For supervisor agents, also remove the handler from the specialized agents' loggers
+if agent_id == "my_supervisor":
+    # Remove handler from each specialized agent's logger
+    for specialized_agent_name in ["agent1", "agent2", "agent3"]:
+        specialized_agent_logger = logging.getLogger(f"mosaic.agents.{specialized_agent_name}")
+        if ws_handler in specialized_agent_logger.handlers:
+            specialized_agent_logger.removeHandler(ws_handler)
+    
+    logger.info(f"Removed log handlers from all specialized agents for {agent_id}")
+```
+
+This ensures that logs from all specialized agents are captured and displayed in the UI, providing a comprehensive view of the supervisor agent's behavior.
 
 ## References
 

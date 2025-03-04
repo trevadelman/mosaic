@@ -22,12 +22,20 @@ export function useChat(agentId?: string) {
     connectionState, 
     sendMessage: wsSendMessage, 
     addEventListener, 
-    connect 
+    connect,
+    disconnect
   } = useWebSocket()
 
   // Initialize WebSocket connection and fetch messages when agentId changes
   useEffect(() => {
     if (!agentId) return
+
+    // Reset messages when agent changes
+    setMessages([])
+    setIsProcessing(false)
+    setError(null)
+    
+    console.log("Agent changed to:", agentId)
 
     if (USE_MOCK_DATA) {
       // Use mock data
@@ -57,10 +65,15 @@ export function useChat(agentId?: string) {
 
       fetchMessages()
 
+      // Disconnect existing WebSocket connection
+      console.log("Disconnecting existing WebSocket connection")
+      disconnect()
+      
       // Connect to WebSocket for this agent
+      console.log("Connecting to WebSocket for agent:", agentId)
       connect(agentId)
     }
-  }, [agentId, connect])
+  }, [agentId, connect, disconnect])
 
   // Set up WebSocket event listeners
   useEffect(() => {
