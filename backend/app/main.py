@@ -177,6 +177,42 @@ async def get_agents():
                     "capabilities": ["Web Search", "Content Retrieval", "Data Processing", "Academic Research"],
                     "icon": "🔍"
                 })
+            elif agent_id == "web_search":
+                agents.append({
+                    "id": agent.name,
+                    "name": "Web Search",
+                    "description": agent.description,
+                    "type": "Specialized",
+                    "capabilities": ["Web Search", "Content Retrieval"],
+                    "icon": "🌐"
+                })
+            elif agent_id == "browser_interaction":
+                agents.append({
+                    "id": agent.name,
+                    "name": "Browser Interaction",
+                    "description": agent.description,
+                    "type": "Specialized",
+                    "capabilities": ["JavaScript Handling", "Dynamic Content"],
+                    "icon": "🖥️"
+                })
+            elif agent_id == "data_processing":
+                agents.append({
+                    "id": agent.name,
+                    "name": "Data Processing",
+                    "description": agent.description,
+                    "type": "Specialized",
+                    "capabilities": ["Data Extraction", "Data Normalization"],
+                    "icon": "📊"
+                })
+            elif agent_id == "literature":
+                agents.append({
+                    "id": agent.name,
+                    "name": "Literature",
+                    "description": agent.description,
+                    "type": "Specialized",
+                    "capabilities": ["Academic Research", "Paper Analysis"],
+                    "icon": "📚"
+                })
             else:
                 agents.append({
                     "id": agent.name,
@@ -215,6 +251,42 @@ async def get_agent(agent_id: str):
             "type": "Supervisor",
             "capabilities": ["Web Search", "Content Retrieval", "Data Processing", "Academic Research"],
             "icon": "🔍"
+        }
+    elif agent_id == "web_search":
+        return {
+            "id": agent.name,
+            "name": "Web Search",
+            "description": agent.description,
+            "type": "Specialized",
+            "capabilities": ["Web Search", "Content Retrieval"],
+            "icon": "🌐"
+        }
+    elif agent_id == "browser_interaction":
+        return {
+            "id": agent.name,
+            "name": "Browser Interaction",
+            "description": agent.description,
+            "type": "Specialized",
+            "capabilities": ["JavaScript Handling", "Dynamic Content"],
+            "icon": "🖥️"
+        }
+    elif agent_id == "data_processing":
+        return {
+            "id": agent.name,
+            "name": "Data Processing",
+            "description": agent.description,
+            "type": "Specialized",
+            "capabilities": ["Data Extraction", "Data Normalization"],
+            "icon": "📊"
+        }
+    elif agent_id == "literature":
+        return {
+            "id": agent.name,
+            "name": "Literature",
+            "description": agent.description,
+            "type": "Specialized",
+            "capabilities": ["Academic Research", "Paper Analysis"],
+            "icon": "📚"
         }
     else:
         return {
@@ -876,9 +948,16 @@ def initialize_agents():
         # Register specialized agents for the research supervisor
         logger.info("Registering specialized agents for research supervisor")
         web_search = register_web_search_agent(model)
+        initialized_agents["web_search"] = web_search
+        
         browser_interaction = register_browser_interaction_agent(model)
+        initialized_agents["browser_interaction"] = browser_interaction
+        
         data_processing = register_data_processing_agent(model)
+        initialized_agents["data_processing"] = data_processing
+        
         literature = register_literature_agent(model)
+        initialized_agents["literature"] = literature
         
         # Create the research supervisor
         logger.info("Creating research supervisor")
