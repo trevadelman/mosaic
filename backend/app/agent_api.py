@@ -167,7 +167,7 @@ class AgentAPI:
             capabilities = self._extract_agent_capabilities(agent)
             return {"capabilities": capabilities}
     
-    def _extract_agent_metadata(self, agent_id: str, agent: BaseAgent) -> Dict[str, Any]:
+    def _extract_agent_metadata(self, agent_id: str, agent: Any) -> Dict[str, Any]:
         """
         Extract metadata from an agent.
         
@@ -178,15 +178,30 @@ class AgentAPI:
         Returns:
             A dictionary containing agent metadata
         """
+        # Check if the agent is a CompiledStateGraph (supervisor)
+        is_supervisor = not hasattr(agent, 'description')
+        
         # Default metadata
-        metadata = {
-            "id": agent.name,
-            "name": agent.name.capitalize(),
-            "description": agent.description,
-            "type": "Utility",
-            "capabilities": [],
-            "icon": "🤖"
-        }
+        if is_supervisor:
+            # For supervisor agents, use agent_id as the name
+            metadata = {
+                "id": agent_id,
+                "name": agent_id.capitalize(),
+                "description": "A supervisor agent that orchestrates multiple specialized agents",
+                "type": "Supervisor",
+                "capabilities": [],
+                "icon": "👨‍💼"
+            }
+        else:
+            # For regular agents, use agent attributes
+            metadata = {
+                "id": agent.name,
+                "name": agent.name.capitalize(),
+                "description": agent.description,
+                "type": "Utility",
+                "capabilities": [],
+                "icon": "🤖"
+            }
         
         # Special cases for known agent types
         if agent_id == "calculator":
@@ -254,7 +269,7 @@ class AgentAPI:
         
         return metadata
     
-    def _extract_agent_capabilities(self, agent: BaseAgent) -> List[Dict[str, Any]]:
+    def _extract_agent_capabilities(self, agent: Any) -> List[Dict[str, Any]]:
         """
         Extract capabilities from an agent.
         
@@ -266,29 +281,49 @@ class AgentAPI:
         """
         capabilities = []
         
-        # Extract capabilities from agent tools
-        if hasattr(agent, "tools"):
-            for tool in agent.tools:
-                capability = {
-                    "name": tool.name,
-                    "description": tool.description,
-                    "parameters": []
+        # Check if the agent is a CompiledStateGraph (supervisor)
+        is_supervisor = not hasattr(agent, 'description')
+        
+        if is_supervisor:
+            # For supervisor agents, return predefined capabilities
+            capabilities = [
+                {
+                    "name": "chat",
+                    "description": "Chat with the supervisor agent",
+                    "parameters": [
+                        {
+                            "name": "message",
+                            "type": "string",
+                            "description": "The message to send to the agent",
+                            "required": True
+                        }
+                    ]
                 }
-                
-                # Extract parameters from tool schema
-                if hasattr(tool, "args_schema"):
-                    schema = tool.args_schema.schema()
-                    if "properties" in schema:
-                        for param_name, param_info in schema["properties"].items():
-                            parameter = {
-                                "name": param_name,
-                                "type": param_info.get("type", "string"),
-                                "description": param_info.get("description", ""),
-                                "required": param_name in schema.get("required", [])
-                            }
-                            capability["parameters"].append(parameter)
-                
-                capabilities.append(capability)
+            ]
+        else:
+            # Extract capabilities from agent tools
+            if hasattr(agent, "tools"):
+                for tool in agent.tools:
+                    capability = {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "parameters": []
+                    }
+                    
+                    # Extract parameters from tool schema
+                    if hasattr(tool, "args_schema"):
+                        schema = tool.args_schema.schema()
+                        if "properties" in schema:
+                            for param_name, param_info in schema["properties"].items():
+                                parameter = {
+                                    "name": param_name,
+                                    "type": param_info.get("type", "string"),
+                                    "description": param_info.get("description", ""),
+                                    "required": param_name in schema.get("required", [])
+                                }
+                                capability["parameters"].append(parameter)
+                    
+                    capabilities.append(capability)
         
         return capabilities
     
@@ -465,7 +500,7 @@ class AgentAPI:
             # Return the user message
             return user_message
     
-    def _add_capability_routes(self, router: APIRouter, agent_id: str, agent: BaseAgent):
+    def _add_capability_routes(self, router: APIRouter, agent_id: str, agent: Any):
         """
         Add capability-specific routes for an agent.
         
@@ -474,77 +509,127 @@ class AgentAPI:
             agent_id: The ID of the agent
             agent: The agent object
         """
-        # Extract capabilities from agent tools
-        if hasattr(agent, "tools"):
-            for tool in agent.tools:
-                # Create a route for this tool
-                tool_name = tool.name
-                tool_description = tool.description
-                
-                # Create a model for the tool parameters
-                param_model = None
-                if hasattr(tool, "args_schema"):
-                    param_model = tool.args_schema
-                
-                # Add the route
-                if param_model:
-                    @router.post(f"/capabilities/{tool_name}")
-                    async def invoke_capability(params: param_model):
-                        """Invoke a capability of the agent."""
-                        try:
-                            # Get the agent from the initialized agents
-                            initialized_agents = get_initialized_agents()
-                            agent = initialized_agents.get(agent_id)
-                            
-                            if not agent:
-                                raise HTTPException(status_code=404, detail="Agent not found")
-                            
-                            # Find the tool
-                            tool = None
-                            for t in agent.tools:
-                                if t.name == tool_name:
-                                    tool = t
-                                    break
-                            
-                            if not tool:
-                                raise HTTPException(status_code=404, detail=f"Capability '{tool_name}' not found")
-                            
-                            # Invoke the tool
-                            result = tool.invoke(params.dict())
-                            
-                            return {"result": result}
-                        except Exception as e:
-                            logger.error(f"Error invoking capability '{tool_name}': {str(e)}")
-                            raise HTTPException(status_code=500, detail=str(e))
-                else:
-                    @router.post(f"/capabilities/{tool_name}")
-                    async def invoke_capability():
-                        """Invoke a capability of the agent."""
-                        try:
-                            # Get the agent from the initialized agents
-                            initialized_agents = get_initialized_agents()
-                            agent = initialized_agents.get(agent_id)
-                            
-                            if not agent:
-                                raise HTTPException(status_code=404, detail="Agent not found")
-                            
-                            # Find the tool
-                            tool = None
-                            for t in agent.tools:
-                                if t.name == tool_name:
-                                    tool = t
-                                    break
-                            
-                            if not tool:
-                                raise HTTPException(status_code=404, detail=f"Capability '{tool_name}' not found")
-                            
-                            # Invoke the tool
-                            result = tool.invoke({})
-                            
-                            return {"result": result}
-                        except Exception as e:
-                            logger.error(f"Error invoking capability '{tool_name}': {str(e)}")
-                            raise HTTPException(status_code=500, detail=str(e))
+        # Check if the agent is a CompiledStateGraph (supervisor)
+        is_supervisor = not hasattr(agent, 'description')
+        
+        if is_supervisor:
+            # For supervisor agents, add a generic chat capability
+            @router.post("/capabilities/chat")
+            async def invoke_chat_capability(message: MessageContent):
+                """Chat with the supervisor agent."""
+                try:
+                    # Get the agent from the initialized agents
+                    initialized_agents = get_initialized_agents()
+                    agent = initialized_agents.get(agent_id)
+                    
+                    if not agent:
+                        raise HTTPException(status_code=404, detail="Agent not found")
+                    
+                    # Initialize the conversation state
+                    state = {"messages": []}
+                    
+                    # Add the user message to the state
+                    state["messages"].append({
+                        "role": "user",
+                        "content": message.content
+                    })
+                    
+                    # Invoke the agent
+                    logger.info(f"Invoking {agent_id} supervisor agent")
+                    result = agent.invoke(state)
+                    logger.info(f"{agent_id} supervisor agent completed processing")
+                    
+                    # Extract the response
+                    response = "No response from supervisor agent"
+                    if "messages" in result:
+                        messages = result["messages"]
+                        for msg in reversed(messages):
+                            if isinstance(msg, dict) and msg.get("role") == "assistant":
+                                response = msg.get("content", "")
+                                break
+                            elif hasattr(msg, "content") and (
+                                getattr(msg, "type", None) == "ai" or 
+                                getattr(msg, "role", None) == "assistant"
+                            ):
+                                response = msg.content
+                                break
+                    
+                    return {"result": response}
+                except Exception as e:
+                    logger.error(f"Error invoking supervisor chat: {str(e)}")
+                    raise HTTPException(status_code=500, detail=str(e))
+        else:
+            # Extract capabilities from agent tools
+            if hasattr(agent, "tools"):
+                for tool in agent.tools:
+                    # Create a route for this tool
+                    tool_name = tool.name
+                    tool_description = tool.description
+                    
+                    # Create a model for the tool parameters
+                    param_model = None
+                    if hasattr(tool, "args_schema"):
+                        param_model = tool.args_schema
+                    
+                    # Add the route
+                    if param_model:
+                        @router.post(f"/capabilities/{tool_name}")
+                        async def invoke_capability(params: param_model):
+                            """Invoke a capability of the agent."""
+                            try:
+                                # Get the agent from the initialized agents
+                                initialized_agents = get_initialized_agents()
+                                agent = initialized_agents.get(agent_id)
+                                
+                                if not agent:
+                                    raise HTTPException(status_code=404, detail="Agent not found")
+                                
+                                # Find the tool
+                                tool = None
+                                for t in agent.tools:
+                                    if t.name == tool_name:
+                                        tool = t
+                                        break
+                                
+                                if not tool:
+                                    raise HTTPException(status_code=404, detail=f"Capability '{tool_name}' not found")
+                                
+                                # Invoke the tool
+                                result = tool.invoke(params.dict())
+                                
+                                return {"result": result}
+                            except Exception as e:
+                                logger.error(f"Error invoking capability '{tool_name}': {str(e)}")
+                                raise HTTPException(status_code=500, detail=str(e))
+                    else:
+                        @router.post(f"/capabilities/{tool_name}")
+                        async def invoke_capability():
+                            """Invoke a capability of the agent."""
+                            try:
+                                # Get the agent from the initialized agents
+                                initialized_agents = get_initialized_agents()
+                                agent = initialized_agents.get(agent_id)
+                                
+                                if not agent:
+                                    raise HTTPException(status_code=404, detail="Agent not found")
+                                
+                                # Find the tool
+                                tool = None
+                                for t in agent.tools:
+                                    if t.name == tool_name:
+                                        tool = t
+                                        break
+                                
+                                if not tool:
+                                    raise HTTPException(status_code=404, detail=f"Capability '{tool_name}' not found")
+                                
+                                # Invoke the tool
+                                result = tool.invoke({})
+                                
+                                return {"result": result}
+                            except Exception as e:
+                                logger.error(f"Error invoking capability '{tool_name}': {str(e)}")
+                                raise HTTPException(status_code=500, detail=str(e))
 
 # Create a global instance of the agent API
 agent_api = AgentAPI()
