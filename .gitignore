@@ -6,7 +6,6 @@ build/
 dist/
 .cache/
 .env.local
-.env.docker
 .env.development.local
 .env.test.local
 .env.production.local

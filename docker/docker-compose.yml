@@ -9,7 +9,7 @@ services:
       - "3000:3000"
     volumes:
       - ../frontend:/app
-      - /app/node_modules
+      - frontend-node-modules:/app/node_modules
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost:8000/api
@@ -66,3 +66,4 @@ networks:
 
 volumes:
   mosaic-db-data:  # Named volume for persisting the database
+  frontend-node-modules:  # Named volume for frontend node_modules
