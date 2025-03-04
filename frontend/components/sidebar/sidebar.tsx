@@ -7,6 +7,7 @@ import {
   BrainCircuit,
   Home,
   MessageSquare,
+  Plus,
   Settings,
   Users,
 } from "lucide-react"
@@ -27,6 +28,11 @@ const items = [
     name: "Agents",
     href: "/agents",
     icon: BrainCircuit,
+  },
+  {
+    name: "Create Agent",
+    href: "/agents/create",
+    icon: Plus,
   },
   {
     name: "Community",

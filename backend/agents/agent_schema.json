@@ -1,0 +1,157 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Definition Schema",
+  "description": "Schema for defining agents in the MOSAIC system",
+  "type": "object",
+  "required": ["agent"],
+  "properties": {
+    "agent": {
+      "type": "object",
+      "required": ["name", "type", "description", "tools", "systemPrompt"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Unique identifier for the agent",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of agent",
+          "enum": ["Utility", "Specialized", "Supervisor"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the agent"
+        },
+        "capabilities": {
+          "type": "array",
+          "description": "List of agent capabilities",
+          "items": {
+            "type": "string"
+          }
+        },
+        "icon": {
+          "type": "string",
+          "description": "Emoji icon for the agent"
+        },
+        "tools": {
+          "type": "array",
+          "description": "List of tools available to the agent",
+          "items": {
+            "type": "object",
+            "required": ["name", "description", "parameters", "returns", "implementation"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Name of the tool",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              },
+              "description": {
+                "type": "string",
+                "description": "Human-readable description of the tool"
+              },
+              "parameters": {
+                "type": "array",
+                "description": "List of parameters for the tool",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "type", "description"],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Name of the parameter"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "Type of the parameter",
+                      "enum": ["string", "integer", "number", "boolean", "array", "object"]
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Human-readable description of the parameter"
+                    },
+                    "default": {
+                      "description": "Default value for the parameter"
+                    },
+                    "required": {
+                      "type": "boolean",
+                      "description": "Whether the parameter is required",
+                      "default": true
+                    }
+                  }
+                }
+              },
+              "returns": {
+                "type": "object",
+                "required": ["type", "description"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "description": "Return type of the tool",
+                    "enum": ["string", "integer", "number", "boolean", "array", "object"]
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Human-readable description of the return value"
+                  }
+                }
+              },
+              "implementation": {
+                "type": "object",
+                "required": ["code"],
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "description": "Python code implementing the tool"
+                  },
+                  "dependencies": {
+                    "type": "array",
+                    "description": "List of Python package dependencies",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "systemPrompt": {
+          "type": "string",
+          "description": "System prompt for the agent"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional metadata for the agent",
+          "properties": {
+            "version": {
+              "type": "string",
+              "description": "Version of the agent definition"
+            },
+            "author": {
+              "type": "string",
+              "description": "Author of the agent definition"
+            },
+            "created": {
+              "type": "string",
+              "description": "Creation timestamp in ISO 8601 format",
+              "format": "date-time"
+            },
+            "updated": {
+              "type": "string",
+              "description": "Last update timestamp in ISO 8601 format",
+              "format": "date-time"
+            },
+            "tags": {
+              "type": "array",
+              "description": "Tags for categorizing the agent",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

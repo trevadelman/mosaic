@@ -10,6 +10,12 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import json
 
+# Import the agent creator API router
+from app.agent_creator_api import router as agent_creator_router
+
+# Import the agent API router
+from app.agent_api import get_agent_api_router
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -24,6 +30,12 @@ app = FastAPI(
     description="API for Multi-agent Orchestration System for Adaptive Intelligent Collaboration",
     version="0.1.0",
 )
+
+# Include the agent creator API router
+app.include_router(agent_creator_router)
+
+# Include the agent API router
+app.include_router(get_agent_api_router())
 
 # Configure CORS
 cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://frontend:3000").split(",")
@@ -144,6 +156,7 @@ async def root():
 @app.get("/api/debug/agents")
 async def debug_agents():
     """Debug endpoint to check the initialized agents."""
+    initialized_agents = get_initialized_agents()
     return {
         "initialized_agents": list(initialized_agents.keys()),
         "registry_agents": agent_registry.list_agents(),
@@ -157,6 +170,7 @@ async def debug_agents():
 async def get_agents():
     """Get a list of all available agents."""
     try:
+        initialized_agents = get_initialized_agents()
         agents = []
         for agent_id, agent in initialized_agents.items():
             if agent_id == "calculator":
@@ -213,6 +227,24 @@ async def get_agents():
                     "capabilities": ["Academic Research", "Paper Analysis"],
                     "icon": "📚"
                 })
+            elif agent_id == "agent_creator":
+                agents.append({
+                    "id": agent.name,
+                    "name": "Agent Creator",
+                    "description": agent.description,
+                    "type": "Utility",
+                    "capabilities": ["Agent Creation", "Template Management", "Code Generation"],
+                    "icon": "🛠️"
+                })
+            elif agent_id == "story_writer":
+                agents.append({
+                    "id": agent.name,
+                    "name": "Story Writer",
+                    "description": agent.description,
+                    "type": "Utility",
+                    "capabilities": ["Story Generation", "Creative Writing", "Character Development"],
+                    "icon": "📝"
+                })
             else:
                 agents.append({
                     "id": agent.name,
@@ -230,6 +262,7 @@ async def get_agents():
 @app.get("/api/agents/{agent_id}")
 async def get_agent(agent_id: str):
     """Get information about a specific agent."""
+    initialized_agents = get_initialized_agents()
     agent = initialized_agents.get(agent_id)
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
@@ -288,6 +321,24 @@ async def get_agent(agent_id: str):
             "capabilities": ["Academic Research", "Paper Analysis"],
             "icon": "📚"
         }
+    elif agent_id == "agent_creator":
+        return {
+            "id": agent.name,
+            "name": "Agent Creator",
+            "description": agent.description,
+            "type": "Utility",
+            "capabilities": ["Agent Creation", "Template Management", "Code Generation"],
+            "icon": "🛠️"
+        }
+    elif agent_id == "story_writer":
+        return {
+            "id": agent.name,
+            "name": "Story Writer",
+            "description": agent.description,
+            "type": "Utility",
+            "capabilities": ["Story Generation", "Creative Writing", "Character Development"],
+            "icon": "📝"
+        }
     else:
         return {
             "id": agent.name,
@@ -326,6 +377,7 @@ async def send_message(agent_id: str, message: MessageContent):
     MESSAGE_STORE[agent_id].append(user_message)
     
     # Get the agent from the initialized agents
+    initialized_agents = get_initialized_agents()
     agent = initialized_agents.get(agent_id)
     
     if agent:
@@ -577,6 +629,7 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                 })
                 
                 # Get the agent from the initialized agents
+                initialized_agents = get_initialized_agents()
                 agent = initialized_agents.get(agent_id)
                 
                 if agent:
@@ -899,80 +952,8 @@ async def simulate_agent_processing(websocket: WebSocket, agent_id: str, content
         "messageId": message_id
     })
 
-# Global variable to store the initialized agents
-initialized_agents = {}
-
-# Initialize the agents
-def initialize_agents():
-    """Initialize the agents and register them with the agent registry."""
-    global initialized_agents
-    
-    try:
-        # Try importing with the full package path (for local development)
-        from mosaic.backend.agents import register_calculator_agent
-        from mosaic.backend.agents.web_search import register_web_search_agent
-        from mosaic.backend.agents.browser_interaction import register_browser_interaction_agent
-        from mosaic.backend.agents.data_processing import register_data_processing_agent
-        from mosaic.backend.agents.literature import register_literature_agent
-        from mosaic.backend.agents.supervisor import create_research_supervisor
-        from langchain_openai import ChatOpenAI
-    except ImportError:
-        try:
-            # Fall back to relative import (for Docker environment)
-            from backend.agents import register_calculator_agent
-            from backend.agents.web_search import register_web_search_agent
-            from backend.agents.browser_interaction import register_browser_interaction_agent
-            from backend.agents.data_processing import register_data_processing_agent
-            from backend.agents.literature import register_literature_agent
-            from backend.agents.supervisor import create_research_supervisor
-            from langchain_openai import ChatOpenAI
-        except ImportError:
-            logger.error("Failed to import agent modules. Agents will not be available.")
-            return
-    
-    try:
-        # Check if the OpenAI API key is set
-        if not os.getenv("OPENAI_API_KEY"):
-            logger.warning("OPENAI_API_KEY not set. Agents will not be available.")
-            return
-        
-        # Initialize the language model
-        logger.info("Initializing language model")
-        model = ChatOpenAI(model="gpt-4o-mini")
-        
-        # Register the calculator agent
-        logger.info("Registering calculator agent")
-        calculator = register_calculator_agent(model)
-        initialized_agents["calculator"] = calculator
-        
-        # Register specialized agents for the research supervisor
-        logger.info("Registering specialized agents for research supervisor")
-        web_search = register_web_search_agent(model)
-        initialized_agents["web_search"] = web_search
-        
-        browser_interaction = register_browser_interaction_agent(model)
-        initialized_agents["browser_interaction"] = browser_interaction
-        
-        data_processing = register_data_processing_agent(model)
-        initialized_agents["data_processing"] = data_processing
-        
-        literature = register_literature_agent(model)
-        initialized_agents["literature"] = literature
-        
-        # Create the research supervisor
-        logger.info("Creating research supervisor")
-        research_supervisor = create_research_supervisor(model)
-        initialized_agents["research_supervisor"] = research_supervisor
-        
-        # Log the registered agents
-        logger.info(f"Registered agents: {agent_registry.list_agents()}")
-        logger.info(f"Initialized agents: {list(initialized_agents.keys())}")
-        
-        logger.info("Agents initialized and registered successfully")
-    except Exception as e:
-        logger.error(f"Error initializing agents: {str(e)}")
-        import traceback
-        logger.error(traceback.format_exc())
+# Import the agent runner module to get initialized agents
+from app.agent_runner import initialize_agents, get_initialized_agents
 
 # Initialize the agents on startup
 @app.on_event("startup")

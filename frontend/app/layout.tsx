@@ -4,6 +4,7 @@ import './globals.css'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Sidebar } from '@/components/sidebar/sidebar'
 import { WebSocketProvider } from '@/lib/contexts/websocket-context'
+import { ToastProvider } from '@/components/ui/toast'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -27,12 +28,14 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <WebSocketProvider>
-            <div className="flex h-screen">
-              <Sidebar />
-              <div className="flex-1 overflow-auto">
-                {children}
+            <ToastProvider>
+              <div className="flex h-screen">
+                <Sidebar />
+                <div className="flex-1 overflow-auto">
+                  {children}
+                </div>
               </div>
-            </div>
+            </ToastProvider>
           </WebSocketProvider>
         </ThemeProvider>
       </body>

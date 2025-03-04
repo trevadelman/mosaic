@@ -2,7 +2,9 @@
 
 import { useState } from "react"
 import { useAgents } from "@/lib/hooks/use-agents"
-import { BrainCircuit, Info, Settings } from "lucide-react"
+import { BrainCircuit, Info, Plus, Settings } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default function AgentsPage() {
   const { agents, loading, error } = useAgents()
@@ -12,11 +14,19 @@ export default function AgentsPage() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Agents</h1>
-        <p className="text-muted-foreground">
-          View and manage available agents in the MOSAIC system
-        </p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Agents</h1>
+          <p className="text-muted-foreground">
+            View and manage available agents in the MOSAIC system
+          </p>
+        </div>
+        <Link href="/agents/create">
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Agent
+          </Button>
+        </Link>
       </div>
 
       {error && (

@@ -57,3 +57,59 @@ export const chatApi = {
       body: JSON.stringify({ content }),
     }),
 }
+
+/**
+ * Agent Creator API functions
+ */
+export const agentCreatorApi = {
+  // Get the agent schema
+  getSchema: () => fetchApi<any>("/agent-creator/schema"),
+
+  // Get all available templates
+  getTemplates: () => fetchApi<any[]>("/agent-creator/templates"),
+
+  // Get a specific template by ID
+  getTemplate: (id: string) => fetchApi<any>(`/agent-creator/templates/${id}`),
+
+  // Create a new agent template
+  createTemplate: (template: any) => 
+    fetchApi<any>("/agent-creator/template", {
+      method: "POST",
+      body: JSON.stringify(template),
+    }),
+
+  // Add a tool to a template
+  addTool: (template: any, tool: any) => 
+    fetchApi<any>("/agent-creator/add-tool", {
+      method: "POST",
+      body: JSON.stringify({ template, tool }),
+    }),
+
+  // Validate a template
+  validateTemplate: (template: any) => 
+    fetchApi<any>("/agent-creator/validate", {
+      method: "POST",
+      body: JSON.stringify(template),
+    }),
+
+  // Generate code for a template
+  generateCode: (template: any) => 
+    fetchApi<any>("/agent-creator/generate-code", {
+      method: "POST",
+      body: JSON.stringify(template),
+    }),
+
+  // Deploy an agent
+  deployAgent: (template: any, options: any) => 
+    fetchApi<any>("/agent-creator/deploy", {
+      method: "POST",
+      body: JSON.stringify({ template, options }),
+    }),
+
+  // Save a template
+  saveTemplate: (id: string, template: any) => 
+    fetchApi<any>(`/agent-creator/templates/${id}`, {
+      method: "POST",
+      body: JSON.stringify(template),
+    }),
+}

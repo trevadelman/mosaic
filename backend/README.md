@@ -8,6 +8,8 @@ The MOSAIC backend consists of several key components:
 
 1. **FastAPI Application**: Provides REST API endpoints and WebSocket connections for the frontend
 2. **Agent System**: Implements the agent framework, specialized agents, and supervisor system
+   - **Dynamic Agent Discovery**: Automatically discovers and registers agents
+   - **API Endpoint Generation**: Dynamically generates API endpoints for agents
 3. **Database Models**: Defines the data models for storing queries, responses, and agent configurations
 
 ## How to Test the System
@@ -91,6 +93,73 @@ To test the full system (frontend + backend):
 
 3. Open your browser to http://localhost:3000 to access the MOSAIC interface.
 
+## Dynamic Agent Discovery and API Endpoint Generation
+
+The MOSAIC backend now includes a dynamic agent discovery system and automatic API endpoint generation for agents. This makes it easier to create and use new agents without modifying the core application code.
+
+### Creating a New Agent
+
+To create a new agent that will be automatically discovered:
+
+1. Create a new Python file in the `mosaic/backend/agents` directory (e.g., `my_agent.py`)
+2. Implement a registration function that starts with `register_` and takes a model parameter:
+
+```python
+from mosaic.backend.agents import BaseAgent
+
+class MyAgent(BaseAgent):
+    def __init__(self, name, model, tools=None, prompt=None):
+        super().__init__(name, model, tools or [], prompt)
+    
+    def _get_default_prompt(self) -> str:
+        return "You are a specialized agent that..."
+
+def register_my_agent(model):
+    """Register the my_agent agent."""
+    agent = MyAgent("my_agent", model)
+    return agent
+```
+
+The agent discovery system will automatically find this registration function and call it during startup, registering the agent with the agent registry.
+
+### Using the Agent API
+
+The agent API system automatically generates API endpoints for each agent:
+
+- **GET /api/agents**: Get a list of all available agents
+  ```bash
+  curl http://localhost:8000/api/agents
+  ```
+
+- **GET /api/agents/{agent_id}**: Get information about a specific agent
+  ```bash
+  curl http://localhost:8000/api/agents/calculator
+  ```
+
+- **GET /api/agents/{agent_id}/capabilities**: Get the capabilities of a specific agent
+  ```bash
+  curl http://localhost:8000/api/agents/calculator/capabilities
+  ```
+
+- **POST /api/agents/{agent_id}/messages**: Send a message to an agent
+  ```bash
+  curl -X POST http://localhost:8000/api/agents/calculator/messages \
+    -H "Content-Type: application/json" \
+    -d '{"content": "What is 2 + 2?"}'
+  ```
+
+- **GET /api/agents/{agent_id}/messages**: Get all messages for a specific agent
+  ```bash
+  curl http://localhost:8000/api/agents/calculator/messages
+  ```
+
+- **POST /api/agents/{agent_id}/capabilities/{capability_name}**: Invoke a specific capability of an agent
+  ```bash
+  curl -X POST http://localhost:8000/api/agents/calculator/capabilities/add \
+    -H "Content-Type: application/json" \
+    -d '{"a": 2, "b": 2}'
+  ```
+
 ## Troubleshooting
 
 ### Module Not Found Errors
@@ -104,3 +173,12 @@ If you encounter authentication errors with the OpenAI API, check that your API 
 ### WebSocket Connection Issues
 
 If the WebSocket connection fails, make sure both the frontend and backend are running and that there are no network restrictions blocking WebSocket connections.
+
+### Agent Discovery Issues
+
+If your agent is not being discovered automatically, check the following:
+
+1. Make sure the agent file is in the `mosaic/backend/agents` directory
+2. Make sure the registration function starts with `register_` and takes a model parameter
+3. Check the logs for any errors during agent discovery
+4. Make sure the agent is properly registered with the agent registry

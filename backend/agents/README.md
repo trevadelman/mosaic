@@ -13,6 +13,8 @@ The base agent framework provides the foundation for creating specialized agents
 - **BaseAgent**: An abstract base class that all agents inherit from
 - **AgentRegistry**: A singleton registry for managing agents
 - **Tool Utilities**: Utilities for creating and managing agent tools
+- **Dynamic Discovery**: Automatic discovery and registration of agents
+- **API Endpoint Generation**: Dynamic generation of API endpoints for agents
 
 ### Specialized Agents
 
@@ -229,6 +231,62 @@ if agent_id == "my_supervisor":
 ```
 
 This ensures that logs from all specialized agents are captured and displayed in the UI, providing a comprehensive view of the supervisor agent's behavior.
+
+## Dynamic Agent Discovery and API Endpoint Generation
+
+The MOSAIC platform now includes a dynamic agent discovery system and automatic API endpoint generation for agents. This makes it easier to create and use new agents without modifying the core application code.
+
+### Dynamic Agent Discovery
+
+The agent discovery system automatically scans the agents directory for Python files, extracts agent registration functions, and calls them automatically during startup. This means you can create a new agent by simply adding a new file to the agents directory.
+
+To create a new agent that will be automatically discovered:
+
+1. Create a new Python file in the `mosaic/backend/agents` directory (e.g., `my_agent.py`)
+2. Implement a registration function that starts with `register_` and takes a model parameter:
+
+```python
+from mosaic.backend.agents import BaseAgent
+
+class MyAgent(BaseAgent):
+    def __init__(self, name, model, tools=None, prompt=None):
+        super().__init__(name, model, tools or [], prompt)
+    
+    def _get_default_prompt(self) -> str:
+        return "You are a specialized agent that..."
+
+def register_my_agent(model):
+    """Register the my_agent agent."""
+    agent = MyAgent("my_agent", model)
+    return agent
+```
+
+The agent discovery system will automatically find this registration function and call it during startup, registering the agent with the agent registry.
+
+### Agent Metadata Extraction
+
+The agent discovery system also extracts metadata from agent classes, including:
+
+- **Name**: The name of the agent
+- **Description**: The description of the agent (from the docstring)
+- **Type**: The type of agent (Utility, Specialized, Supervisor)
+- **Capabilities**: The capabilities of the agent (from tools or docstring)
+- **Icon**: An icon for the agent (emoji)
+
+This metadata is used to generate API endpoints and UI components for the agent.
+
+### Dynamic API Endpoint Generation
+
+The agent API system automatically generates API endpoints for each agent, including:
+
+- **GET /api/agents**: Get a list of all available agents
+- **GET /api/agents/{agent_id}**: Get information about a specific agent
+- **GET /api/agents/{agent_id}/capabilities**: Get the capabilities of a specific agent
+- **POST /api/agents/{agent_id}/messages**: Send a message to an agent
+- **GET /api/agents/{agent_id}/messages**: Get all messages for a specific agent
+- **POST /api/agents/{agent_id}/capabilities/{capability_name}**: Invoke a specific capability of an agent
+
+This means you can create a new agent and immediately use it through the API without modifying the core application code.
 
 ## References
 
