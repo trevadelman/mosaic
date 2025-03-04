@@ -2,6 +2,12 @@
 
 import { Agent } from "@/lib/types"
 import { BrainCircuit } from "lucide-react"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 interface AgentSelectorProps {
   agents: Agent[]
@@ -47,51 +53,78 @@ export function AgentSelector({
     )
   }
 
+  // Group agents by type
+  const groupedAgents = agents.reduce<Record<string, Agent[]>>((groups, agent) => {
+    const type = agent.type || 'Other';
+    if (!groups[type]) {
+      groups[type] = [];
+    }
+    groups[type].push(agent);
+    return groups;
+  }, {});
+
+  // Sort group names
+  const sortedGroupNames = Object.keys(groupedAgents).sort((a, b) => {
+    // Put "Supervisor" groups first
+    if (a.includes('Supervisor') && !b.includes('Supervisor')) return -1;
+    if (!a.includes('Supervisor') && b.includes('Supervisor')) return 1;
+    // Then sort alphabetically
+    return a.localeCompare(b);
+  });
+
   return (
-    <div className="space-y-2">
-      {agents.map((agent) => (
-        <button
-          key={agent.id}
-          onClick={() => onSelect(agent)}
-          className={`flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent ${
-            selectedAgent?.id === agent.id ? "bg-accent" : ""
-          }`}
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-            {agent.icon ? (
-              <span className="text-lg">{agent.icon}</span>
-            ) : (
-              <BrainCircuit className="h-5 w-5" />
-            )}
-          </div>
-          <div className="flex-1 space-y-1">
-            <div className="flex items-center justify-between">
-              <p className="font-medium leading-none">{agent.name}</p>
-              <p className="text-xs text-muted-foreground">{agent.type}</p>
+    <Accordion type="multiple" className="space-y-2" defaultValue={[]}>
+      {sortedGroupNames.map((type) => (
+        <AccordionItem key={type} value={type} className="border-none">
+          <AccordionTrigger className="py-2 px-3 text-sm font-medium text-muted-foreground hover:no-underline">
+            {type}
+          </AccordionTrigger>
+          <AccordionContent className="pb-1 pt-0">
+            <div className="space-y-1">
+              {groupedAgents[type].map((agent) => (
+                <button
+                  key={agent.id}
+                  onClick={() => onSelect(agent)}
+                  className={`flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent ${
+                    selectedAgent?.id === agent.id ? "bg-accent" : ""
+                  }`}
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    {agent.icon ? (
+                      <span className="text-lg">{agent.icon}</span>
+                    ) : (
+                      <BrainCircuit className="h-5 w-5" />
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <p className="font-medium leading-none">{agent.name}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {agent.description}
+                    </p>
+                    {agent.capabilities && agent.capabilities.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {agent.capabilities.slice(0, 3).map((capability) => (
+                          <span
+                            key={capability}
+                            className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold"
+                          >
+                            {capability}
+                          </span>
+                        ))}
+                        {agent.capabilities.length > 3 && (
+                          <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold">
+                            +{agent.capabilities.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))}
             </div>
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {agent.description}
-            </p>
-            {agent.capabilities && agent.capabilities.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-1">
-                {agent.capabilities.slice(0, 3).map((capability) => (
-                  <span
-                    key={capability}
-                    className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold"
-                  >
-                    {capability}
-                  </span>
-                ))}
-                {agent.capabilities.length > 3 && (
-                  <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold">
-                    +{agent.capabilities.length - 3}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        </button>
+          </AccordionContent>
+        </AccordionItem>
       ))}
-    </div>
+    </Accordion>
   )
 }
