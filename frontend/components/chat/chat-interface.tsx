@@ -4,7 +4,8 @@ import { useRef, useEffect } from "react"
 import { Message as MessageType, Agent } from "@/lib/types"
 import { Message } from "./message"
 import { ChatInput } from "./chat-input"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, Loader2, Wifi, WifiOff } from "lucide-react"
+import { ConnectionState } from "@/lib/contexts/websocket-context"
 
 interface ChatInterfaceProps {
   messages: MessageType[]
@@ -12,6 +13,7 @@ interface ChatInterfaceProps {
   isProcessing?: boolean
   selectedAgent: Agent | null
   error?: string | null
+  connectionState?: ConnectionState
 }
 
 export function ChatInterface({
@@ -19,7 +21,8 @@ export function ChatInterface({
   onSendMessage,
   isProcessing = false,
   selectedAgent,
-  error
+  error,
+  connectionState = ConnectionState.DISCONNECTED
 }: ChatInterfaceProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -28,15 +31,48 @@ export function ChatInterface({
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
     }
+    
+    // Debug messages
+    console.log("Messages updated:", messages)
   }, [messages])
 
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="border-b p-4">
-        <h2 className="text-xl font-semibold">
-          {selectedAgent ? selectedAgent.name : "Chat"}
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">
+            {selectedAgent ? selectedAgent.name : "Chat"}
+          </h2>
+          
+          {/* Connection status indicator */}
+          {connectionState && (
+            <div className="flex items-center gap-1 text-xs">
+              {connectionState === ConnectionState.CONNECTED ? (
+                <>
+                  <Wifi className="h-3 w-3 text-green-500" />
+                  <span className="text-green-500">Connected</span>
+                </>
+              ) : connectionState === ConnectionState.CONNECTING ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin text-yellow-500" />
+                  <span className="text-yellow-500">Connecting</span>
+                </>
+              ) : connectionState === ConnectionState.RECONNECTING ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin text-yellow-500" />
+                  <span className="text-yellow-500">Reconnecting</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="h-3 w-3 text-destructive" />
+                  <span className="text-destructive">Disconnected</span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+        
         {selectedAgent && (
           <p className="text-sm text-muted-foreground">
             {selectedAgent.description}

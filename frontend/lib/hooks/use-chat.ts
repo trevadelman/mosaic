@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from "react"
 import { v4 as uuidv4 } from "uuid"
 import { Message } from "../types"
 import { chatApi } from "../api"
-import { getWebSocketService } from "../websocket"
 import { mockMessages } from "../mock-data"
+import { useWebSocket, ConnectionState } from "../contexts/websocket-context"
 
 // Always use the actual API in Docker environment
 const USE_MOCK_DATA = false
@@ -14,8 +14,18 @@ export function useChat(agentId?: string) {
   const [messages, setMessages] = useState<Message[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [sentMessageContents, setSentMessageContents] = useState<Set<string>>(new Set())
+  
+  // Get WebSocket context
+  const { 
+    connectionState, 
+    sendMessage: wsSendMessage, 
+    addEventListener, 
+    connect 
+  } = useWebSocket()
 
-  // Initialize WebSocket connection when agentId changes
+  // Initialize WebSocket connection and fetch messages when agentId changes
   useEffect(() => {
     if (!agentId) return
 
@@ -27,6 +37,7 @@ export function useChat(agentId?: string) {
         } else {
           setMessages([])
         }
+        setIsInitialized(true)
       }, 500) // Simulate network delay
     } else {
       // Fetch message history from API
@@ -40,44 +51,94 @@ export function useChat(agentId?: string) {
         } else if (response.data) {
           setMessages(response.data)
         }
+        
+        setIsInitialized(true)
       }
 
       fetchMessages()
 
-      // Set up WebSocket connection
-      const ws = getWebSocketService(agentId)
-      ws.connect()
+      // Connect to WebSocket for this agent
+      connect(agentId)
+    }
+  }, [agentId, connect])
 
-      // Set up event listener
-      const unsubscribe = ws.addEventListener((event) => {
-        if (event.type === "message" && event.message) {
-          setMessages(prev => [...prev, event.message])
-          setIsProcessing(false)
-        } else if (event.type === "log_update" && event.messageId) {
-          // Add log to the appropriate message
-          setMessages(prev => 
-            prev.map(msg => 
-              msg.id === event.messageId
-                ? { 
-                    ...msg, 
-                    logs: [...(msg.logs || []), event.log] 
-                  }
-                : msg
+  // Set up WebSocket event listeners
+  useEffect(() => {
+    if (!agentId || USE_MOCK_DATA) return
+
+    // Set up event listener
+    const unsubscribe = addEventListener((event) => {
+      if (event.type === "message" && event.message) {
+        console.log("Received message event:", event.message)
+        
+        // For user messages, check if we've already sent this content
+        if (event.message.role === "user") {
+          const content = event.message.content
+          
+          // If we've already sent this message content, update the existing message
+          if (sentMessageContents.has(content)) {
+            setMessages(prev => 
+              prev.map(msg => 
+                (msg.role === "user" && msg.content === content)
+                  ? { ...event.message, id: msg.id } // Keep our ID but update other fields
+                  : msg
+              )
             )
-          )
-        } else if (event.type === "error") {
-          setError(event.error)
-          setIsProcessing(false)
+            return
+          }
         }
-      })
+        
+        // Only add the message if it's not already in the list
+        setMessages(prev => {
+          const exists = prev.some(msg => msg.id === event.message.id)
+          return exists ? prev : [...prev, event.message]
+        })
+        
+        setIsProcessing(false)
+      } else if (event.type === "log_update" && event.messageId) {
+        console.log("Received log update:", event.log, "for message:", event.messageId)
+        
+        // Add log to the appropriate message
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === event.messageId
+              ? { 
+                  ...msg, 
+                  logs: [...(msg.logs || []), event.log] 
+                }
+              : msg
+          )
+        )
+      } else if (event.type === "error") {
+        console.error("Received error event:", event.error)
+        setError(event.error)
+        setIsProcessing(false)
+      } else if (event.type === "connect") {
+        console.log("WebSocket connected")
+        setError(null)
+      }
+    })
 
-      // Clean up
-      return () => {
-        unsubscribe()
-        ws.disconnect()
+    // Clean up
+    return () => {
+      unsubscribe()
+    }
+  }, [agentId, addEventListener, sentMessageContents])
+
+  // Update UI based on connection state
+  useEffect(() => {
+    if (connectionState === ConnectionState.DISCONNECTED) {
+      // Only show error if we've already initialized
+      if (isInitialized) {
+        setError("Connection lost. Reconnecting...")
+      }
+    } else if (connectionState === ConnectionState.CONNECTED) {
+      // Clear connection error when connected
+      if (error === "Connection lost. Reconnecting...") {
+        setError(null)
       }
     }
-  }, [agentId])
+  }, [connectionState, error, isInitialized])
 
   // Send a message
   const sendMessage = useCallback(
@@ -97,8 +158,25 @@ export function useChat(agentId?: string) {
         status: "sending"
       }
 
-      // Add to messages immediately for UI feedback
-      setMessages(prev => [...prev, tempMessage])
+      // Check if a similar message was recently added
+      const recentDuplicate = messages.some(msg => 
+        msg.content === content && 
+        msg.role === "user" &&
+        Date.now() - msg.timestamp < 5000 // Within last 5 seconds
+      )
+      
+      // Only add the message if it's not a duplicate
+      if (!recentDuplicate) {
+        // Add to messages immediately for UI feedback
+        setMessages(prev => [...prev, tempMessage])
+        
+        // Track this message content as sent
+        setSentMessageContents(prev => {
+          const newSet = new Set(prev)
+          newSet.add(content)
+          return newSet
+        })
+      }
 
       if (USE_MOCK_DATA) {
         // Simulate API delay
@@ -128,39 +206,44 @@ export function useChat(agentId?: string) {
         }, 500)
       } else {
         try {
-          // Try to send via WebSocket first
-          const ws = getWebSocketService(agentId)
-          const sent = ws.sendMessage({
-            role: "user",
-            content,
-            agentId
-          })
+          // Try to send via WebSocket
+          console.log("Sending message via WebSocket:", content)
+          const sent = await wsSendMessage(agentId, content)
+          console.log("Message sent successfully:", sent)
+          
+          // Update message status to sent
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === tempMessage.id 
+                ? { ...msg, status: "sent" } 
+                : msg
+            )
+          )
           
           if (!sent) {
-            // Fallback to API if WebSocket fails
-            const response = await chatApi.sendMessage(agentId, content)
-            
-            if (response.error) {
-              setError(response.error)
-              setIsProcessing(false)
+            // If WebSocket send failed but we're still trying to connect,
+            // don't fall back to API yet
+            if (connectionState === ConnectionState.CONNECTING || 
+                connectionState === ConnectionState.RECONNECTING) {
+              console.log("Message queued, waiting for connection...")
+            } else {
+              // Fallback to API if WebSocket fails and we're not connecting
+              console.log("Falling back to API")
+              const response = await chatApi.sendMessage(agentId, content)
               
-              // Update message status to error
-              setMessages(prev => 
-                prev.map(msg => 
-                  msg.id === tempMessage.id 
-                    ? { ...msg, status: "error", error: response.error } 
-                    : msg
+              if (response.error) {
+                setError(response.error)
+                setIsProcessing(false)
+                
+                // Update message status to error
+                setMessages(prev => 
+                  prev.map(msg => 
+                    msg.id === tempMessage.id 
+                      ? { ...msg, status: "error", error: response.error } 
+                      : msg
+                  )
                 )
-              )
-            } else if (response.data) {
-              // Update message status to sent
-              setMessages(prev => 
-                prev.map(msg => 
-                  msg.id === tempMessage.id 
-                    ? { ...msg, status: "sent" } 
-                    : msg
-                )
-              )
+              }
             }
           }
         } catch (error) {
@@ -179,13 +262,14 @@ export function useChat(agentId?: string) {
         }
       }
     },
-    [agentId]
+    [agentId, connectionState, wsSendMessage, messages, sentMessageContents]
   )
 
   return {
     messages,
     sendMessage,
     isProcessing,
-    error
+    error,
+    connectionState
   }
 }

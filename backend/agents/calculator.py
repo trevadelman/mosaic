@@ -43,7 +43,7 @@ def add_tool(a: float, b: float) -> float:
         return result
     except Exception as e:
         logger.error(f"Error in add operation: {str(e)}")
-        raise
+        return f"Error: {str(e)}"
 
 @tool
 def subtract_tool(a: float, b: float) -> float:
@@ -64,7 +64,7 @@ def subtract_tool(a: float, b: float) -> float:
         return result
     except Exception as e:
         logger.error(f"Error in subtract operation: {str(e)}")
-        raise
+        return f"Error: {str(e)}"
 
 @tool
 def multiply_tool(a: float, b: float) -> float:
@@ -85,7 +85,7 @@ def multiply_tool(a: float, b: float) -> float:
         return result
     except Exception as e:
         logger.error(f"Error in multiply operation: {str(e)}")
-        raise
+        return f"Error: {str(e)}"
 
 @tool
 def divide_tool(a: float, b: float) -> float:
@@ -98,23 +98,19 @@ def divide_tool(a: float, b: float) -> float:
         
     Returns:
         The result of a / b
-        
-    Raises:
-        ZeroDivisionError: If b is zero
     """
     logger.info(f"Dividing {a} / {b}")
     if b == 0:
         error_msg = "Cannot divide by zero"
         logger.error(error_msg)
-        raise ZeroDivisionError(error_msg)
+        return f"Error: {error_msg}"
     try:
         result = a / b
         logger.info(f"Division result: {result}")
         return result
     except Exception as e:
-        if not isinstance(e, ZeroDivisionError):
-            logger.error(f"Error in divide operation: {str(e)}")
-        raise
+        logger.error(f"Error in divide operation: {str(e)}")
+        return f"Error: {str(e)}"
 
 @tool
 def parse_expression_tool(expression: str) -> float:
@@ -129,10 +125,6 @@ def parse_expression_tool(expression: str) -> float:
         
     Returns:
         The result of evaluating the expression
-        
-    Raises:
-        ValueError: If the expression is invalid or contains unsupported operations
-        ZeroDivisionError: If the expression involves division by zero
     """
     logger.info(f"Parsing expression: {expression}")
     
@@ -141,7 +133,7 @@ def parse_expression_tool(expression: str) -> float:
     if not re.match(r'^[\d\+\-\*\/\(\)\.]+$', expression):
         error_msg = f"Invalid expression: {expression}. Only numbers and basic operators (+, -, *, /) are supported."
         logger.error(error_msg)
-        raise ValueError(error_msg)
+        return f"Error: {error_msg}"
     
     try:
         # Use eval with a restricted namespace for safety
@@ -171,12 +163,12 @@ def parse_expression_tool(expression: str) -> float:
     except ZeroDivisionError:
         error_msg = f"Division by zero in expression: {expression}"
         logger.error(error_msg)
-        raise
+        return f"Error: {error_msg}"
         
     except Exception as e:
         error_msg = f"Error evaluating expression '{expression}': {str(e)}"
         logger.error(error_msg)
-        raise ValueError(error_msg)
+        return f"Error: {error_msg}"
 
 class CalculatorAgent(BaseAgent):
     """

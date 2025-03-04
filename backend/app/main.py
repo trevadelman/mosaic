@@ -363,17 +363,39 @@ except ImportError:
 class WebSocketLogHandler(logging.Handler):
     """Custom log handler to capture logs and send them to the client via WebSocket."""
     
-    def __init__(self, websocket: WebSocket, message_id: str):
+    def __init__(self, websocket: WebSocket, message_id: str, loop=None):
         super().__init__()
         self.websocket = websocket
         self.message_id = message_id
+        self.loop = loop or asyncio.get_event_loop()
+        self.log_queue = []
         
     def emit(self, record):
         log_entry = self.format(record)
-        asyncio.create_task(self.send_log(log_entry))
-    
-    async def send_log(self, log_entry: str):
+        
+        # Store log in message store directly (synchronously)
+        for agent_id, messages in MESSAGE_STORE.items():
+            for message in messages:
+                if message.get("id") == self.message_id:
+                    if "logs" not in message:
+                        message["logs"] = []
+                    message["logs"].append(log_entry)
+                    break
+        
+        # Add to queue
+        self.log_queue.append(log_entry)
+        
+        # Send log to client asynchronously
         try:
+            # Use run_coroutine_threadsafe to properly handle the coroutine
+            asyncio.run_coroutine_threadsafe(self._send_log(log_entry), self.loop)
+        except Exception as e:
+            # Don't raise exceptions from the log handler
+            print(f"Error sending log: {e}")
+    
+    async def _send_log(self, log_entry: str):
+        try:
+            # Send log to client
             await self.websocket.send_json({
                 "type": "log_update",
                 "log": log_entry,
@@ -381,7 +403,11 @@ class WebSocketLogHandler(logging.Handler):
             })
         except Exception as e:
             # Don't raise exceptions from the log handler
-            pass
+            print(f"Error in _send_log: {e}")
+    
+    def get_logs(self):
+        """Get all logs collected by this handler."""
+        return self.log_queue
 
 @app.websocket("/ws/chat/{agent_id}")
 async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
@@ -394,7 +420,15 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
         while True:
             data = await websocket.receive_json()
             
-            if data.get("type") == "message":
+            if data.get("type") == "ping":
+                # Respond to ping with a pong to keep the connection alive
+                await websocket.send_json({
+                    "type": "pong",
+                    "timestamp": datetime.now().isoformat()
+                })
+                continue
+            
+            elif data.get("type") == "message":
                 message_data = data.get("message", {})
                 
                 # Create user message
@@ -404,7 +438,8 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                     "content": message_data.get("content", ""),
                     "timestamp": int(datetime.now().timestamp() * 1000),
                     "agentId": agent_id,
-                    "status": "sent"
+                    "status": "sent",
+                    "clientMessageId": message_data.get("clientMessageId")  # Pass through client message ID
                 }
                 
                 # Add user message to history
@@ -421,10 +456,13 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                 # Create agent response with a unique ID
                 agent_message_id = str(uuid.uuid4())
                 
-                # Send initial log messages
+                # Create initial log message
+                initial_log = f"{datetime.now().strftime('%H:%M:%S')} - Starting processing with {agent_id} agent"
+                
+                # Send initial log message
                 await websocket.send_json({
                     "type": "log_update",
-                    "log": f"{datetime.now().strftime('%H:%M:%S')} - Starting processing with {agent_id} agent",
+                    "log": initial_log,
                     "messageId": agent_message_id
                 })
                 
@@ -512,19 +550,34 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                                         logger.info(f"Found AI response in object: {agent_response[:50]}...")
                                         break
                         
-                        # Create the agent message
+                        # Get all logs from the message store
+                        logs = [initial_log]
+                        for agent_id_key, messages in MESSAGE_STORE.items():
+                            for message in messages:
+                                if message.get("id") == agent_message_id and "logs" in message:
+                                    logs = message.get("logs", [])
+                                    break
+                        
+                        # Create the agent message with logs
                         agent_message = {
                             "id": agent_message_id,
                             "role": "assistant",
                             "content": agent_response,
                             "timestamp": int(datetime.now().timestamp() * 1000),
-                            "agentId": agent_id
+                            "agentId": agent_id,
+                            "logs": ws_handler.get_logs()  # Include all logs from the handler
                         }
                         
                         # Add agent message to history
                         MESSAGE_STORE[agent_id].append(agent_message)
                         
-                        # Send agent response back to client
+                        # Send agent response back to client with a small delay
+                        # This ensures the logs have time to be processed
+                        await asyncio.sleep(0.5)
+                        
+                        # Log that we're sending the response
+                        logger.info(f"Sending agent response back to client: {agent_message['id']}")
+                        
                         await websocket.send_json({
                             "type": "message",
                             "message": agent_message

@@ -12,7 +12,8 @@ export default function ChatPage() {
     messages, 
     sendMessage, 
     isProcessing, 
-    error 
+    error,
+    connectionState
   } = useChat(selectedAgent?.id)
 
   return (
@@ -45,6 +46,7 @@ export default function ChatPage() {
           isProcessing={isProcessing}
           selectedAgent={selectedAgent}
           error={error}
+          connectionState={connectionState}
         />
       </div>
     </div>

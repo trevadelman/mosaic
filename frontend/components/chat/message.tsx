@@ -71,8 +71,9 @@ export function Message({ message, isLastMessage = false }: MessageProps) {
         {/* Logs section */}
         {hasLogs && showLogs && !isUser && (
           <div className="mb-4 rounded-md border bg-black p-3 text-xs text-white font-mono overflow-auto max-h-60">
+            <div className="text-green-400 mb-2">Agent Logs:</div>
             {message.logs!.map((log, i) => (
-              <div key={i} className="mb-1 last:mb-0">
+              <div key={i} className="mb-1 last:mb-0 whitespace-pre-wrap">
                 {log}
               </div>
             ))}

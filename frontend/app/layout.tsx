@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Sidebar } from '@/components/sidebar/sidebar'
+import { WebSocketProvider } from '@/lib/contexts/websocket-context'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -25,12 +26,14 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex h-screen">
-            <Sidebar />
-            <div className="flex-1 overflow-auto">
-              {children}
+          <WebSocketProvider>
+            <div className="flex h-screen">
+              <Sidebar />
+              <div className="flex-1 overflow-auto">
+                {children}
+              </div>
             </div>
-          </div>
+          </WebSocketProvider>
         </ThemeProvider>
       </body>
     </html>

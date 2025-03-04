@@ -99,7 +99,24 @@ This is useful for verifying that the backend is correctly set up and can handle
 
 ### Running the Full System
 
-#### Option 1: Running Locally
+#### Option 1: Using the Startup Script (Recommended)
+
+1. Run the startup script:
+   ```bash
+   cd mosaic
+   ./startup.sh
+   ```
+
+   This script will:
+   - Start the backend server on port 8000
+   - Start the frontend development server on port 3000
+   - Display logs from both services in a single terminal
+
+2. Open your browser to http://localhost:3000 to access the MOSAIC interface.
+
+3. Press Ctrl+C to stop both services.
+
+#### Option 2: Running Services Separately
 
 1. Start the backend server:
    ```bash
