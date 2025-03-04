@@ -1,4 +1,4 @@
-import { Agent, ApiResponse, Message } from "./types"
+import { Agent, ApiResponse, Message, Tool } from "./types"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 
@@ -40,6 +40,18 @@ export const agentApi = {
 
   // Get a specific agent by ID
   getAgent: (id: string) => fetchApi<Agent>(`/agents/${id}`),
+  
+  // Get all agents from the database
+  getDbAgents: () => fetchApi<Agent[]>("/agent-creator/db/agents"),
+  
+  // Get a specific agent from the database by ID
+  getDbAgent: (id: number) => fetchApi<Agent>(`/agent-creator/db/agents/${id}`),
+  
+  // Get tools for a specific agent
+  getAgentTools: (id: string) => fetchApi<Tool[]>(`/agents/${id}/tools`),
+  
+  // Get relationships for a specific agent
+  getAgentRelationships: (id: string) => fetchApi<Agent['relationships']>(`/agents/${id}/relationships`),
 }
 
 /**

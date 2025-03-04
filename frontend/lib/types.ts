@@ -1,4 +1,12 @@
 // Agent types
+export interface Tool {
+  id: number
+  name: string
+  description: string
+  parameters: any[]
+  returns: any
+}
+
 export interface Agent {
   id: string
   name: string
@@ -6,6 +14,11 @@ export interface Agent {
   type: string
   capabilities: string[]
   icon?: string
+  tools?: Tool[]
+  relationships?: {
+    supervisor?: string
+    subAgents?: string[]
+  }
 }
 
 // Message types

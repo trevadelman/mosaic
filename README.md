@@ -53,6 +53,8 @@ MOSAIC is a production-ready system for creating, managing, and interacting with
   - **Research Supervisor**: Orchestrates multiple agents for comprehensive research tasks
   - **Multi-Agent Supervisor**: Generic supervisor that can orchestrate any combination of agents
 - **Dynamic Agent Discovery**: Automatically discovers and registers both regular agents and supervisors
+- **Database-Driven Agent Metadata**: Store and manage agent definitions, tools, and capabilities in the database
+- **JSON Template Integration**: Convert between JSON templates and database records for agent definitions
 - **Docker Containerization**: Secure, isolated environments for development and deployment
 
 ## Getting Started
@@ -233,6 +235,11 @@ mosaic/
 │   │   ├── supervisors/      # Supervisor agents
 │   │   ├── sandbox/          # Sandbox environment for testing
 │   │   └── templates/        # Templates for creating new agents
+│   ├── database/   # Database models and operations
+│   │   ├── models.py         # SQLAlchemy models
+│   │   ├── repository.py     # Repository classes for database operations
+│   │   ├── database.py       # Database connection management
+│   │   └── migrations/       # Database migration scripts
 │   └── tests/      # Test scripts
 ├── database/       # SQLite database files
 ├── setup.py        # Package setup file

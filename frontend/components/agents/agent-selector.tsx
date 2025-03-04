@@ -118,6 +118,39 @@ export function AgentSelector({
                         )}
                       </div>
                     )}
+                    {agent.tools && agent.tools.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        <span className="text-xs text-muted-foreground">Tools:</span>
+                        {agent.tools.slice(0, 2).map((tool) => (
+                          <span
+                            key={tool.id}
+                            className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold"
+                            title={tool.description}
+                          >
+                            {tool.name}
+                          </span>
+                        ))}
+                        {agent.tools.length > 2 && (
+                          <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
+                            +{agent.tools.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {agent.relationships && (agent.relationships.supervisor || (agent.relationships.subAgents && agent.relationships.subAgents.length > 0)) && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {agent.relationships.supervisor && (
+                          <span className="text-xs text-muted-foreground">
+                            Supervisor: {agent.relationships.supervisor}
+                          </span>
+                        )}
+                        {agent.relationships.subAgents && agent.relationships.subAgents.length > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            Sub-agents: {agent.relationships.subAgents.length}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </button>
               ))}

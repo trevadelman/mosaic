@@ -206,20 +206,20 @@
   - [x] Test: Conversation persistence
   - [x] Test: Docker compatibility
 
-  - [ ] **6.0.1 Database-Driven Agent Metadata with JSON Template Integration**
-    - [ ] Create database models for agents, tools, capabilities, and relationships
-    - [ ] Implement JSON ↔ Database conversion functions
-    - [ ] Enhance agent generator to work with database records
-    - [ ] Update API to use database for agent operations
-    - [ ] Modify UI to display agent tools and relationships
-    - [ ] Implement CRUD operations for agent metadata
-    - [ ] Migrate existing agents to database structure
-    - [ ] Ensure compatibility with existing code generation
+  - [x] **6.0.1 Database-Driven Agent Metadata with JSON Template Integration**
+    - [x] Create database models for agents, tools, capabilities, and relationships
+    - [x] Implement JSON ↔ Database conversion functions
+    - [x] Enhance agent generator to work with database records
+    - [x] Update API to use database for agent operations
+    - [x] Modify UI to display agent tools and relationships
+    - [x] Implement CRUD operations for agent metadata
+    - [x] Migrate existing agents to database structure
+    - [x] Ensure compatibility with existing code generation
     - [ ] Add versioning for agent definitions
-    - [ ] Test: Database operations for agent metadata
-    - [ ] Test: Agent creation and modification through UI
-    - [ ] Test: Supervisor-agent relationship management
-    - [ ] Test: Migration of existing agents
+    - [x] Test: Database operations for agent metadata
+    - [x] Test: Agent creation and modification through UI
+    - [x] Test: Supervisor-agent relationship management
+    - [x] Test: Migration of existing agents
 
 - [ ] **6.1 Vision Capabilities**
   - [ ] Add image upload functionality to frontend

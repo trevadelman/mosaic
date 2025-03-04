@@ -7,6 +7,7 @@ import { ChatInput } from "./chat-input"
 import { AlertCircle, Loader2, Wifi, WifiOff, Trash2 } from "lucide-react"
 import { ConnectionState } from "@/lib/contexts/websocket-context"
 import { Button } from "@/components/ui/button"
+import { AgentDetails } from "@/components/agents/agent-details"
 
 interface ChatInterfaceProps {
   messages: MessageType[]
@@ -94,9 +95,14 @@ export function ChatInterface({
         </div>
         
         {selectedAgent && (
-          <p className="text-sm text-muted-foreground">
-            {selectedAgent.description}
-          </p>
+          <>
+            <p className="text-sm text-muted-foreground">
+              {selectedAgent.description}
+            </p>
+            <div className="mt-4">
+              <AgentDetails agent={selectedAgent} />
+            </div>
+          </>
         )}
       </div>
 

@@ -14,7 +14,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
-from .models import Conversation, Message, Attachment, MessageLog
+from .models import Conversation, Message, Attachment, MessageLog, Agent, Tool, Capability
 from .database import get_db_session
 
 # Configure logging
@@ -416,6 +416,426 @@ class AttachmentRepository:
                 session.expunge(attachment)
                 
             return attachments
+
+
+# Agent Repository for database operations related to agents, tools, and capabilities
+
+class AgentRepository:
+    """
+    Repository for agent-related database operations.
+    """
+    
+    @staticmethod
+    def create_agent(
+        name: str,
+        agent_type: str,
+        description: str,
+        system_prompt: str,
+        icon: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Agent:
+        """
+        Create a new agent.
+        
+        Args:
+            name: The name of the agent
+            agent_type: The type of agent ("Utility", "Specialized", "Supervisor")
+            description: The description of the agent
+            system_prompt: The system prompt for the agent
+            icon: Optional emoji icon for the agent
+            metadata: Optional metadata for the agent
+            
+        Returns:
+            The created agent
+        """
+        with get_db_session() as session:
+            agent = Agent(
+                name=name,
+                type=agent_type,
+                description=description,
+                system_prompt=system_prompt,
+                icon=icon,
+                meta_data=metadata
+            )
+            session.add(agent)
+            session.commit()
+            logger.info(f"Created agent {agent.id} with name {name}")
+            
+            # Detach the agent from the session by expunging it
+            session.expunge(agent)
+            
+            return agent
+    
+    @staticmethod
+    def get_agent(agent_id: int) -> Optional[Agent]:
+        """
+        Get an agent by ID.
+        
+        Args:
+            agent_id: The ID of the agent
+            
+        Returns:
+            The agent, or None if not found
+        """
+        with get_db_session() as session:
+            agent = session.query(Agent).filter(
+                Agent.id == agent_id,
+                Agent.is_deleted == False
+            ).first()
+            
+            # If we found an agent, detach it from the session by expunging it
+            if agent:
+                session.expunge(agent)
+                
+            return agent
+    
+    @staticmethod
+    def get_agent_by_name(name: str) -> Optional[Agent]:
+        """
+        Get an agent by name.
+        
+        Args:
+            name: The name of the agent
+            
+        Returns:
+            The agent, or None if not found
+        """
+        with get_db_session() as session:
+            agent = session.query(Agent).filter(
+                Agent.name == name,
+                Agent.is_deleted == False
+            ).first()
+            
+            # If we found an agent, detach it from the session by expunging it
+            if agent:
+                session.expunge(agent)
+                
+            return agent
+    
+    @staticmethod
+    def get_all_agents() -> List[Agent]:
+        """
+        Get all agents.
+        
+        Returns:
+            A list of agents
+        """
+        with get_db_session() as session:
+            agents = session.query(Agent).filter(
+                Agent.is_deleted == False
+            ).all()
+            
+            # Detach all agents from the session by expunging them
+            for agent in agents:
+                session.expunge(agent)
+                
+            return agents
+    
+    @staticmethod
+    def update_agent(
+        agent_id: int,
+        name: Optional[str] = None,
+        agent_type: Optional[str] = None,
+        description: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        icon: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Optional[Agent]:
+        """
+        Update an agent.
+        
+        Args:
+            agent_id: The ID of the agent
+            name: Optional new name for the agent
+            agent_type: Optional new type for the agent
+            description: Optional new description for the agent
+            system_prompt: Optional new system prompt for the agent
+            icon: Optional new icon for the agent
+            metadata: Optional new metadata for the agent
+            
+        Returns:
+            The updated agent, or None if not found
+        """
+        with get_db_session() as session:
+            agent = session.query(Agent).filter(
+                Agent.id == agent_id,
+                Agent.is_deleted == False
+            ).first()
+            
+            if agent:
+                if name is not None:
+                    agent.name = name
+                if agent_type is not None:
+                    agent.type = agent_type
+                if description is not None:
+                    agent.description = description
+                if system_prompt is not None:
+                    agent.system_prompt = system_prompt
+                if icon is not None:
+                    agent.icon = icon
+                if metadata is not None:
+                    agent.meta_data = metadata
+                
+                session.commit()
+                logger.info(f"Updated agent {agent_id}")
+                
+                # Detach the agent from the session by expunging it
+                session.expunge(agent)
+            
+            return agent
+    
+    @staticmethod
+    def delete_agent(agent_id: int, hard_delete: bool = False) -> bool:
+        """
+        Delete an agent.
+        
+        Args:
+            agent_id: The ID of the agent
+            hard_delete: Whether to hard delete the agent (default: False)
+            
+        Returns:
+            True if the agent was deleted, False otherwise
+        """
+        with get_db_session() as session:
+            agent = session.query(Agent).filter(Agent.id == agent_id).first()
+            
+            if agent:
+                if hard_delete:
+                    session.delete(agent)
+                    logger.info(f"Hard deleted agent {agent_id}")
+                else:
+                    agent.is_deleted = True
+                    logger.info(f"Soft deleted agent {agent_id}")
+                
+                session.commit()
+                return True
+            
+            return False
+    
+    @staticmethod
+    def create_tool(
+        agent_id: int,
+        name: str,
+        description: str,
+        parameters: List[Dict[str, Any]],
+        returns: Dict[str, Any],
+        implementation_code: str,
+        dependencies: Optional[List[str]] = None
+    ) -> Tool:
+        """
+        Create a new tool for an agent.
+        
+        Args:
+            agent_id: The ID of the agent
+            name: The name of the tool
+            description: The description of the tool
+            parameters: The parameters for the tool
+            returns: The return type and description for the tool
+            implementation_code: The implementation code for the tool
+            dependencies: Optional list of dependencies for the tool
+            
+        Returns:
+            The created tool
+        """
+        with get_db_session() as session:
+            tool = Tool(
+                agent_id=agent_id,
+                name=name,
+                description=description,
+                parameters=parameters,
+                returns=returns,
+                implementation_code=implementation_code,
+                dependencies=dependencies
+            )
+            session.add(tool)
+            session.commit()
+            logger.info(f"Created tool {tool.id} for agent {agent_id}")
+            
+            # Detach the tool from the session by expunging it
+            session.expunge(tool)
+            
+            return tool
+    
+    @staticmethod
+    def get_tools_for_agent(agent_id: int) -> List[Tool]:
+        """
+        Get all tools for an agent.
+        
+        Args:
+            agent_id: The ID of the agent
+            
+        Returns:
+            A list of tools
+        """
+        with get_db_session() as session:
+            tools = session.query(Tool).filter(
+                Tool.agent_id == agent_id,
+                Tool.is_deleted == False
+            ).all()
+            
+            # Detach all tools from the session by expunging them
+            for tool in tools:
+                session.expunge(tool)
+                
+            return tools
+    
+    @staticmethod
+    def create_capability(
+        agent_id: int,
+        name: str,
+        description: Optional[str] = None
+    ) -> Capability:
+        """
+        Create a new capability for an agent.
+        
+        Args:
+            agent_id: The ID of the agent
+            name: The name of the capability
+            description: Optional description of the capability
+            
+        Returns:
+            The created capability
+        """
+        with get_db_session() as session:
+            capability = Capability(
+                agent_id=agent_id,
+                name=name,
+                description=description
+            )
+            session.add(capability)
+            session.commit()
+            logger.info(f"Created capability {capability.id} for agent {agent_id}")
+            
+            # Detach the capability from the session by expunging it
+            session.expunge(capability)
+            
+            return capability
+    
+    @staticmethod
+    def get_capabilities_for_agent(agent_id: int) -> List[Capability]:
+        """
+        Get all capabilities for an agent.
+        
+        Args:
+            agent_id: The ID of the agent
+            
+        Returns:
+            A list of capabilities
+        """
+        with get_db_session() as session:
+            capabilities = session.query(Capability).filter(
+                Capability.agent_id == agent_id,
+                Capability.is_deleted == False
+            ).all()
+            
+            # Detach all capabilities from the session by expunging them
+            for capability in capabilities:
+                session.expunge(capability)
+                
+            return capabilities
+    
+    @staticmethod
+    def json_to_db(definition: Dict[str, Any]) -> Tuple[Agent, List[Tool], List[Capability]]:
+        """
+        Convert a JSON agent definition to database models.
+        
+        Args:
+            definition: The agent definition
+            
+        Returns:
+            A tuple containing the agent, tools, and capabilities
+        """
+        # Extract agent information
+        agent_data = definition["agent"]
+        name = agent_data["name"]
+        agent_type = agent_data["type"]
+        description = agent_data["description"]
+        icon = agent_data.get("icon")
+        system_prompt = agent_data["systemPrompt"]
+        metadata = agent_data.get("metadata", {})
+        
+        # Create the agent
+        agent = AgentRepository.create_agent(
+            name=name,
+            agent_type=agent_type,
+            description=description,
+            system_prompt=system_prompt,
+            icon=icon,
+            metadata=metadata
+        )
+        
+        # Create tools
+        tools = []
+        for tool_data in agent_data["tools"]:
+            tool = AgentRepository.create_tool(
+                agent_id=agent.id,
+                name=tool_data["name"],
+                description=tool_data["description"],
+                parameters=tool_data["parameters"],
+                returns=tool_data["returns"],
+                implementation_code=tool_data["implementation"]["code"],
+                dependencies=tool_data["implementation"].get("dependencies")
+            )
+            tools.append(tool)
+        
+        # Create capabilities
+        capabilities = []
+        for capability_name in agent_data.get("capabilities", []):
+            capability = AgentRepository.create_capability(
+                agent_id=agent.id,
+                name=capability_name
+            )
+            capabilities.append(capability)
+        
+        return agent, tools, capabilities
+    
+    @staticmethod
+    def db_to_json(agent: Agent) -> Dict[str, Any]:
+        """
+        Convert database models to a JSON agent definition.
+        
+        Args:
+            agent: The agent model
+            
+        Returns:
+            The agent definition as a dictionary
+        """
+        # Get tools and capabilities
+        tools = AgentRepository.get_tools_for_agent(agent.id)
+        capabilities = AgentRepository.get_capabilities_for_agent(agent.id)
+        
+        # Build the agent definition
+        definition = {
+            "agent": {
+                "name": agent.name,
+                "type": agent.type,
+                "description": agent.description,
+                "systemPrompt": agent.system_prompt,
+                "tools": [
+                    {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "parameters": tool.parameters,
+                        "returns": tool.returns,
+                        "implementation": {
+                            "code": tool.implementation_code,
+                            "dependencies": tool.dependencies
+                        }
+                    }
+                    for tool in tools
+                ],
+                "capabilities": [capability.name for capability in capabilities]
+            }
+        }
+        
+        # Add optional fields
+        if agent.icon:
+            definition["agent"]["icon"] = agent.icon
+        
+        if agent.meta_data:
+            definition["agent"]["metadata"] = agent.meta_data
+        
+        return definition
 
 
 # Helper functions for converting between database models and API models

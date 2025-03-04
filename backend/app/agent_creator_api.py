@@ -32,6 +32,8 @@ try:
     )
     from mosaic.backend.agents.agent_generator import AgentGenerator
     from mosaic.backend.agents.base import agent_registry
+    from mosaic.backend.database.repository import AgentRepository
+    from mosaic.backend.database.models import Agent, Tool, Capability
 except ImportError:
     # Fall back to relative import (for Docker environment)
     from backend.agents.regular.agent_creator import (
@@ -43,6 +45,8 @@ except ImportError:
     )
     from backend.agents.agent_generator import AgentGenerator
     from backend.agents.base import agent_registry
+    from backend.database.repository import AgentRepository
+    from backend.database.models import Agent, Tool, Capability
 
 # Create the router
 router = APIRouter(
@@ -383,3 +387,237 @@ async def delete_template(template_id: str):
     except Exception as e:
         logger.error(f"Error deleting template: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error deleting template: {str(e)}")
+
+# Database-driven agent metadata endpoints
+
+class AgentResponse(BaseModel):
+    """Response containing agent information."""
+    id: int = Field(..., description="ID of the agent")
+    name: str = Field(..., description="Name of the agent")
+    type: str = Field(..., description="Type of agent")
+    description: str = Field(..., description="Description of the agent")
+    icon: Optional[str] = Field(None, description="Emoji icon for the agent")
+    tools_count: int = Field(..., description="Number of tools")
+    capabilities_count: int = Field(..., description="Number of capabilities")
+    created_at: str = Field(..., description="Creation timestamp")
+    updated_at: str = Field(..., description="Last update timestamp")
+
+@router.post("/db/agents", response_model=AgentResponse)
+async def save_agent_to_db(template: Dict[str, Any]):
+    """Save an agent template to the database."""
+    try:
+        # Create an agent generator
+        generator = AgentGenerator()
+        
+        # Validate the template
+        generator.validate_definition(template)
+        
+        # Save the template to the database
+        agent, tools, capabilities = generator.save_definition_to_db(template)
+        
+        # Return the agent information
+        return {
+            "id": agent.id,
+            "name": agent.name,
+            "type": agent.type,
+            "description": agent.description,
+            "icon": agent.icon,
+            "tools_count": len(tools),
+            "capabilities_count": len(capabilities),
+            "created_at": agent.created_at.isoformat(),
+            "updated_at": agent.updated_at.isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error saving agent to database: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error saving agent to database: {str(e)}")
+
+@router.get("/db/agents", response_model=List[AgentResponse])
+async def get_agents_from_db():
+    """Get a list of all agents from the database."""
+    try:
+        # Get all agents from the database
+        agents = AgentRepository.get_all_agents()
+        
+        # Return the agent information
+        return [
+            {
+                "id": agent.id,
+                "name": agent.name,
+                "type": agent.type,
+                "description": agent.description,
+                "icon": agent.icon,
+                "tools_count": len(AgentRepository.get_tools_for_agent(agent.id)),
+                "capabilities_count": len(AgentRepository.get_capabilities_for_agent(agent.id)),
+                "created_at": agent.created_at.isoformat(),
+                "updated_at": agent.updated_at.isoformat()
+            }
+            for agent in agents
+        ]
+    except Exception as e:
+        logger.error(f"Error getting agents from database: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting agents from database: {str(e)}")
+
+@router.get("/db/agents/{agent_id}", response_model=Dict[str, Any])
+async def get_agent_from_db(agent_id: int):
+    """Get an agent from the database by ID."""
+    try:
+        # Create an agent generator
+        generator = AgentGenerator()
+        
+        # Load the agent from the database
+        definition = generator.load_definition_from_db(agent_id)
+        
+        # Return the agent definition
+        return definition
+    except ValueError as e:
+        logger.error(f"Error getting agent from database: {str(e)}")
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error getting agent from database: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting agent from database: {str(e)}")
+
+@router.delete("/db/agents/{agent_id}", response_model=Dict[str, Any])
+async def delete_agent_from_db(agent_id: int, hard_delete: bool = False):
+    """Delete an agent from the database by ID."""
+    try:
+        # Delete the agent from the database
+        success = AgentRepository.delete_agent(agent_id, hard_delete)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail=f"Agent with ID {agent_id} not found")
+        
+        # Return success message
+        return {"message": f"Agent with ID {agent_id} deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting agent from database: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error deleting agent from database: {str(e)}")
+
+@router.post("/db/deploy/{agent_id}", response_model=DeploymentResult)
+async def deploy_agent_from_db(agent_id: int, options: DeploymentOptions):
+    """Deploy an agent from the database."""
+    try:
+        # Create an agent generator
+        generator = AgentGenerator()
+        
+        # Register the agent from the database
+        agent = generator.register_agent_from_definition(
+            agent_id,
+            agent_registry.model,
+            options.sandbox
+        )
+        
+        # Return the deployment result
+        return {
+            "success": True,
+            "message": f"Agent {agent.name} deployed successfully",
+            "agent_id": agent.name
+        }
+    except Exception as e:
+        logger.error(f"Error deploying agent from database: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Error deploying agent from database: {str(e)}",
+            "agent_id": None
+        }
+
+@router.post("/db/generate-code/{agent_id}", response_model=CodeGenerationResult)
+async def generate_code_from_db(agent_id: int):
+    """Generate Python code for an agent from the database."""
+    try:
+        # Create an agent generator
+        generator = AgentGenerator()
+        
+        # Generate the code from the database
+        code = generator.generate_agent_class_from_db(agent_id)
+        
+        # Return the generated code
+        return {"code": code}
+    except ValueError as e:
+        logger.error(f"Error generating agent code from database: {str(e)}")
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error generating agent code from database: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating agent code from database: {str(e)}")
+
+@router.get("/db/agents/{agent_id}/tools", response_model=List[Dict[str, Any]])
+async def get_agent_tools_from_db(agent_id: int):
+    """Get the tools of an agent from the database."""
+    try:
+        # Get the agent from the database
+        agent = AgentRepository.get_agent(agent_id)
+        if not agent:
+            raise HTTPException(status_code=404, detail=f"Agent with ID {agent_id} not found")
+        
+        # Get the tools for the agent
+        tools = AgentRepository.get_tools_for_agent(agent_id)
+        
+        # Return the tools
+        return [
+            {
+                "id": tool.id,
+                "name": tool.name,
+                "description": tool.description,
+                "parameters": tool.parameters,
+                "returns": tool.returns
+            }
+            for tool in tools
+        ]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting agent tools from database: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting agent tools from database: {str(e)}")
+
+@router.get("/db/agents/{agent_id}/capabilities", response_model=List[Dict[str, Any]])
+async def get_agent_capabilities_from_db(agent_id: int):
+    """Get the capabilities of an agent from the database."""
+    try:
+        # Get the agent from the database
+        agent = AgentRepository.get_agent(agent_id)
+        if not agent:
+            raise HTTPException(status_code=404, detail=f"Agent with ID {agent_id} not found")
+        
+        # Get the capabilities for the agent
+        capabilities = AgentRepository.get_capabilities_for_agent(agent_id)
+        
+        # Return the capabilities
+        return [
+            {
+                "id": capability.id,
+                "name": capability.name,
+                "description": capability.description
+            }
+            for capability in capabilities
+        ]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting agent capabilities from database: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting agent capabilities from database: {str(e)}")
+
+@router.get("/db/agents/{agent_id}/relationships", response_model=Dict[str, Any])
+async def get_agent_relationships_from_db(agent_id: int):
+    """Get the relationships of an agent from the database."""
+    try:
+        # Get the agent from the database
+        agent = AgentRepository.get_agent(agent_id)
+        if not agent:
+            raise HTTPException(status_code=404, detail=f"Agent with ID {agent_id} not found")
+        
+        # Get the agent metadata
+        metadata = agent.meta_data or {}
+        
+        # Extract relationships from metadata
+        relationships = {
+            "supervisor": metadata.get("supervisor"),
+            "subAgents": metadata.get("subAgents", [])
+        }
+        
+        return relationships
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting agent relationships from database: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting agent relationships from database: {str(e)}")

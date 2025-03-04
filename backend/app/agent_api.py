@@ -181,6 +181,32 @@ class AgentAPI:
             # Extract agent capabilities
             capabilities = self._extract_agent_capabilities(agent)
             return {"capabilities": capabilities}
+        
+        @self.router.get("/{agent_id}/tools")
+        async def get_agent_tools(agent_id: str):
+            """Get the tools of a specific agent."""
+            initialized_agents = get_initialized_agents()
+            agent = initialized_agents.get(agent_id)
+            
+            if not agent:
+                raise HTTPException(status_code=404, detail="Agent not found")
+            
+            # Extract agent tools
+            tools = self._extract_agent_tools(agent)
+            return tools
+        
+        @self.router.get("/{agent_id}/relationships")
+        async def get_agent_relationships(agent_id: str):
+            """Get the relationships of a specific agent."""
+            initialized_agents = get_initialized_agents()
+            agent = initialized_agents.get(agent_id)
+            
+            if not agent:
+                raise HTTPException(status_code=404, detail="Agent not found")
+            
+            # Extract agent relationships
+            relationships = self._extract_agent_relationships(agent_id, agent)
+            return relationships
     
     def _extract_agent_metadata(self, agent_id: str, agent: Any) -> Dict[str, Any]:
         """
@@ -235,6 +261,96 @@ class AgentAPI:
                 metadata["capabilities"] = capabilities
         
         return metadata
+    
+    def _extract_agent_tools(self, agent: Any) -> List[Dict[str, Any]]:
+        """
+        Extract tools from an agent.
+        
+        Args:
+            agent: The agent object
+            
+        Returns:
+            A list of tool dictionaries
+        """
+        tools = []
+        
+        # Check if the agent is a CompiledStateGraph (supervisor)
+        is_supervisor = not hasattr(agent, 'description')
+        
+        if not is_supervisor and hasattr(agent, "tools"):
+            for tool in agent.tools:
+                tool_dict = {
+                    "id": id(tool),  # Use object ID as a unique identifier
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": [],
+                    "returns": {"type": "string", "description": "Result of the tool execution"}
+                }
+                
+                # Extract parameters from tool schema
+                if hasattr(tool, "args_schema"):
+                    schema = tool.args_schema.schema()
+                    if "properties" in schema:
+                        for param_name, param_info in schema["properties"].items():
+                            parameter = {
+                                "name": param_name,
+                                "type": param_info.get("type", "string"),
+                                "description": param_info.get("description", ""),
+                                "required": param_name in schema.get("required", [])
+                            }
+                            tool_dict["parameters"].append(parameter)
+                
+                tools.append(tool_dict)
+        
+        return tools
+    
+    def _extract_agent_relationships(self, agent_id: str, agent: Any) -> Dict[str, Any]:
+        """
+        Extract relationships from an agent.
+        
+        Args:
+            agent_id: The ID of the agent
+            agent: The agent object
+            
+        Returns:
+            A dictionary containing agent relationships
+        """
+        relationships = {
+            "supervisor": None,
+            "subAgents": []
+        }
+        
+        # Check if the agent is a CompiledStateGraph (supervisor)
+        is_supervisor = not hasattr(agent, 'description')
+        
+        if is_supervisor:
+            # For supervisor agents, extract sub-agents
+            # This is a simplified implementation - in a real system, you would
+            # extract this information from the agent's graph structure
+            if agent_id == "research_supervisor":
+                relationships["subAgents"] = [
+                    "web_search",
+                    "browser_interaction",
+                    "data_processing",
+                    "literature"
+                ]
+        else:
+            # For regular agents, check if they are used by any supervisor
+            initialized_agents = get_initialized_agents()
+            for supervisor_id, supervisor in initialized_agents.items():
+                if not hasattr(supervisor, 'description'):  # Is a supervisor
+                    # Check if this agent is used by the supervisor
+                    # This is a simplified implementation - in a real system, you would
+                    # extract this information from the supervisor's graph structure
+                    if supervisor_id == "research_supervisor" and agent_id in [
+                        "web_search",
+                        "browser_interaction",
+                        "data_processing",
+                        "literature"
+                    ]:
+                        relationships["supervisor"] = supervisor_id
+        
+        return relationships
     
     def _extract_agent_capabilities(self, agent: Any) -> List[Dict[str, Any]]:
         """

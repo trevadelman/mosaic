@@ -1,8 +1,9 @@
 """
 Agent Generator Module for MOSAIC
 
-This module provides functionality for generating agent code from JSON definitions.
-It is used by the agent creator system to dynamically create new agents.
+This module provides functionality for generating agent code from JSON definitions
+and database records. It is used by the agent creator system to dynamically create
+new agents.
 """
 
 import json
@@ -10,7 +11,7 @@ import os
 import logging
 import importlib
 import inspect
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple, Union
 from pathlib import Path
 import jsonschema
 
@@ -21,6 +22,16 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 logger = logging.getLogger("mosaic.agent_generator")
+
+# Import database models and repository
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.database.models import Agent, Tool, Capability
+    from mosaic.backend.database.repository import AgentRepository
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.database.models import Agent, Tool, Capability
+    from backend.database.repository import AgentRepository
 
 class AgentGenerator:
     """
@@ -296,9 +307,64 @@ def register_{name}_agent(model: LanguageModelLike) -> {name.capitalize().replac
             logger.error(f"Error writing agent class to file: {str(e)}")
             raise
     
+    def generate_agent_class_from_db(self, agent_id: int) -> str:
+        """
+        Generate Python code for an agent class from a database record.
+        
+        Args:
+            agent_id: The ID of the agent in the database
+            
+        Returns:
+            Python code for the agent class
+        """
+        # Get the agent from the database
+        agent = AgentRepository.get_agent(agent_id)
+        if not agent:
+            raise ValueError(f"Agent with ID {agent_id} not found in the database")
+        
+        # Convert the database record to a JSON definition
+        definition = AgentRepository.db_to_json(agent)
+        
+        # Generate the agent class
+        return self.generate_agent_class(definition)
+    
+    def save_definition_to_db(self, definition: Dict[str, Any]) -> Tuple[Agent, List[Tool], List[Capability]]:
+        """
+        Save an agent definition to the database.
+        
+        Args:
+            definition: The agent definition
+            
+        Returns:
+            A tuple containing the agent, tools, and capabilities
+        """
+        # Validate the definition
+        self.validate_definition(definition)
+        
+        # Convert the JSON definition to database records
+        return AgentRepository.json_to_db(definition)
+    
+    def load_definition_from_db(self, agent_id: int) -> Dict[str, Any]:
+        """
+        Load an agent definition from the database.
+        
+        Args:
+            agent_id: The ID of the agent in the database
+            
+        Returns:
+            The agent definition as a dictionary
+        """
+        # Get the agent from the database
+        agent = AgentRepository.get_agent(agent_id)
+        if not agent:
+            raise ValueError(f"Agent with ID {agent_id} not found in the database")
+        
+        # Convert the database record to a JSON definition
+        return AgentRepository.db_to_json(agent)
+    
     def register_agent_from_definition(
         self, 
-        definition: Dict[str, Any], 
+        definition: Union[Dict[str, Any], int], 
         model: Any,
         sandbox: bool = True
     ) -> Any:
@@ -306,15 +372,19 @@ def register_{name}_agent(model: LanguageModelLike) -> {name.capitalize().replac
         Register an agent from a definition.
         
         Args:
-            definition: The agent definition
+            definition: The agent definition or agent ID in the database
             model: The language model to use for the agent
             sandbox: Whether to register the agent in a sandbox environment
             
         Returns:
             The registered agent
         """
-        # Validate the definition
-        self.validate_definition(definition)
+        # If definition is an integer, load it from the database
+        if isinstance(definition, int):
+            definition = self.load_definition_from_db(definition)
+        else:
+            # Validate the definition
+            self.validate_definition(definition)
         
         # Extract agent information
         agent_name = definition["agent"]["name"]
@@ -364,6 +434,28 @@ def register_{name}_agent(model: LanguageModelLike) -> {name.capitalize().replac
             logger.info(f"Successfully registered agent '{agent_name}' in production")
             
             return agent
+    
+    def write_agent_to_file_from_db(self, agent_id: int, output_dir: str = None) -> str:
+        """
+        Write an agent class to a Python file from a database record.
+        
+        Args:
+            agent_id: The ID of the agent in the database
+            output_dir: Directory to write the file to (default: current directory)
+            
+        Returns:
+            Path to the generated file
+        """
+        # Get the agent from the database
+        agent = AgentRepository.get_agent(agent_id)
+        if not agent:
+            raise ValueError(f"Agent with ID {agent_id} not found in the database")
+        
+        # Convert the database record to a JSON definition
+        definition = AgentRepository.db_to_json(agent)
+        
+        # Write the agent to a file
+        return self.write_agent_to_file(definition, output_dir)
 
 
 # Example usage

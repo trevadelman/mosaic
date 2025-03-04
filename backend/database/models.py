@@ -4,7 +4,7 @@ Database Models for MOSAIC
 This module defines the SQLAlchemy models for the MOSAIC database.
 """
 
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, LargeBinary
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, LargeBinary, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 import datetime
@@ -105,3 +105,80 @@ class MessageLog(Base):
     
     def __repr__(self):
         return f"<MessageLog(id={self.id}, message_id='{self.message_id}')>"
+
+
+class Agent(Base):
+    """
+    Model for an agent definition.
+    
+    An agent is a specialized AI assistant with specific capabilities and tools.
+    """
+    __tablename__ = "agents"
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), nullable=False, unique=True, index=True)
+    type = Column(String(20), nullable=False)  # "Utility", "Specialized", "Supervisor"
+    description = Column(Text, nullable=False)
+    icon = Column(String(10), nullable=True)  # Emoji icon
+    system_prompt = Column(Text, nullable=False)
+    meta_data = Column(JSON, nullable=True)  # version, author, created, updated, tags
+    is_deleted = Column(Boolean, default=False)  # Soft delete
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    
+    # Relationships
+    tools = relationship("Tool", back_populates="agent", cascade="all, delete-orphan")
+    capabilities = relationship("Capability", back_populates="agent", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"<Agent(id={self.id}, name='{self.name}', type='{self.type}')>"
+
+
+class Tool(Base):
+    """
+    Model for a tool available to an agent.
+    
+    A tool is a function that an agent can use to perform a specific task.
+    """
+    __tablename__ = "tools"
+    
+    id = Column(Integer, primary_key=True)
+    agent_id = Column(Integer, ForeignKey("agents.id"), nullable=False)
+    name = Column(String(50), nullable=False)
+    description = Column(Text, nullable=False)
+    parameters = Column(JSON, nullable=False)  # Array of parameter objects
+    returns = Column(JSON, nullable=False)  # Type and description
+    implementation_code = Column(Text, nullable=False)
+    dependencies = Column(JSON, nullable=True)  # Array of package names
+    is_deleted = Column(Boolean, default=False)  # Soft delete
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    
+    # Relationships
+    agent = relationship("Agent", back_populates="tools")
+    
+    def __repr__(self):
+        return f"<Tool(id={self.id}, name='{self.name}', agent_id={self.agent_id})>"
+
+
+class Capability(Base):
+    """
+    Model for a capability of an agent.
+    
+    A capability is a high-level description of what an agent can do.
+    """
+    __tablename__ = "capabilities"
+    
+    id = Column(Integer, primary_key=True)
+    agent_id = Column(Integer, ForeignKey("agents.id"), nullable=False)
+    name = Column(String(50), nullable=False)
+    description = Column(Text, nullable=True)
+    is_deleted = Column(Boolean, default=False)  # Soft delete
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    
+    # Relationships
+    agent = relationship("Agent", back_populates="capabilities")
+    
+    def __repr__(self):
+        return f"<Capability(id={self.id}, name='{self.name}', agent_id={self.agent_id})>"
