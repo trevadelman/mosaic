@@ -9,6 +9,7 @@ python-multipart
 httpx
 requests
 websocket-client
+jsonschema
 
 # LLM and agent packages
 openai

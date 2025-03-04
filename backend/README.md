@@ -7,10 +7,20 @@ This directory contains the backend components of the MOSAIC system, including t
 The MOSAIC backend consists of several key components:
 
 1. **FastAPI Application**: Provides REST API endpoints and WebSocket connections for the frontend
-2. **Agent System**: Implements the agent framework, specialized agents, and supervisor system
-   - **Dynamic Agent Discovery**: Automatically discovers and registers agents
+2. **Agent System**: Implements the agent framework, regular agents, and supervisor agents
+   - **Dynamic Agent Discovery**: Automatically discovers and registers both regular agents and supervisors
    - **API Endpoint Generation**: Dynamically generates API endpoints for agents
 3. **Database Models**: Defines the data models for storing queries, responses, and agent configurations
+
+### Agent System Directory Structure
+
+The agent system is organized into the following directories:
+
+- **agents/base.py**: Contains the base agent framework and agent registry
+- **agents/regular/**: Contains regular (specialized) agents
+- **agents/supervisors/**: Contains supervisor agents that orchestrate regular agents
+- **agents/sandbox/**: Contains sandbox environment for testing new agents
+- **agents/templates/**: Contains templates for creating new agents
 
 ## How to Test the System
 
@@ -47,7 +57,7 @@ The simplest way to test the system is to run the calculator agent test script:
 
 ```bash
 cd /Users/trevoradelman/Documents/devStuff/langChainDev/swarms
-python -m mosaic.backend.test_calculator
+python -m mosaic.backend.tests.test_calculator
 ```
 
 This will start an interactive session where you can test the calculator agent's capabilities by entering mathematical expressions.

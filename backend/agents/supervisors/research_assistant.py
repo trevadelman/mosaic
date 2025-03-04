@@ -1,9 +1,9 @@
 """
-Supervisor Agent Module for MOSAIC
+Research Assistant Agent Module for MOSAIC
 
-This module defines supervisor agents that can orchestrate other agents.
-It provides examples of how to create supervisors that can leverage specialized agents
-for tasks like mathematical calculations and research.
+This module defines research assistant agents that can orchestrate other specialized agents.
+It provides examples of how to create research assistants that can leverage specialized agents
+for tasks like web search, browser interaction, data processing, and literature research.
 """
 
 import logging
@@ -20,7 +20,7 @@ except ImportError:
     from backend.agents.base import agent_registry
 
 # Configure logging
-logger = logging.getLogger("mosaic.agents.supervisor")
+logger = logging.getLogger("mosaic.agents.research_assistant")
 
 def create_calculator_supervisor(
     model: LanguageModelLike,
@@ -42,10 +42,10 @@ def create_calculator_supervisor(
     # Make sure the calculator agent is registered
     try:
         # Try importing with the full package path (for local development)
-        from mosaic.backend.agents.calculator import register_calculator_agent
+        from mosaic.backend.agents.regular.calculator import register_calculator_agent
     except ImportError:
         # Fall back to relative import (for Docker environment)
-        from backend.agents.calculator import register_calculator_agent
+        from backend.agents.regular.calculator import register_calculator_agent
     
     calculator = agent_registry.get("calculator")
     if calculator is None:
@@ -98,16 +98,16 @@ def create_research_supervisor(
     # Make sure all required agents are registered
     try:
         # Try importing with the full package path (for local development)
-        from mosaic.backend.agents.web_search import register_web_search_agent
-        from mosaic.backend.agents.browser_interaction import register_browser_interaction_agent
-        from mosaic.backend.agents.data_processing import register_data_processing_agent
-        from mosaic.backend.agents.literature import register_literature_agent
+        from mosaic.backend.agents.regular.web_search import register_web_search_agent
+        from mosaic.backend.agents.regular.browser_interaction import register_browser_interaction_agent
+        from mosaic.backend.agents.regular.data_processing import register_data_processing_agent
+        from mosaic.backend.agents.regular.literature import register_literature_agent
     except ImportError:
         # Fall back to relative import (for Docker environment)
-        from backend.agents.web_search import register_web_search_agent
-        from backend.agents.browser_interaction import register_browser_interaction_agent
-        from backend.agents.data_processing import register_data_processing_agent
-        from backend.agents.literature import register_literature_agent
+        from backend.agents.regular.web_search import register_web_search_agent
+        from backend.agents.regular.browser_interaction import register_browser_interaction_agent
+        from backend.agents.regular.data_processing import register_data_processing_agent
+        from backend.agents.regular.literature import register_literature_agent
     
     # Register agents if they don't exist
     web_search = agent_registry.get("web_search")

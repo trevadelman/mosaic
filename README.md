@@ -39,14 +39,20 @@ MOSAIC is a production-ready system for creating, managing, and interacting with
 - **Next.js Frontend**: Modern, responsive UI with shadcn components
 - **FastAPI Backend**: High-performance Python API with WebSocket support
 - **Agent Framework**: Flexible, extensible agent system built on LangChain and LangGraph
-- **Supervisor System**: Orchestrate multiple agents to solve complex problems
-- **Specialized Agents**:
+- **Regular Agents**:
   - **Calculator Agent**: Performs mathematical operations
   - **Web Search Agent**: Searches the web and retrieves webpage content
   - **Browser Interaction Agent**: Handles JavaScript-heavy websites
   - **Data Processing Agent**: Extracts and normalizes information
   - **Literature Agent**: Searches for academic papers and articles
-- **Research Supervisor**: Orchestrates multiple agents for comprehensive research tasks
+  - **Safety Agent**: Validates agent actions for safety
+  - **Writer Agent**: Handles file operations
+  - **Agent Creator Agent**: Creates and deploys new agents
+- **Supervisor Agents**:
+  - **Calculator Supervisor**: Orchestrates the calculator agent
+  - **Research Supervisor**: Orchestrates multiple agents for comprehensive research tasks
+  - **Multi-Agent Supervisor**: Generic supervisor that can orchestrate any combination of agents
+- **Dynamic Agent Discovery**: Automatically discovers and registers both regular agents and supervisors
 - **Docker Containerization**: Secure, isolated environments for development and deployment
 
 ## Getting Started
@@ -82,7 +88,7 @@ MOSAIC is a production-ready system for creating, managing, and interacting with
 The simplest way to test the agent system is to run the calculator agent test script:
 
 ```bash
-python -m mosaic.backend.test_calculator
+python -m mosaic.backend.tests.test_calculator
 ```
 
 This will start an interactive session where you can test the calculator agent's capabilities.
@@ -92,7 +98,7 @@ This will start an interactive session where you can test the calculator agent's
 To test the more advanced research supervisor that orchestrates multiple agents:
 
 ```bash
-python -m mosaic.backend.test_research_supervisor
+python -m mosaic.backend.tests.test_research_supervisor
 ```
 
 This will start an interactive session where you can test the research supervisor's capabilities, including:
@@ -189,7 +195,12 @@ mosaic/
 ├── backend/        # FastAPI backend application
 │   ├── app/        # FastAPI application
 │   ├── agents/     # Agent system
-│   └── test_*.py   # Test scripts
+│   │   ├── base.py           # Base agent framework
+│   │   ├── regular/          # Regular (specialized) agents
+│   │   ├── supervisors/      # Supervisor agents
+│   │   ├── sandbox/          # Sandbox environment for testing
+│   │   └── templates/        # Templates for creating new agents
+│   └── tests/      # Test scripts
 ├── database/       # SQLite database files
 ├── setup.py        # Package setup file
 └── ROADMAP.md      # Development roadmap

@@ -23,7 +23,7 @@ logger = logging.getLogger("mosaic.agent_creator_api")
 # Import the agent creator and generator
 try:
     # Try importing with the full package path (for local development)
-    from mosaic.backend.agents.agent_creator import (
+    from mosaic.backend.agents.regular.agent_creator import (
         create_agent_template,
         add_tool_to_template,
         validate_agent_template,
@@ -34,7 +34,7 @@ try:
     from mosaic.backend.agents.base import agent_registry
 except ImportError:
     # Fall back to relative import (for Docker environment)
-    from backend.agents.agent_creator import (
+    from backend.agents.regular.agent_creator import (
         create_agent_template,
         add_tool_to_template,
         validate_agent_template,

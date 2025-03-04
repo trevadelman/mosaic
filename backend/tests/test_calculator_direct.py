@@ -1,8 +1,7 @@
 """
-Test script for the calculator agent and supervisor.
+Direct test script for the calculator agent.
 
-This script demonstrates how to use the calculator agent and supervisor
-to perform basic mathematical operations.
+This script tests the calculator agent directly without using the supervisor.
 """
 
 import os
@@ -10,10 +9,12 @@ import logging
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
-from mosaic.backend.agents import (
-    register_calculator_agent,
-    create_calculator_supervisor
-)
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.agents.regular.calculator import register_calculator_agent
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.agents.regular.calculator import register_calculator_agent
 
 # Configure logging
 logging.basicConfig(
@@ -21,13 +22,13 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     datefmt="%H:%M:%S",
 )
-logger = logging.getLogger("mosaic.test_calculator")
+logger = logging.getLogger("mosaic.test_calculator_direct")
 
 # Load environment variables
 load_dotenv()
 
 def main():
-    """Run the calculator agent test."""
+    """Run the direct calculator agent test."""
     # Check if the OpenAI API key is set
     if not os.getenv("OPENAI_API_KEY"):
         logger.error("Please set your OPENAI_API_KEY in the .env file")
@@ -37,24 +38,24 @@ def main():
     logger.info("Initializing language model")
     model = ChatOpenAI(model="gpt-4o-mini")
     
-    # Create the calculator supervisor
-    logger.info("Creating calculator supervisor")
-    supervisor = create_calculator_supervisor(model)
+    # Create the calculator agent
+    logger.info("Creating calculator agent")
+    calculator = register_calculator_agent(model)
+    
+    # Create the agent
+    agent = calculator.create()
     
     # Initialize the conversation state
     state = {"messages": []}
     
-    print("\nCalculator Agent Test")
-    print("--------------------")
-    print("This test demonstrates how to use the calculator agent and supervisor")
-    print("to perform basic mathematical operations.")
+    print("\nDirect Calculator Agent Test")
+    print("---------------------------")
+    print("This test directly uses the calculator agent without a supervisor.")
     print("\nExample queries:")
-    print("- 'What is 123 + 456?'")
-    print("- 'Calculate 15 * 7 - 3'")
-    print("- 'What is the square root of 144?'")
-    print("- 'Solve (10 + 5) * 3 / 2'")
+    print("- 'What is 5 + 5?'")
+    print("- 'Calculate 15 * 7'")
     print("\nType 'exit' to quit.")
-    print("--------------------\n")
+    print("---------------------------\n")
     
     while True:
         # Get user input
@@ -66,9 +67,9 @@ def main():
         user_message = {"role": "user", "content": user_input}
         state["messages"].append(user_message)
         
-        # Invoke the supervisor
+        # Invoke the agent
         logger.info(f"Processing query: {user_input}")
-        result = supervisor.invoke(state)
+        result = agent.invoke(state)
         
         # Update the state with the result
         state = result

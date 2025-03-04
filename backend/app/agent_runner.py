@@ -20,10 +20,14 @@ logging.basicConfig(
 logger = logging.getLogger("mosaic.agent_runner")
 
 # Import the agent discovery module
-from app.agent_discovery import discover_and_register_agents
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.app.agent_discovery import discover_and_register_agents
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.app.agent_discovery import discover_and_register_agents
 
-# Import specific agents that need special handling
-from backend.agents import create_calculator_supervisor
+# No need to import specific agents anymore, they will be discovered automatically
 
 # Load environment variables
 load_dotenv()
@@ -44,15 +48,10 @@ def initialize_agents():
     logger.info("Initializing language model")
     model = ChatOpenAI(model="gpt-4o-mini")
     
-    # Discover and register all agents
-    logger.info("Discovering and registering agents")
+    # Discover and register all agents and supervisors
+    logger.info("Discovering and registering agents and supervisors")
     discovered_agents = discover_and_register_agents(model)
     initialized_agents.update(discovered_agents)
-    
-    # Create the calculator supervisor (special case)
-    logger.info("Creating calculator supervisor")
-    supervisor = create_calculator_supervisor(model)
-    initialized_agents["research_supervisor"] = supervisor
     
     logger.info(f"Initialized {len(initialized_agents)} agents: {', '.join(initialized_agents.keys())}")
     

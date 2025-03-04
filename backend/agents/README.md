@@ -2,6 +2,16 @@
 
 This directory contains the agent system for the MOSAIC platform. The agent system is built on top of LangChain and LangGraph, providing a flexible and extensible framework for creating and orchestrating intelligent agents.
 
+## Directory Structure
+
+The agent system is organized into the following directories:
+
+- **base.py**: Contains the base agent framework and agent registry
+- **regular/**: Contains regular (specialized) agents
+- **supervisors/**: Contains supervisor agents that orchestrate regular agents
+- **sandbox/**: Contains sandbox environment for testing new agents
+- **templates/**: Contains templates for creating new agents
+
 ## Architecture
 
 The agent system follows a modular architecture with the following components:
@@ -13,12 +23,12 @@ The base agent framework provides the foundation for creating specialized agents
 - **BaseAgent**: An abstract base class that all agents inherit from
 - **AgentRegistry**: A singleton registry for managing agents
 - **Tool Utilities**: Utilities for creating and managing agent tools
-- **Dynamic Discovery**: Automatic discovery and registration of agents
+- **Dynamic Discovery**: Automatic discovery and registration of agents and supervisors
 - **API Endpoint Generation**: Dynamic generation of API endpoints for agents
 
-### Specialized Agents
+### Regular Agents
 
-Specialized agents are built on top of the base agent framework and provide specific capabilities:
+Regular agents (in the `regular/` directory) are built on top of the base agent framework and provide specific capabilities:
 
 - **CalculatorAgent**: Performs basic mathematical operations
 - **WebSearchAgent**: Searches the web and retrieves webpage content
@@ -27,14 +37,15 @@ Specialized agents are built on top of the base agent framework and provide spec
 - **LiteratureAgent**: Searches for academic papers and articles
 - **SafetyAgent**: Validates agent actions for safety
 - **WriterAgent**: Handles file operations
+- **AgentCreatorAgent**: Creates and deploys new agents
 
-### Supervisor System
+### Supervisor Agents
 
-The supervisor system orchestrates multiple agents to solve complex problems:
+Supervisor agents (in the `supervisors/` directory) orchestrate multiple regular agents to solve complex problems:
 
 - **Calculator Supervisor**: Orchestrates the calculator agent to solve mathematical problems
 - **Research Supervisor**: Orchestrates web search, browser interaction, data processing, and literature agents for comprehensive research tasks
-- **Multi-Agent Supervisor**: Generic supervisor that can orchestrate any combination of specialized agents
+- **Multi-Agent Supervisor**: Generic supervisor that can orchestrate any combination of regular agents
 
 ## Usage
 
@@ -87,10 +98,10 @@ Each agent includes a test script that demonstrates its capabilities:
 
 ```bash
 # Test the calculator agent
-python -m mosaic.backend.test_calculator
+python -m mosaic.backend.tests.test_calculator
 
 # Test the research supervisor (orchestrates multiple agents)
-python -m mosaic.backend.test_research_supervisor
+python -m mosaic.backend.tests.test_research_supervisor
 ```
 
 ## Adding New Tools

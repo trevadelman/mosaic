@@ -19,15 +19,15 @@ from pathlib import Path
 
 try:
     # Try importing with the full package path (for local development)
-    from mosaic.backend.agents.agent_creator import AgentCreatorAgent
+    from mosaic.backend.agents.regular.agent_creator import AgentCreatorAgent
 except ImportError:
     # Fall back to relative import (for Docker environment)
-    from backend.agents.agent_creator import AgentCreatorAgent
+    from backend.agents.regular.agent_creator import AgentCreatorAgent
 
 # Import the tool functions directly
 try:
     # Try importing with the full package path (for local development)
-    from mosaic.backend.agents.agent_creator import (
+    from mosaic.backend.agents.regular.agent_creator import (
         create_agent_template,
         add_tool_to_template,
         validate_agent_template,
@@ -36,7 +36,7 @@ try:
     )
 except ImportError:
     # Fall back to relative import (for Docker environment)
-    from backend.agents.agent_creator import (
+    from backend.agents.regular.agent_creator import (
         create_agent_template,
         add_tool_to_template,
         validate_agent_template,

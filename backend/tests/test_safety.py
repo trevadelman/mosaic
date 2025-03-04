@@ -13,12 +13,10 @@ from langchain_openai import ChatOpenAI
 
 try:
     # Try importing with the full package path (for local development)
-    from mosaic.backend.agents import register_safety_agent
-    from mosaic.backend.agents.safety import validate_content_tool, approve_operation_tool
+    from mosaic.backend.agents.regular.safety import register_safety_agent, validate_content_tool, approve_operation_tool
 except ImportError:
     # Fall back to relative import (for Docker environment)
-    from backend.agents import register_safety_agent
-    from backend.agents.safety import validate_content_tool, approve_operation_tool
+    from backend.agents.regular.safety import register_safety_agent, validate_content_tool, approve_operation_tool
 
 # Configure logging
 logging.basicConfig(
@@ -280,7 +278,12 @@ def test_package_installation():
     ]
     
     # Import the package installation check function
-    from mosaic.backend.agents.safety import _check_package_installation
+    try:
+        # Try importing with the full package path (for local development)
+        from mosaic.backend.agents.regular.safety import _check_package_installation
+    except ImportError:
+        # Fall back to relative import (for Docker environment)
+        from backend.agents.regular.safety import _check_package_installation
     
     for test_case in test_cases:
         print(f"\n[Test] {test_case['name']}")

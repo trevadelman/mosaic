@@ -383,6 +383,9 @@ class AgentCreatorAgent(BaseAgent):
         tools: List[BaseTool] = None,
         prompt: str = None,
         description: str = None,
+        type: str = "Utility",
+        capabilities: List[str] = None,
+        icon: str = "🛠️",
     ):
         """
         Initialize a new agent creator agent.
@@ -393,6 +396,9 @@ class AgentCreatorAgent(BaseAgent):
             tools: Optional list of additional tools
             prompt: Optional system prompt for the agent
             description: Optional description of the agent
+            type: The type of agent (default: "Utility")
+            capabilities: List of agent capabilities
+            icon: Emoji icon for the agent (default: "🛠️")
         """
         # Define the agent's tools
         agent_tools = [
@@ -407,12 +413,19 @@ class AgentCreatorAgent(BaseAgent):
         # Combine with any additional tools
         all_tools = agent_tools + (tools or [])
         
+        # Default capabilities if none provided
+        if capabilities is None:
+            capabilities = ["Agent Creation", "Template Management", "Code Generation"]
+        
         super().__init__(
             name=name,
             model=model,
             tools=all_tools,
             prompt=prompt,
-            description=description or "Agent for creating new agents based on natural language descriptions"
+            description=description or "Agent for creating new agents based on natural language descriptions",
+            type=type,
+            capabilities=capabilities,
+            icon=icon
         )
         
         logger.info(f"Initialized agent creator agent with {len(all_tools)} tools")

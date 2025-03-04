@@ -18,11 +18,11 @@ from langchain_core.tools import BaseTool, tool
 try:
     # Try importing with the full package path (for local development)
     from mosaic.backend.agents.base import BaseAgent, agent_registry
-    from mosaic.backend.agents.safety import validate_content_tool
+    from mosaic.backend.agents.regular.safety import validate_content_tool
 except ImportError:
     # Fall back to relative import (for Docker environment)
     from backend.agents.base import BaseAgent, agent_registry
-    from backend.agents.safety import validate_content_tool
+    from backend.agents.regular.safety import validate_content_tool
 
 # Configure logging
 logger = logging.getLogger("mosaic.agents.writer")

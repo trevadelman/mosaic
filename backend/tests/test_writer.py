@@ -13,12 +13,10 @@ from langchain_openai import ChatOpenAI
 
 try:
     # Try importing with the full package path (for local development)
-    from mosaic.backend.agents import register_writer_agent
-    from mosaic.backend.agents.writer import read_file_tool, write_file_tool, list_files_tool
+    from mosaic.backend.agents.writer import register_writer_agent, read_file_tool, write_file_tool, list_files_tool
 except ImportError:
     # Fall back to relative import (for Docker environment)
-    from backend.agents import register_writer_agent
-    from backend.agents.writer import read_file_tool, write_file_tool, list_files_tool
+    from backend.agents.writer import register_writer_agent, read_file_tool, write_file_tool, list_files_tool
 
 # Configure logging
 logging.basicConfig(

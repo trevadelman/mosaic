@@ -52,10 +52,10 @@ def main():
     # Import the research supervisor
     try:
         # Try importing with the full package path (for local development)
-        from mosaic.backend.agents.supervisor import create_research_supervisor
+        from mosaic.backend.agents.supervisors.research_assistant import create_research_supervisor
     except ImportError:
         # Fall back to relative import (for Docker environment)
-        from backend.agents.supervisor import create_research_supervisor
+        from backend.agents.supervisors.research_assistant import create_research_supervisor
     
     # Create the research supervisor
     logger.info("Creating research supervisor...")

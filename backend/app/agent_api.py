@@ -30,8 +30,23 @@ except ImportError:
     # Fall back to relative import (for Docker environment)
     from backend.agents.base import BaseAgent, agent_registry
 
+# Import the agent modules
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.agents.regular import calculator, web_search, browser_interaction, data_processing, literature, agent_creator
+    from mosaic.backend.agents.supervisors import research_assistant
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.agents.regular import calculator, web_search, browser_interaction, data_processing, literature, agent_creator
+    from backend.agents.supervisors import research_assistant
+
 # Import the agent runner module to get initialized agents
-from app.agent_runner import get_initialized_agents
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.app.agent_runner import get_initialized_agents
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.app.agent_runner import get_initialized_agents
 
 # Models for agents and messages
 class Agent(BaseModel):
@@ -192,73 +207,32 @@ class AgentAPI:
                 "capabilities": [],
                 "icon": "👨‍💼"
             }
+            
+            # Special case for research_supervisor
+            if agent_id == "research_supervisor":
+                metadata.update({
+                    "name": "Research Assistant",
+                    "description": "Research assistant that can search the web, browse websites, process data, and find academic papers",
+                    "capabilities": ["Web Search", "Content Retrieval", "Data Processing", "Academic Research"],
+                    "icon": "🔍"
+                })
         else:
             # For regular agents, use agent attributes
             metadata = {
                 "id": agent.name,
                 "name": agent.name.capitalize(),
                 "description": agent.description,
-                "type": "Utility",
-                "capabilities": [],
-                "icon": "🤖"
+                "type": getattr(agent, "type", "Utility"),
+                "capabilities": getattr(agent, "capabilities", []),
+                "icon": getattr(agent, "icon", "🤖")
             }
-        
-        # Special cases for known agent types
-        if agent_id == "calculator":
-            metadata.update({
-                "capabilities": ["Basic Math", "Equations", "Unit Conversion"],
-                "icon": "🧮"
-            })
-        elif agent_id == "research_supervisor":
-            metadata.update({
-                "name": "Research Assistant",
-                "description": "Research assistant that can search the web, browse websites, process data, and find academic papers",
-                "type": "Supervisor",
-                "capabilities": ["Web Search", "Content Retrieval", "Data Processing", "Academic Research"],
-                "icon": "🔍"
-            })
-        elif agent_id == "web_search":
-            metadata.update({
-                "name": "Web Search",
-                "type": "Specialized",
-                "capabilities": ["Web Search", "Content Retrieval"],
-                "icon": "🌐"
-            })
-        elif agent_id == "browser_interaction":
-            metadata.update({
-                "name": "Browser Interaction",
-                "type": "Specialized",
-                "capabilities": ["JavaScript Handling", "Dynamic Content"],
-                "icon": "🖥️"
-            })
-        elif agent_id == "data_processing":
-            metadata.update({
-                "name": "Data Processing",
-                "type": "Specialized",
-                "capabilities": ["Data Extraction", "Data Normalization"],
-                "icon": "📊"
-            })
-        elif agent_id == "literature":
-            metadata.update({
-                "name": "Literature",
-                "type": "Specialized",
-                "capabilities": ["Academic Research", "Paper Analysis"],
-                "icon": "📚"
-            })
-        elif agent_id == "agent_creator":
-            metadata.update({
-                "name": "Agent Creator",
-                "type": "Utility",
-                "capabilities": ["Agent Creation", "Template Management", "Code Generation"],
-                "icon": "🛠️"
-            })
-        
-        # Extract capabilities from agent tools
-        if not metadata["capabilities"] and hasattr(agent, "tools"):
-            capabilities = []
-            for tool in agent.tools:
-                capabilities.append(tool.name.replace("_", " ").title())
-            metadata["capabilities"] = capabilities
+            
+            # Extract capabilities from agent tools if none provided
+            if not metadata["capabilities"] and hasattr(agent, "tools"):
+                capabilities = []
+                for tool in agent.tools:
+                    capabilities.append(tool.name.replace("_", " ").title())
+                metadata["capabilities"] = capabilities
         
         return metadata
     

@@ -153,6 +153,9 @@ class WebSearchAgent(BaseAgent):
         tools: List[BaseTool] = None,
         prompt: str = None,
         description: str = None,
+        type: str = "Specialized",
+        capabilities: List[str] = None,
+        icon: str = "🌐",
     ):
         """
         Initialize a new web search agent.
@@ -163,6 +166,9 @@ class WebSearchAgent(BaseAgent):
             tools: Optional list of additional tools
             prompt: Optional system prompt for the agent
             description: Optional description of the agent
+            type: The type of agent (default: "Specialized")
+            capabilities: List of agent capabilities
+            icon: Emoji icon for the agent (default: "🌐")
         """
         # Create the web search tools
         web_search_tools = [
@@ -173,12 +179,19 @@ class WebSearchAgent(BaseAgent):
         # Combine with any additional tools
         all_tools = web_search_tools + (tools or [])
         
+        # Default capabilities if none provided
+        if capabilities is None:
+            capabilities = ["Web Search", "Content Retrieval"]
+        
         super().__init__(
             name=name,
             model=model,
             tools=all_tools,
             prompt=prompt,
-            description=description or "Web Search Agent for searching the web and fetching webpage content"
+            description=description or "Web Search Agent for searching the web and fetching webpage content",
+            type=type,
+            capabilities=capabilities,
+            icon=icon
         )
         
         logger.info(f"Initialized web search agent with {len(all_tools)} tools")

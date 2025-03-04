@@ -45,16 +45,30 @@ class AgentDiscovery:
         self.agents_package = agents_package
         self.discovered_agents: Dict[str, Dict[str, Any]] = {}
         self.registration_functions: Dict[str, Callable] = {}
+        self.supervisor_functions: Dict[str, Callable] = {}
         
         # Try to import the agents package
         try:
             self.agents_module = importlib.import_module(agents_package)
             self.agents_path = os.path.dirname(self.agents_module.__file__)
             logger.info(f"Agents module found at: {self.agents_path}")
+            
+            # Define paths for regular and supervisor agents
+            self.regular_agents_path = os.path.join(self.agents_path, "regular")
+            self.supervisors_path = os.path.join(self.agents_path, "supervisors")
+            
+            # Create the directories if they don't exist
+            os.makedirs(self.regular_agents_path, exist_ok=True)
+            os.makedirs(self.supervisors_path, exist_ok=True)
+            
+            logger.info(f"Regular agents path: {self.regular_agents_path}")
+            logger.info(f"Supervisors path: {self.supervisors_path}")
         except ImportError:
             logger.error(f"Could not import agents package: {agents_package}")
             self.agents_module = None
             self.agents_path = None
+            self.regular_agents_path = None
+            self.supervisors_path = None
     
     def discover_agents(self) -> Dict[str, Dict[str, Any]]:
         """
@@ -69,50 +83,19 @@ class AgentDiscovery:
         
         logger.info(f"Discovering agents in package: {self.agents_package}")
         
-        # Walk through the agents package and find all Python modules
-        for _, name, is_pkg in pkgutil.iter_modules([self.agents_path]):
-            # Skip __pycache__ and other special directories
-            if name.startswith("__") or is_pkg:
-                continue
-            
-            # Skip the base module
-            if name == "base":
-                continue
-            
-            # Try to import the module
-            module_name = f"{self.agents_package}.{name}"
-            try:
-                module = importlib.import_module(module_name)
-                logger.info(f"Examining module: {module_name}")
-                
-                # Look for agent classes that inherit from BaseAgent
-                agent_classes = self._find_agent_classes(module)
-                
-                # Look for registration functions
-                registration_functions = self._find_registration_functions(module)
-                
-                if agent_classes or registration_functions:
-                    # Extract metadata from the agent classes
-                    metadata = self._extract_agent_metadata(module, agent_classes)
-                    
-                    # Store the discovered agent
-                    self.discovered_agents[name] = {
-                        "module": module,
-                        "classes": agent_classes,
-                        "registration_functions": registration_functions,
-                        "metadata": metadata
-                    }
-                    
-                    # Store the registration functions
-                    for func_name, func in registration_functions.items():
-                        self.registration_functions[func_name] = func
-                    
-                    logger.info(f"Discovered agent: {name} with {len(agent_classes)} classes and {len(registration_functions)} registration functions")
-                else:
-                    logger.info(f"No agent classes or registration functions found in module: {module_name}")
-            
-            except ImportError as e:
-                logger.error(f"Error importing module {module_name}: {str(e)}")
+        # Discover regular agents
+        if os.path.exists(self.regular_agents_path):
+            logger.info(f"Discovering regular agents in: {self.regular_agents_path}")
+            self._discover_agents_in_directory(self.regular_agents_path, f"{self.agents_package}.regular")
+        
+        # Discover supervisor agents
+        if os.path.exists(self.supervisors_path):
+            logger.info(f"Discovering supervisor agents in: {self.supervisors_path}")
+            self._discover_agents_in_directory(self.supervisors_path, f"{self.agents_package}.supervisors")
+        
+        # Discover agents in the main agents directory (for backward compatibility)
+        logger.info(f"Discovering agents in main directory: {self.agents_path}")
+        self._discover_agents_in_directory(self.agents_path, self.agents_package, skip_dirs=["regular", "supervisors", "sandbox"])
         
         return self.discovered_agents
     
@@ -159,6 +142,28 @@ class AgentDiscovery:
                 logger.info(f"Found registration function: {name}")
         
         return registration_functions
+    
+    def _find_supervisor_functions(self, module) -> Dict[str, Callable]:
+        """
+        Find all supervisor creation functions in a module.
+        
+        Args:
+            module: The module to search
+            
+        Returns:
+            A dictionary mapping function names to function objects
+        """
+        supervisor_functions = {}
+        
+        for name, obj in inspect.getmembers(module):
+            # Check if it's a function that starts with "create_" and has a model parameter
+            if (inspect.isfunction(obj) and 
+                name.startswith("create_") and 
+                "model" in inspect.signature(obj).parameters):
+                supervisor_functions[name] = obj
+                logger.info(f"Found supervisor function: {name}")
+        
+        return supervisor_functions
     
     def _extract_agent_metadata(self, module, agent_classes: Dict[str, Type[BaseAgent]]) -> Dict[str, Any]:
         """
@@ -277,6 +282,71 @@ class AgentDiscovery:
         # Default icon
         return "🤖"
     
+    def _discover_agents_in_directory(self, directory_path: str, package_prefix: str, skip_dirs: List[str] = None) -> None:
+        """
+        Discover agents in a specific directory.
+        
+        Args:
+            directory_path: The directory path to search
+            package_prefix: The package prefix for importing modules
+            skip_dirs: List of directory names to skip
+        """
+        if skip_dirs is None:
+            skip_dirs = []
+        
+        # Walk through the directory and find all Python modules
+        for _, name, is_pkg in pkgutil.iter_modules([directory_path]):
+            # Skip __pycache__ and other special directories
+            if name.startswith("__") or (is_pkg and name in skip_dirs):
+                continue
+            
+            # Skip the base module
+            if name == "base":
+                continue
+            
+            # Try to import the module
+            module_name = f"{package_prefix}.{name}"
+            try:
+                module = importlib.import_module(module_name)
+                logger.info(f"Examining module: {module_name}")
+                
+                # Look for agent classes that inherit from BaseAgent
+                agent_classes = self._find_agent_classes(module)
+                
+                # Look for registration functions
+                registration_functions = self._find_registration_functions(module)
+                
+                # Look for supervisor functions
+                supervisor_functions = self._find_supervisor_functions(module)
+                
+                if agent_classes or registration_functions or supervisor_functions:
+                    # Extract metadata from the agent classes
+                    metadata = self._extract_agent_metadata(module, agent_classes)
+                    
+                    # Store the discovered agent
+                    self.discovered_agents[name] = {
+                        "module": module,
+                        "classes": agent_classes,
+                        "registration_functions": registration_functions,
+                        "supervisor_functions": supervisor_functions,
+                        "metadata": metadata
+                    }
+                    
+                    # Store the registration functions
+                    for func_name, func in registration_functions.items():
+                        self.registration_functions[func_name] = func
+                    
+                    # Store the supervisor functions
+                    for func_name, func in supervisor_functions.items():
+                        self.supervisor_functions[func_name] = func
+                    
+                    logger.info(f"Discovered agent: {name} with {len(agent_classes)} classes, {len(registration_functions)} registration functions, and {len(supervisor_functions)} supervisor functions")
+                else:
+                    logger.info(f"No agent classes or registration functions found in module: {module_name}")
+            
+            except ImportError as e:
+                logger.error(f"Error importing module {module_name}: {str(e)}")
+    
     def _extract_type(self, agent_class: Type[BaseAgent]) -> str:
         """
         Extract agent type from an agent class.
@@ -345,18 +415,53 @@ class AgentDiscovery:
                 logger.error(f"Error registering agent with function {func_name}: {str(e)}")
         
         return registered_agents
+    
+    def register_supervisors(self, model) -> Dict[str, Any]:
+        """
+        Register all discovered supervisors.
+        
+        Args:
+            model: The language model to use for the supervisors
+            
+        Returns:
+            A dictionary mapping supervisor names to supervisor instances
+        """
+        registered_supervisors = {}
+        
+        logger.info(f"Registering {len(self.supervisor_functions)} supervisors")
+        
+        # Call each supervisor function with the model
+        for func_name, func in self.supervisor_functions.items():
+            try:
+                # Extract supervisor name from function name
+                # e.g., create_calculator_supervisor -> calculator_supervisor
+                supervisor_name = func_name.replace("create_", "")
+                
+                logger.info(f"Creating supervisor with function: {func_name}")
+                supervisor = func(model)
+                
+                if supervisor:
+                    registered_supervisors[supervisor_name] = supervisor
+                    logger.info(f"Successfully created supervisor: {supervisor_name}")
+                else:
+                    logger.warning(f"Supervisor function {func_name} returned None")
+            
+            except Exception as e:
+                logger.error(f"Error creating supervisor with function {func_name}: {str(e)}")
+        
+        return registered_supervisors
 
 
 # Function to discover and register all agents
 def discover_and_register_agents(model) -> Dict[str, Any]:
     """
-    Discover and register all agents.
+    Discover and register all agents and supervisors.
     
     Args:
-        model: The language model to use for the agents
+        model: The language model to use for the agents and supervisors
         
     Returns:
-        A dictionary mapping agent names to agent instances
+        A dictionary mapping agent and supervisor names to their instances
     """
     # Create the agent discovery system
     discovery = AgentDiscovery()
@@ -366,5 +471,11 @@ def discover_and_register_agents(model) -> Dict[str, Any]:
     
     # Register all agents
     registered_agents = discovery.register_agents(model)
+    
+    # Register all supervisors
+    registered_supervisors = discovery.register_supervisors(model)
+    
+    # Combine the registered agents and supervisors
+    registered_agents.update(registered_supervisors)
     
     return registered_agents

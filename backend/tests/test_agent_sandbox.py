@@ -35,7 +35,7 @@ class TestAgentSandboxEnvironment(unittest.TestCase):
         
         # Load the example agent definition
         example_path = os.path.join(
-            os.path.dirname(__file__), 
+            os.path.dirname(os.path.dirname(__file__)), 
             "agents", 
             "example_agent.json"
         )

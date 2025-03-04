@@ -11,10 +11,20 @@ from datetime import datetime
 import json
 
 # Import the agent creator API router
-from app.agent_creator_api import router as agent_creator_router
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.app.agent_creator_api import router as agent_creator_router
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.app.agent_creator_api import router as agent_creator_router
 
 # Import the agent API router
-from app.agent_api import get_agent_api_router
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.app.agent_api import get_agent_api_router
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.app.agent_api import get_agent_api_router
 
 # Configure logging
 logging.basicConfig(
@@ -165,6 +175,14 @@ async def debug_agents():
         "cors_origins": os.getenv("CORS_ORIGINS", "").split(",")
     }
 
+# Import the agent API for metadata extraction
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.app.agent_api import agent_api
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.app.agent_api import agent_api
+
 # Agent routes
 @app.get("/api/agents")
 async def get_agents():
@@ -172,79 +190,12 @@ async def get_agents():
     try:
         initialized_agents = get_initialized_agents()
         agents = []
+        
         for agent_id, agent in initialized_agents.items():
-            if agent_id == "calculator":
-                agents.append({
-                    "id": agent.name,
-                    "name": agent.name.capitalize(),
-                    "description": agent.description,
-                    "type": "Utility",
-                    "capabilities": ["Basic Math", "Equations", "Unit Conversion"],
-                    "icon": "🧮"
-                })
-            elif agent_id == "research_supervisor":
-                agents.append({
-                    "id": agent_id,
-                    "name": "Research Assistant",
-                    "description": "Research assistant that can search the web, browse websites, process data, and find academic papers",
-                    "type": "Supervisor",
-                    "capabilities": ["Web Search", "Content Retrieval", "Data Processing", "Academic Research"],
-                    "icon": "🔍"
-                })
-            elif agent_id == "web_search":
-                agents.append({
-                    "id": agent.name,
-                    "name": "Web Search",
-                    "description": agent.description,
-                    "type": "Specialized",
-                    "capabilities": ["Web Search", "Content Retrieval"],
-                    "icon": "🌐"
-                })
-            elif agent_id == "browser_interaction":
-                agents.append({
-                    "id": agent.name,
-                    "name": "Browser Interaction",
-                    "description": agent.description,
-                    "type": "Specialized",
-                    "capabilities": ["JavaScript Handling", "Dynamic Content"],
-                    "icon": "🖥️"
-                })
-            elif agent_id == "data_processing":
-                agents.append({
-                    "id": agent.name,
-                    "name": "Data Processing",
-                    "description": agent.description,
-                    "type": "Specialized",
-                    "capabilities": ["Data Extraction", "Data Normalization"],
-                    "icon": "📊"
-                })
-            elif agent_id == "literature":
-                agents.append({
-                    "id": agent.name,
-                    "name": "Literature",
-                    "description": agent.description,
-                    "type": "Specialized",
-                    "capabilities": ["Academic Research", "Paper Analysis"],
-                    "icon": "📚"
-                })
-            elif agent_id == "agent_creator":
-                agents.append({
-                    "id": agent.name,
-                    "name": "Agent Creator",
-                    "description": agent.description,
-                    "type": "Utility",
-                    "capabilities": ["Agent Creation", "Template Management", "Code Generation"],
-                    "icon": "🛠️"
-                })
-            else:
-                agents.append({
-                    "id": agent.name,
-                    "name": agent.name.capitalize(),
-                    "description": agent.description,
-                    "type": "Utility",
-                    "capabilities": [],
-                    "icon": "🤖"
-                })
+            # Extract agent metadata using the agent_api's method
+            metadata = agent_api._extract_agent_metadata(agent_id, agent)
+            agents.append(metadata)
+            
         return agents
     except Exception as e:
         logger.error(f"Error getting agents: {str(e)}")
@@ -255,81 +206,12 @@ async def get_agent(agent_id: str):
     """Get information about a specific agent."""
     initialized_agents = get_initialized_agents()
     agent = initialized_agents.get(agent_id)
+    
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
     
-    if agent_id == "calculator":
-        return {
-            "id": agent.name,
-            "name": agent.name.capitalize(),
-            "description": agent.description,
-            "type": "Utility",
-            "capabilities": ["Basic Math", "Equations", "Unit Conversion"],
-            "icon": "🧮"
-        }
-    elif agent_id == "research_supervisor":
-        return {
-            "id": agent_id,
-            "name": "Research Assistant",
-            "description": "Research assistant that can search the web, browse websites, process data, and find academic papers",
-            "type": "Supervisor",
-            "capabilities": ["Web Search", "Content Retrieval", "Data Processing", "Academic Research"],
-            "icon": "🔍"
-        }
-    elif agent_id == "web_search":
-        return {
-            "id": agent.name,
-            "name": "Web Search",
-            "description": agent.description,
-            "type": "Specialized",
-            "capabilities": ["Web Search", "Content Retrieval"],
-            "icon": "🌐"
-        }
-    elif agent_id == "browser_interaction":
-        return {
-            "id": agent.name,
-            "name": "Browser Interaction",
-            "description": agent.description,
-            "type": "Specialized",
-            "capabilities": ["JavaScript Handling", "Dynamic Content"],
-            "icon": "🖥️"
-        }
-    elif agent_id == "data_processing":
-        return {
-            "id": agent.name,
-            "name": "Data Processing",
-            "description": agent.description,
-            "type": "Specialized",
-            "capabilities": ["Data Extraction", "Data Normalization"],
-            "icon": "📊"
-        }
-    elif agent_id == "literature":
-        return {
-            "id": agent.name,
-            "name": "Literature",
-            "description": agent.description,
-            "type": "Specialized",
-            "capabilities": ["Academic Research", "Paper Analysis"],
-            "icon": "📚"
-        }
-    elif agent_id == "agent_creator":
-        return {
-            "id": agent.name,
-            "name": "Agent Creator",
-            "description": agent.description,
-            "type": "Utility",
-            "capabilities": ["Agent Creation", "Template Management", "Code Generation"],
-            "icon": "🛠️"
-        }
-    else:
-        return {
-            "id": agent.name,
-            "name": agent.name.capitalize(),
-            "description": agent.description,
-            "type": "Utility",
-            "capabilities": [],
-            "icon": "🤖"
-        }
+    # Extract agent metadata using the agent_api's method
+    return agent_api._extract_agent_metadata(agent_id, agent)
 
 # Chat routes
 @app.get("/api/chat/{agent_id}/messages")
@@ -935,7 +817,12 @@ async def simulate_agent_processing(websocket: WebSocket, agent_id: str, content
     })
 
 # Import the agent runner module to get initialized agents
-from app.agent_runner import initialize_agents, get_initialized_agents
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.app.agent_runner import initialize_agents, get_initialized_agents
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.app.agent_runner import initialize_agents, get_initialized_agents
 
 # Initialize the agents on startup
 @app.on_event("startup")

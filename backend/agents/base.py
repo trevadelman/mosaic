@@ -36,6 +36,9 @@ class BaseAgent(ABC):
         tools: List[BaseTool] = None,
         prompt: str = None,
         description: str = None,
+        type: str = "Utility",
+        capabilities: List[str] = None,
+        icon: str = "🤖",
     ):
         """
         Initialize a new agent.
@@ -46,12 +49,18 @@ class BaseAgent(ABC):
             tools: Optional list of tools for the agent to use
             prompt: Optional system prompt for the agent
             description: Optional description of the agent
+            type: The type of agent (e.g., "Utility", "Specialized", "Supervisor")
+            capabilities: List of agent capabilities
+            icon: Emoji icon for the agent
         """
         self.name = name
         self.model = model
         self.tools = tools or []
         self.prompt = prompt or self._get_default_prompt()
         self.description = description or f"{name} Agent"
+        self.type = type
+        self.capabilities = capabilities or []
+        self.icon = icon
         self.agent = None
         
         logger.info(f"Initialized {self.name} agent with {len(self.tools)} tools")
