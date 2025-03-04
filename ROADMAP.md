@@ -221,6 +221,32 @@
     - [x] Test: Supervisor-agent relationship management
     - [x] Test: Migration of existing agents
 
+  - [ ] **6.0.2 LLM-Assisted Agent Creation System**
+    - [ ] Create internal specialized agents for agent creation:
+      - [ ] Agent Designer: Generates agent metadata, capabilities, and system prompts
+      - [ ] Tool Creator: Designs and implements tools for agents
+      - [ ] Code Generator: Generates Python code for agents and tools
+      - [ ] Agent Validator: Validates agent definitions and implementations
+      - [ ] Database Manager: Handles database operations for storing agent metadata
+    - [ ] Implement Agent Creation Supervisor to orchestrate specialized agents
+    - [ ] Add documentation processing capabilities:
+      - [ ] Swagger/OpenAPI specification parsing for API integration
+      - [ ] Documentation-based tool generation
+      - [ ] Schema extraction from documentation
+    - [ ] Enhance UI with AI assistance:
+      - [ ] Add "Generate Complete Agent" feature using supervisor
+      - [ ] Implement tool generation from natural language descriptions
+      - [ ] Create contextual suggestions based on current state
+      - [ ] Add chat-based creation assistant
+    - [ ] Implement documentation upload and processing:
+      - [ ] Add file upload for API documentation
+      - [ ] Create parsers for different documentation formats
+      - [ ] Integrate documentation with tool creation
+    - [ ] Test: End-to-end agent creation with supervisor
+    - [ ] Test: Tool generation from documentation
+    - [ ] Test: UI integration with AI assistance
+    - [ ] Test: Documentation processing and integration
+
 - [ ] **6.1 Vision Capabilities**
   - [ ] Add image upload functionality to frontend
   - [ ] Create backend endpoints for image handling
