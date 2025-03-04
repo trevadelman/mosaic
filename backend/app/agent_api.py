@@ -252,13 +252,6 @@ class AgentAPI:
                 "capabilities": ["Agent Creation", "Template Management", "Code Generation"],
                 "icon": "🛠️"
             })
-        elif agent_id == "story_writer":
-            metadata.update({
-                "name": "Story Writer",
-                "type": "Utility",
-                "capabilities": ["Story Generation", "Creative Writing", "Character Development"],
-                "icon": "📝"
-            })
         
         # Extract capabilities from agent tools
         if not metadata["capabilities"] and hasattr(agent, "tools"):

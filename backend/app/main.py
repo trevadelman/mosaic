@@ -236,15 +236,6 @@ async def get_agents():
                     "capabilities": ["Agent Creation", "Template Management", "Code Generation"],
                     "icon": "🛠️"
                 })
-            elif agent_id == "story_writer":
-                agents.append({
-                    "id": agent.name,
-                    "name": "Story Writer",
-                    "description": agent.description,
-                    "type": "Utility",
-                    "capabilities": ["Story Generation", "Creative Writing", "Character Development"],
-                    "icon": "📝"
-                })
             else:
                 agents.append({
                     "id": agent.name,
@@ -329,15 +320,6 @@ async def get_agent(agent_id: str):
             "type": "Utility",
             "capabilities": ["Agent Creation", "Template Management", "Code Generation"],
             "icon": "🛠️"
-        }
-    elif agent_id == "story_writer":
-        return {
-            "id": agent.name,
-            "name": "Story Writer",
-            "description": agent.description,
-            "type": "Utility",
-            "capabilities": ["Story Generation", "Creative Writing", "Character Development"],
-            "icon": "📝"
         }
     else:
         return {
