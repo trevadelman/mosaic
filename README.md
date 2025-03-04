@@ -250,11 +250,33 @@ mosaic/
 
 See the [ROADMAP.md](ROADMAP.md) file for the current development status and upcoming features.
 
+## Documentation
+
+### Creating Agents
+
+For detailed instructions on creating new agents, see the [Creating Agents Guide](CREATING_AGENTS.md). This guide covers:
+
+- Different approaches to creating agents (JSON templates, API, Python scripts, UI)
+- Agent structure and schema
+- Best practices for agent design and tool implementation
+- Troubleshooting common issues
+
 ### Component Documentation
 
 - [Backend README](backend/README.md): Documentation for the backend components
+  - API endpoints
+  - Database models
+  - Server configuration
+  
 - [Frontend README](frontend/README.md): Documentation for the frontend components
+  - UI components
+  - State management
+  - Routing
+  
 - [Agents README](backend/agents/README.md): Documentation for the agent system
+  - Agent framework
+  - Tool development
+  - Supervisor system
 
 ## Troubleshooting
 
