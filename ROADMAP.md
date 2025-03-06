@@ -198,7 +198,7 @@
 - [x] **6.0 SQLite Database Integration**
   - [x] Set up SQLite database models
   - [x] Implement database connection management
-  - [ ] Create migration system
+  - [x] Create migration system
   - [x] Update message storage to use database
   - [x] Add conversation persistence
   - [x] Implement conversation reset functionality
@@ -215,84 +215,114 @@
     - [x] Implement CRUD operations for agent metadata
     - [x] Migrate existing agents to database structure
     - [x] Ensure compatibility with existing code generation
-    - [ ] Add versioning for agent definitions
     - [x] Test: Database operations for agent metadata
     - [x] Test: Agent creation and modification through UI
     - [x] Test: Supervisor-agent relationship management
     - [x] Test: Migration of existing agents
 
-  - [ ] **6.0.2 LLM-Assisted Agent Creation System**
-    - [ ] Create internal specialized agents for agent creation:
-      - [ ] Agent Designer: Generates agent metadata, capabilities, and system prompts
-      - [ ] Tool Creator: Designs and implements tools for agents
-      - [ ] Code Generator: Generates Python code for agents and tools
-      - [ ] Agent Validator: Validates agent definitions and implementations
-      - [ ] Database Manager: Handles database operations for storing agent metadata
-    - [ ] Implement Agent Creation Supervisor to orchestrate specialized agents
-    - [ ] Add documentation processing capabilities:
-      - [ ] Swagger/OpenAPI specification parsing for API integration
-      - [ ] Documentation-based tool generation
-      - [ ] Schema extraction from documentation
-    - [ ] Enhance UI with AI assistance:
-      - [ ] Add "Generate Complete Agent" feature using supervisor
-      - [ ] Implement tool generation from natural language descriptions
-      - [ ] Create contextual suggestions based on current state
-      - [ ] Add chat-based creation assistant
-    - [ ] Implement documentation upload and processing:
-      - [ ] Add file upload for API documentation
-      - [ ] Create parsers for different documentation formats
-      - [ ] Integrate documentation with tool creation
-    - [ ] Test: End-to-end agent creation with supervisor
-    - [ ] Test: Tool generation from documentation
-    - [ ] Test: UI integration with AI assistance
-    - [ ] Test: Documentation processing and integration
+ 
 
-- [ ] **6.1 Vision Capabilities**
-  - [ ] Add image upload functionality to frontend
-  - [ ] Create backend endpoints for image handling
-  - [ ] Integrate with vision-capable models
-  - [ ] Update message components to display images
-  - [ ] Implement image processing utilities
-  - [ ] Test: Image upload and display
-  - [ ] Test: Vision model integration
+- [x] **6.1 Vision Capabilities**
+  - [x] Add image upload functionality to frontend
+  - [x] Create backend endpoints for image handling
+  - [x] Integrate with vision-capable models
+  - [x] Update message components to display images
+  - [x] Implement image processing utilities
+  - [x] Test: Image upload and display
+  - [x] Test: Vision model integration
 
-- [ ] **6.2 File Upload Processing**
-  - [ ] Add file upload functionality to frontend
-  - [ ] Create backend endpoints for file handling
-  - [ ] Implement file type detection
-  - [ ] Create processors for different file types:
-    - [ ] XLSX/CSV: Data extraction
-    - [ ] PDF: Text extraction and image conversion
-    - [ ] Other formats as needed
-  - [ ] Update message components to display processed file content
-  - [ ] Test: File upload and processing
-  - [ ] Test: Different file type handling
+- [x] **6.2 File Upload Processing**
+  - [x] Add file upload functionality to frontend
+  - [x] Create backend endpoints for file handling
+  - [x] Implement file type detection
+  - [x] Create specialized file processing agents:
+    - [x] FileProcessingAgent for XLSX/CSV files
+    - [ ] DocumentProcessingAgent for PDF files (planned)
+    - [ ] MediaProcessingAgent for audio/video files (planned)
+  - [x] Implement file processing tools:
+    - [x] Tabular data extraction and formatting
+    - [x] Data summary generation
+    - [x] Basic statistical analysis
+    - [ ] Advanced data visualization generation (planned)
+  - [x] Create file processing supervisor agent:
+    - [x] Design orchestration logic for file processing
+    - [x] Implement file type routing system
+    - [x] Create agent selection based on MIME types
+    - [x] Develop preprocessing pipeline
+  - [x] Integrate with WebSocket handler:
+    - [x] Add preprocessing hooks before LLM processing
+    - [x] Implement file processing status updates
+    - [x] Create agent-to-agent communication for file data
+  - [x] Update message components to display processed file content
+  - [x] Test: File upload and processing
+  - [x] Test: Excel file handling
+  - [x] Test: End-to-end file processing pipeline
 
-## Phase 7: Plugin System
-- [ ] **7.0 Plugin Architecture**
-  - [ ] Create plugin base class
-  - [ ] Implement plugin registry
-  - [ ] Set up hot-reloading
-  - [ ] Test: Plugin loading
-  - [ ] Test: Hot-reload functionality
+## Phase 7: Authentication and User Management
 
-- [ ] **7.1 Agent Plugins**
-  - [ ] Convert calculator to plugin
-  - [ ] Create plugin documentation
-  - [ ] Implement plugin validation
-  - [ ] Test: Plugin conversion
-  - [ ] Test: Plugin validation
+- [ ] **7.0 Clerk Authentication Integration**
+  - [ ] Install and configure Clerk SDK
+  - [ ] Set up authentication routes
+  - [ ] Create protected routes middleware
+  - [ ] Implement user session management
+  - [ ] Test: Authentication flow
+  - [ ] Test: Session persistence
+  - [ ] Test: Protected routes
 
+- [ ] **7.1 Shadcn Login UI**
+  - [ ] Install shadcn login component (`npx shadcn@latest add login-02`)
+  - [ ] Create login page
+  - [ ] Implement signup flow
+  - [ ] Add password reset functionality
+  - [ ] Create user profile page
+  - [ ] Test: Login/signup UI
+  - [ ] Test: Form validation
+  - [ ] Test: Error handling
 
-## Phase 8: Integration and Testing
-- [ ] **8.0 Integration Testing**
-  - [ ] Create end-to-end tests
-  - [ ] Set up CI/CD pipeline
-  - [ ] Implement monitoring
-  - [ ] Test: Full system flow
-  - [ ] Test: Performance metrics
+- [ ] **7.2 User Data Association**
+  - [ ] Add user_id column to relevant database tables
+  - [ ] Modify API endpoints to filter by user_id
+  - [ ] Update repository layer to include user context
+  - [ ] Implement multi-user data isolation
+  - [ ] Test: User data separation
+  - [ ] Test: Data privacy
+  - [ ] Test: API authorization
 
-- [ ] **8.1 Documentation**
+## Phase 8: Database Migration to Supabase
+
+- [ ] **8.0 Supabase Setup**
+  - [ ] Create Supabase project
+  - [ ] Set up database schema
+  - [ ] Configure authentication integration with Clerk
+  - [ ] Set up environment variables
+  - [ ] Test: Database connection
+  - [ ] Test: Schema validation
+
+- [ ] **8.1 ORM Migration**
+  - [ ] Install Supabase Python client
+  - [ ] Create database abstraction layer
+  - [ ] Implement Supabase query builders
+  - [ ] Update connection management
+  - [ ] Test: CRUD operations
+  - [ ] Test: Transaction handling
+
+- [ ] **8.2 Repository Layer Updates**
+  - [ ] Refactor repository classes for Supabase
+  - [ ] Update service layer to use new repositories
+  - [ ] Implement data migration scripts
+  - [ ] Test: Repository operations
+  - [ ] Test: Service layer functionality
+
+- [ ] **8.3 Data Migration**
+  - [ ] Create data export scripts for SQLite
+  - [ ] Implement data import to Supabase
+  - [ ] Verify data integrity
+  - [ ] Test: Migration process
+  - [ ] Test: Data consistency
+
+## Phase 9: Documentation and Finalization
+
+- [ ] **9.0 Documentation**
   - [ ] Create API documentation
   - [ ] Write development guides
   - [ ] Add inline code comments
@@ -323,24 +353,103 @@ mosaic/
 │   ├── app/
 │   │   ├── layout.tsx
 │   │   ├── page.tsx
-│   │   └── theme.tsx
+│   │   ├── globals.css
+│   │   ├── markdown.css
+│   │   ├── agents/
+│   │   │   └── page.tsx
+│   │   ├── chat/
+│   │   │   └── page.tsx
+│   │   ├── community/
+│   │   │   └── page.tsx
+│   │   └── settings/
+│   │       └── page.tsx
 │   ├── components/
+│   │   ├── theme-provider.tsx
+│   │   ├── theme-toggle.tsx
+│   │   ├── agents/
+│   │   │   ├── agent-details.tsx
+│   │   │   └── agent-selector.tsx
+│   │   ├── chat/
+│   │   │   ├── chat-input.tsx
+│   │   │   ├── chat-interface.tsx
+│   │   │   └── message.tsx
 │   │   ├── sidebar/
-│   │   └── chat/
+│   │   │   └── sidebar.tsx
+│   │   └── ui/
+│   │       ├── accordion.tsx
+│   │       ├── alert.tsx
+│   │       ├── badge.tsx
+│   │       ├── button.tsx
+│   │       ├── card.tsx
+│   │       ├── input.tsx
+│   │       ├── label.tsx
+│   │       ├── select.tsx
+│   │       ├── separator.tsx
+│   │       ├── tabs.tsx
+│   │       ├── textarea.tsx
+│   │       └── toast.tsx
 │   └── lib/
-│       └── api/
+│       ├── api.ts
+│       ├── mock-data.ts
+│       ├── types.ts
+│       ├── utils.ts
+│       ├── websocket.ts
+│       ├── contexts/
+│       │   └── websocket-context.tsx
+│       └── hooks/
+│           ├── use-agent-details.ts
+│           ├── use-agents.ts
+│           └── use-chat.ts
 ├── backend/
 │   ├── app/
+│   │   ├── __init__.py
+│   │   ├── agent_api.py
+│   │   ├── agent_discovery.py
+│   │   ├── agent_runner.py
+│   │   ├── config.py
+│   │   ├── database.py
 │   │   ├── main.py
-│   │   └── config.py
+│   │   └── models.py
 │   ├── agents/
+│   │   ├── __init__.py
+│   │   ├── agent_generator.py
 │   │   ├── base.py
-│   │   ├── calculator.py
-│   │   ├── developer.py
-│   │   ├── safety.py
-│   │   └── writer.py
-│   └── core/
-│       ├── agent_factory.py
-│       └── orchestrator.py
-└── database/
-    └── sqlite.db
+│   │   ├── README.md
+│   │   ├── internal/
+│   │   │   ├── __init__.py
+│   │   │   └── agent_generator.py
+│   │   ├── regular/
+│   │   │   ├── __init__.py
+│   │   │   ├── browser_interaction.py
+│   │   │   ├── calculator.py
+│   │   │   ├── data_processing.py
+│   │   │   ├── literature.py
+│   │   │   ├── safety.py
+│   │   │   ├── story_writer.py
+│   │   │   ├── web_search.py
+│   │   │   └── writer.py
+│   │   └── supervisors/
+│   │       ├── __init__.py
+│   │       └── research_assistant.py
+│   ├── database/
+│   │   ├── __init__.py
+│   │   ├── database.py
+│   │   ├── models.py
+│   │   ├── mosaic.db
+│   │   ├── repository.py
+│   │   ├── service.py
+│   │   └── migrations/
+│   │       ├── create_agent_tables.py
+│   │       └── migrate_agents_to_db.py
+│   └── tests/
+│       ├── __init__.py
+│       ├── test_agent_creator_simple.py
+│       ├── test_agent_creator.py
+│       ├── test_agent_db.py
+│       ├── test_agent_definition.py
+│       ├── test_agent_sandbox.py
+│       ├── test_calculator_direct.py
+│       ├── test_calculator.py
+│       ├── test_research_supervisor.py
+│       ├── test_safety.py
+│       └── test_writer.py

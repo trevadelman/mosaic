@@ -37,6 +37,7 @@ Regular agents (in the `regular/` directory) are built on top of the base agent 
 - **SafetyAgent**: Validates agent actions for safety
 - **WriterAgent**: Handles file operations
 - **StoryWriterAgent**: Generates creative stories based on prompts
+- **FileProcessingAgent**: Processes and analyzes Excel files
 
 ### Supervisor Agents
 
@@ -318,6 +319,53 @@ The agent API system automatically generates API endpoints for each agent, inclu
 - **POST /api/agents/{agent_id}/capabilities/{capability_name}**: Invoke a specific capability of an agent
 
 This means you can create a new agent and immediately use it through the API without modifying the core application code.
+
+## File Processing System
+
+The MOSAIC platform includes a file processing system that allows users to upload files and have them processed by specialized agents. The system is built around two main components:
+
+### FileProcessingAgent
+
+The `FileProcessingAgent` is a specialized agent that processes uploaded files. It currently focuses on Excel (XLSX) files, extracting and analyzing tabular data. The agent provides the following tools:
+
+- **process_excel_file_tool**: Extracts basic information and preview data from Excel files
+- **analyze_excel_data_tool**: Performs specific analyses like correlation, summary statistics, or groupby
+
+The `FileProcessingAgent` is designed to handle file attachments directly, retrieving the file data from the database if necessary. It includes robust error handling and logging to help diagnose issues with file processing.
+
+### FileProcessingSupervisor
+
+The `FileProcessingSupervisor` is a supervisor agent that orchestrates file processing. It determines the file type and routes processing to specialized agents like the `FileProcessingAgent`. The supervisor provides the following tools:
+
+- **transfer_to_file_processing**: Transfers control to the `FileProcessingAgent` for processing Excel files
+- **transfer_back_to_file_processing_supervisor**: Transfers control back to the supervisor after processing
+
+The supervisor is designed to handle file attachments in messages, automatically detecting when a file has been uploaded and transferring control to the appropriate specialized agent.
+
+### File Processing Flow
+
+The file processing flow works as follows:
+
+1. The user uploads a file through the chat interface
+2. The file is stored in the database as an attachment
+3. The message with the attachment is sent to the `file_processing_supervisor` agent
+4. The supervisor detects the file attachment and transfers control to the `file_processing` agent
+5. The `file_processing` agent retrieves the file data from the database
+6. The agent processes the file and returns the results
+7. The supervisor includes the full results in its response to the user
+
+This architecture allows for easy extension to support additional file types in the future by adding new specialized agents and updating the supervisor to route to them based on file type.
+
+### Adding Support for New File Types
+
+To add support for a new file type:
+
+1. Create a new specialized agent that handles the file type (e.g., `PDFProcessingAgent`)
+2. Implement tools for processing the file type (e.g., `process_pdf_file_tool`)
+3. Update the `file_processing_supervisor` to detect the file type and transfer control to the new agent
+4. Register the new agent with the agent registry
+
+The modular design of the file processing system makes it easy to extend with support for additional file types while maintaining a consistent user experience.
 
 ## References
 

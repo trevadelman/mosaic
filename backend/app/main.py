@@ -581,10 +581,47 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                         logger.info(f"Processed {len(attachments)} attachments")
                     
                     # Create user message in the database
+                    content = message_data.get("content", "")
+                    
+                    # Only add the special flag for the file_processing_supervisor agent
+                    # and only for the internal state, not for display to the user
+                    internal_content = content
+                    if agent_id == "file_processing_supervisor" and message_data.get("attachments"):
+                        # Get the first attachment
+                        attachment = message_data["attachments"][0]
+                        
+                        # Get the attachment filename and type
+                        filename = attachment.get("filename", "unknown_file")
+                        content_type = attachment.get("contentType", "application/octet-stream")
+                        
+                        # Create a special flag based on the file type
+                        if content_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" or content_type == "application/vnd.ms-excel" or filename.endswith(".xlsx") or filename.endswith(".xls"):
+                            file_type = "Excel"
+                        elif content_type.startswith("image/"):
+                            file_type = "image"
+                        elif content_type == "application/pdf":
+                            file_type = "PDF"
+                        elif content_type == "text/csv" or filename.endswith(".csv"):
+                            file_type = "CSV"
+                        elif content_type == "application/json" or filename.endswith(".json"):
+                            file_type = "JSON"
+                        elif content_type.startswith("text/"):
+                            file_type = "text"
+                        else:
+                            file_type = "file"
+                        
+                        # Add the special flag to the internal content
+                        if internal_content:
+                            internal_content = f"{internal_content}\n\n[Attached {file_type} file: {filename}] Please use the transfer_to_file_processing tool to process this file."
+                        else:
+                            internal_content = f"[Attached {file_type} file: {filename}] Please use the transfer_to_file_processing tool to process this file."
+                        
+                        logger.info(f"Added special flag to internal message content for file_processing_supervisor: {internal_content}")
+                    
                     user_message = ChatService.add_message(
                         agent_id=agent_id,
                         role="user",
-                        content=message_data.get("content", ""),
+                        content=content,
                         timestamp=int(datetime.now().timestamp() * 1000),
                         status="sent",
                         message_id=user_message_id,
@@ -666,6 +703,48 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                             
                             # Get all previous messages for context
                             previous_messages = ChatService.get_messages_for_agent_state(agent_id)
+                            
+                            # If this is the file_processing_supervisor agent, modify the last message to include the special flag
+                            if agent_id == "file_processing_supervisor" and previous_messages:
+                                # Find the last user message
+                                for i in range(len(previous_messages) - 1, -1, -1):
+                                    if isinstance(previous_messages[i], dict) and previous_messages[i].get("role") == "user":
+                                        # Check if this message has attachments
+                                        if previous_messages[i].get("attachments"):
+                                            # Get the original content
+                                            content = previous_messages[i].get("content", "")
+                                            
+                                            # Get the first attachment
+                                            attachment = previous_messages[i]["attachments"][0]
+                                            
+                                            # Get the attachment filename and type
+                                            filename = attachment.get("filename", "unknown_file")
+                                            content_type = attachment.get("contentType", "application/octet-stream")
+                                            
+                                            # Create a special flag based on the file type
+                                            if content_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" or content_type == "application/vnd.ms-excel" or filename.endswith(".xlsx") or filename.endswith(".xls"):
+                                                file_type = "Excel"
+                                            elif content_type.startswith("image/"):
+                                                file_type = "image"
+                                            elif content_type == "application/pdf":
+                                                file_type = "PDF"
+                                            elif content_type == "text/csv" or filename.endswith(".csv"):
+                                                file_type = "CSV"
+                                            elif content_type == "application/json" or filename.endswith(".json"):
+                                                file_type = "JSON"
+                                            elif content_type.startswith("text/"):
+                                                file_type = "text"
+                                            else:
+                                                file_type = "file"
+                                            
+                                            # Add the special flag to the content
+                                            if content:
+                                                previous_messages[i]["content"] = f"{content}\n\n[Attached {file_type} file: {filename}] Please use the transfer_to_file_processing tool to process this file."
+                                            else:
+                                                previous_messages[i]["content"] = f"[Attached {file_type} file: {filename}] Please use the transfer_to_file_processing tool to process this file."
+                                            
+                                            logger.info(f"Added special flag to message content for file_processing_supervisor in state: {previous_messages[i]['content']}")
+                                        break
                             
                             # Check if we have any image attachments
                             has_images = False

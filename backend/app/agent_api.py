@@ -242,6 +242,14 @@ class AgentAPI:
                     "capabilities": ["Web Search", "Content Retrieval", "Data Processing", "Academic Research"],
                     "icon": "🔍"
                 })
+            # Special case for file_processing_supervisor
+            elif agent_id == "file_processing_supervisor":
+                metadata.update({
+                    "name": "File Processing Supervisor",
+                    "description": "File processing supervisor that can analyze and extract data from various file types",
+                    "capabilities": ["Excel Processing", "Data Analysis", "File Type Detection"],
+                    "icon": "📊"
+                })
         else:
             # For regular agents, use agent attributes
             metadata = {
@@ -334,6 +342,10 @@ class AgentAPI:
                     "data_processing",
                     "literature"
                 ]
+            elif agent_id == "file_processing_supervisor":
+                relationships["subAgents"] = [
+                    "file_processing"
+                ]
         else:
             # For regular agents, check if they are used by any supervisor
             initialized_agents = get_initialized_agents()
@@ -342,12 +354,12 @@ class AgentAPI:
                     # Check if this agent is used by the supervisor
                     # This is a simplified implementation - in a real system, you would
                     # extract this information from the supervisor's graph structure
-                    if supervisor_id == "research_supervisor" and agent_id in [
+                    if (supervisor_id == "research_supervisor" and agent_id in [
                         "web_search",
                         "browser_interaction",
                         "data_processing",
                         "literature"
-                    ]:
+                    ]) or (supervisor_id == "file_processing_supervisor" and agent_id == "file_processing"):
                         relationships["supervisor"] = supervisor_id
         
         return relationships
