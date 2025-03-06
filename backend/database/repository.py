@@ -15,7 +15,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
-from .models import Conversation, Message, Attachment, MessageLog, Agent, Tool, Capability
+from .models import Conversation, Message, Attachment, MessageLog, Agent, Tool, Capability, UserPreference
 from .database import get_db_session
 
 # Configure logging
@@ -27,13 +27,14 @@ class ConversationRepository:
     """
     
     @staticmethod
-    def create_conversation(agent_id: str, title: Optional[str] = None) -> Conversation:
+    def create_conversation(agent_id: str, title: Optional[str] = None, user_id: Optional[str] = None) -> Conversation:
         """
         Create a new conversation.
         
         Args:
             agent_id: The ID of the agent
             title: Optional title for the conversation
+            user_id: Optional Clerk user ID
             
         Returns:
             The created conversation
@@ -41,7 +42,8 @@ class ConversationRepository:
         with get_db_session() as session:
             conversation = Conversation(
                 agent_id=agent_id,
-                title=title or f"Conversation with {agent_id}"
+                title=title or f"Conversation with {agent_id}",
+                user_id=user_id
             )
             session.add(conversation)
             session.commit()
@@ -73,20 +75,27 @@ class ConversationRepository:
             return conversation
     
     @staticmethod
-    def get_conversations_for_agent(agent_id: str) -> List[Conversation]:
+    def get_conversations_for_agent(agent_id: str, user_id: Optional[str] = None) -> List[Conversation]:
         """
         Get all conversations for an agent.
         
         Args:
             agent_id: The ID of the agent
+            user_id: Optional Clerk user ID to filter by
             
         Returns:
             A list of conversations
         """
         with get_db_session() as session:
-            conversations = session.query(Conversation).filter(
+            query = session.query(Conversation).filter(
                 Conversation.agent_id == agent_id
-            ).order_by(desc(Conversation.updated_at)).all()
+            )
+            
+            # Filter by user_id if provided
+            if user_id:
+                query = query.filter(Conversation.user_id == user_id)
+                
+            conversations = query.order_by(desc(Conversation.updated_at)).all()
             
             # Detach all conversations from the session by expunging them
             for conversation in conversations:
@@ -95,21 +104,28 @@ class ConversationRepository:
             return conversations
     
     @staticmethod
-    def get_active_conversation_for_agent(agent_id: str) -> Optional[Conversation]:
+    def get_active_conversation_for_agent(agent_id: str, user_id: Optional[str] = None) -> Optional[Conversation]:
         """
         Get the active conversation for an agent.
         
         Args:
             agent_id: The ID of the agent
+            user_id: Optional Clerk user ID to filter by
             
         Returns:
             The active conversation, or None if not found
         """
         with get_db_session() as session:
-            conversation = session.query(Conversation).filter(
+            query = session.query(Conversation).filter(
                 Conversation.agent_id == agent_id,
                 Conversation.is_active == True
-            ).order_by(desc(Conversation.updated_at)).first()
+            )
+            
+            # Filter by user_id if provided
+            if user_id:
+                query = query.filter(Conversation.user_id == user_id)
+                
+            conversation = query.order_by(desc(Conversation.updated_at)).first()
             
             # If we found a conversation, detach it from the session by expunging it
             if conversation:
@@ -183,6 +199,28 @@ class ConversationRepository:
                 logger.info(f"Deleted conversation {conversation_id}")
                 return True
             return False
+    
+    @staticmethod
+    def get_conversations_for_user(user_id: str) -> List[Conversation]:
+        """
+        Get all conversations for a user.
+        
+        Args:
+            user_id: The Clerk user ID
+            
+        Returns:
+            A list of conversations
+        """
+        with get_db_session() as session:
+            conversations = session.query(Conversation).filter(
+                Conversation.user_id == user_id
+            ).order_by(desc(Conversation.updated_at)).all()
+            
+            # Detach all conversations from the session by expunging them
+            for conversation in conversations:
+                session.expunge(conversation)
+                
+            return conversations
 
 
 class MessageRepository:
@@ -199,7 +237,8 @@ class MessageRepository:
         status: Optional[str] = None,
         error: Optional[str] = None,
         client_message_id: Optional[str] = None,
-        message_id: Optional[str] = None
+        message_id: Optional[str] = None,
+        user_id: Optional[str] = None
     ) -> Message:
         """
         Create a new message.
@@ -213,11 +252,18 @@ class MessageRepository:
             error: Optional error message
             client_message_id: Optional client-side message ID
             message_id: Optional message ID (defaults to a new UUID)
+            user_id: Optional Clerk user ID
             
         Returns:
             The created message
         """
         with get_db_session() as session:
+            # If user_id is not provided, try to get it from the conversation
+            if user_id is None:
+                conversation = session.query(Conversation).filter(Conversation.id == conversation_id).first()
+                if conversation:
+                    user_id = conversation.user_id
+            
             message = Message(
                 id=message_id or str(uuid.uuid4()),
                 conversation_id=conversation_id,
@@ -226,7 +272,8 @@ class MessageRepository:
                 timestamp=timestamp or int(datetime.now().timestamp() * 1000),
                 status=status,
                 error=error,
-                client_message_id=client_message_id
+                client_message_id=client_message_id,
+                user_id=user_id
             )
             session.add(message)
             session.commit()
@@ -325,6 +372,28 @@ class MessageRepository:
                 session.expunge(log)
                 
             return logs
+    
+    @staticmethod
+    def get_messages_for_user(user_id: str) -> List[Message]:
+        """
+        Get all messages for a user.
+        
+        Args:
+            user_id: The Clerk user ID
+            
+        Returns:
+            A list of messages
+        """
+        with get_db_session() as session:
+            messages = session.query(Message).filter(
+                Message.user_id == user_id
+            ).order_by(Message.timestamp).all()
+            
+            # Detach all messages from the session by expunging them
+            for message in messages:
+                session.expunge(message)
+                
+            return messages
 
 
 class AttachmentRepository:
@@ -340,7 +409,8 @@ class AttachmentRepository:
         content_type: Optional[str] = None,
         size: Optional[int] = None,
         storage_path: Optional[str] = None,
-        data: Optional[bytes] = None
+        data: Optional[bytes] = None,
+        user_id: Optional[str] = None
     ) -> Attachment:
         """
         Create a new attachment.
@@ -353,11 +423,18 @@ class AttachmentRepository:
             size: Optional size in bytes
             storage_path: Optional path to file on disk
             data: Optional binary data
+            user_id: Optional Clerk user ID
             
         Returns:
             The created attachment
         """
         with get_db_session() as session:
+            # If user_id is not provided, try to get it from the message
+            if user_id is None:
+                message = session.query(Message).filter(Message.id == message_id).first()
+                if message:
+                    user_id = message.user_id
+            
             attachment = Attachment(
                 message_id=message_id,
                 type=attachment_type,
@@ -365,7 +442,8 @@ class AttachmentRepository:
                 content_type=content_type,
                 size=size,
                 storage_path=storage_path,
-                data=data
+                data=data,
+                user_id=user_id
             )
             session.add(attachment)
             session.commit()
@@ -417,6 +495,28 @@ class AttachmentRepository:
                 session.expunge(attachment)
                 
             return attachments
+    
+    @staticmethod
+    def get_attachments_for_user(user_id: str) -> List[Attachment]:
+        """
+        Get all attachments for a user.
+        
+        Args:
+            user_id: The Clerk user ID
+            
+        Returns:
+            A list of attachments
+        """
+        with get_db_session() as session:
+            attachments = session.query(Attachment).filter(
+                Attachment.user_id == user_id
+            ).all()
+            
+            # Detach all attachments from the session by expunging them
+            for attachment in attachments:
+                session.expunge(attachment)
+                
+            return attachments
 
 
 # Agent Repository for database operations related to agents, tools, and capabilities
@@ -433,7 +533,8 @@ class AgentRepository:
         description: str,
         system_prompt: str,
         icon: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        user_id: Optional[str] = None
     ) -> Agent:
         """
         Create a new agent.
@@ -445,6 +546,7 @@ class AgentRepository:
             system_prompt: The system prompt for the agent
             icon: Optional emoji icon for the agent
             metadata: Optional metadata for the agent
+            user_id: Optional Clerk user ID
             
         Returns:
             The created agent
@@ -456,7 +558,8 @@ class AgentRepository:
                 description=description,
                 system_prompt=system_prompt,
                 icon=icon,
-                meta_data=metadata
+                meta_data=metadata,
+                user_id=user_id
             )
             session.add(agent)
             session.commit()
@@ -514,17 +617,30 @@ class AgentRepository:
             return agent
     
     @staticmethod
-    def get_all_agents() -> List[Agent]:
+    def get_all_agents(user_id: Optional[str] = None) -> List[Agent]:
         """
         Get all agents.
         
+        Args:
+            user_id: Optional Clerk user ID to filter by
+            
         Returns:
             A list of agents
         """
         with get_db_session() as session:
-            agents = session.query(Agent).filter(
+            query = session.query(Agent).filter(
                 Agent.is_deleted == False
-            ).all()
+            )
+            
+            # Filter by user_id if provided, or get public agents (user_id is None)
+            if user_id:
+                # Get agents created by this user or public agents (user_id is None)
+                query = query.filter((Agent.user_id == user_id) | (Agent.user_id == None))
+            else:
+                # Only get public agents
+                query = query.filter(Agent.user_id == None)
+                
+            agents = query.all()
             
             # Detach all agents from the session by expunging them
             for agent in agents:
@@ -540,7 +656,8 @@ class AgentRepository:
         description: Optional[str] = None,
         system_prompt: Optional[str] = None,
         icon: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        user_id: Optional[str] = None
     ) -> Optional[Agent]:
         """
         Update an agent.
@@ -553,6 +670,7 @@ class AgentRepository:
             system_prompt: Optional new system prompt for the agent
             icon: Optional new icon for the agent
             metadata: Optional new metadata for the agent
+            user_id: Optional new Clerk user ID for the agent
             
         Returns:
             The updated agent, or None if not found
@@ -576,6 +694,8 @@ class AgentRepository:
                     agent.icon = icon
                 if metadata is not None:
                     agent.meta_data = metadata
+                if user_id is not None:
+                    agent.user_id = user_id
                 
                 session.commit()
                 logger.info(f"Updated agent {agent_id}")
@@ -736,12 +856,13 @@ class AgentRepository:
             return capabilities
     
     @staticmethod
-    def json_to_db(definition: Dict[str, Any]) -> Tuple[Agent, List[Tool], List[Capability]]:
+    def json_to_db(definition: Dict[str, Any], user_id: Optional[str] = None) -> Tuple[Agent, List[Tool], List[Capability]]:
         """
         Convert a JSON agent definition to database models.
         
         Args:
             definition: The agent definition
+            user_id: Optional Clerk user ID
             
         Returns:
             A tuple containing the agent, tools, and capabilities
@@ -762,7 +883,8 @@ class AgentRepository:
             description=description,
             system_prompt=system_prompt,
             icon=icon,
-            metadata=metadata
+            metadata=metadata,
+            user_id=user_id
         )
         
         # Create tools
@@ -835,8 +957,195 @@ class AgentRepository:
         
         if agent.meta_data:
             definition["agent"]["metadata"] = agent.meta_data
+            
+        # Add user_id if available
+        if agent.user_id:
+            definition["agent"]["userId"] = agent.user_id
         
         return definition
+
+
+class UserPreferenceRepository:
+    """
+    Repository for user preference-related database operations.
+    """
+    
+    @staticmethod
+    def create_user_preference(
+        user_id: str,
+        theme: Optional[str] = "system",
+        language: Optional[str] = "en",
+        notifications: Optional[bool] = True,
+        settings: Optional[Dict[str, Any]] = None
+    ) -> UserPreference:
+        """
+        Create a new user preference.
+        
+        Args:
+            user_id: The Clerk user ID
+            theme: Optional theme preference (default: "system")
+            language: Optional language preference (default: "en")
+            notifications: Optional notifications preference (default: True)
+            settings: Optional additional settings
+            
+        Returns:
+            The created user preference
+        """
+        with get_db_session() as session:
+            user_preference = UserPreference(
+                user_id=user_id,
+                theme=theme,
+                language=language,
+                notifications=notifications,
+                settings=settings or {}
+            )
+            session.add(user_preference)
+            session.commit()
+            logger.info(f"Created user preference for user {user_id}")
+            
+            # Detach the user preference from the session by expunging it
+            session.expunge(user_preference)
+            
+            return user_preference
+    
+    @staticmethod
+    def get_user_preference(user_id: str) -> Optional[UserPreference]:
+        """
+        Get a user preference by user ID.
+        
+        Args:
+            user_id: The Clerk user ID
+            
+        Returns:
+            The user preference, or None if not found
+        """
+        with get_db_session() as session:
+            user_preference = session.query(UserPreference).filter(
+                UserPreference.user_id == user_id
+            ).first()
+            
+            # If we found a user preference, detach it from the session by expunging it
+            if user_preference:
+                session.expunge(user_preference)
+                
+            return user_preference
+    
+    @staticmethod
+    def update_user_preference(
+        user_id: str,
+        theme: Optional[str] = None,
+        language: Optional[str] = None,
+        notifications: Optional[bool] = None,
+        settings: Optional[Dict[str, Any]] = None
+    ) -> Optional[UserPreference]:
+        """
+        Update a user preference.
+        
+        Args:
+            user_id: The Clerk user ID
+            theme: Optional new theme preference
+            language: Optional new language preference
+            notifications: Optional new notifications preference
+            settings: Optional new additional settings
+            
+        Returns:
+            The updated user preference, or None if not found
+        """
+        with get_db_session() as session:
+            user_preference = session.query(UserPreference).filter(
+                UserPreference.user_id == user_id
+            ).first()
+            
+            if user_preference:
+                if theme is not None:
+                    user_preference.theme = theme
+                if language is not None:
+                    user_preference.language = language
+                if notifications is not None:
+                    user_preference.notifications = notifications
+                if settings is not None:
+                    user_preference.settings = settings
+                
+                user_preference.updated_at = datetime.utcnow()
+                session.commit()
+                logger.info(f"Updated user preference for user {user_id}")
+                
+                # Create a copy of the user preference before detaching it
+                updated_preference = UserPreference(
+                    id=user_preference.id,
+                    user_id=user_preference.user_id,
+                    theme=user_preference.theme,
+                    language=user_preference.language,
+                    notifications=user_preference.notifications,
+                    settings=user_preference.settings,
+                    created_at=user_preference.created_at,
+                    updated_at=user_preference.updated_at
+                )
+                
+                # Detach the user preference from the session by expunging it
+                session.expunge(user_preference)
+                
+                return updated_preference
+            
+            return None
+    
+    @staticmethod
+    def delete_user_preference(user_id: str) -> bool:
+        """
+        Delete a user preference.
+        
+        Args:
+            user_id: The Clerk user ID
+            
+        Returns:
+            True if the user preference was deleted, False otherwise
+        """
+        with get_db_session() as session:
+            user_preference = session.query(UserPreference).filter(
+                UserPreference.user_id == user_id
+            ).first()
+            
+            if user_preference:
+                session.delete(user_preference)
+                session.commit()
+                logger.info(f"Deleted user preference for user {user_id}")
+                return True
+            
+            return False
+    
+    @staticmethod
+    def get_or_create_user_preference(
+        user_id: str,
+        theme: Optional[str] = "system",
+        language: Optional[str] = "en",
+        notifications: Optional[bool] = True,
+        settings: Optional[Dict[str, Any]] = None
+    ) -> UserPreference:
+        """
+        Get a user preference by user ID, or create it if it doesn't exist.
+        
+        Args:
+            user_id: The Clerk user ID
+            theme: Optional theme preference (default: "system")
+            language: Optional language preference (default: "en")
+            notifications: Optional notifications preference (default: True)
+            settings: Optional additional settings
+            
+        Returns:
+            The user preference
+        """
+        user_preference = UserPreferenceRepository.get_user_preference(user_id)
+        
+        if user_preference:
+            return user_preference
+        
+        return UserPreferenceRepository.create_user_preference(
+            user_id=user_id,
+            theme=theme,
+            language=language,
+            notifications=notifications,
+            settings=settings
+        )
 
 
 # Helper functions for converting between database models and API models
@@ -873,6 +1182,10 @@ def message_to_dict(message: Message) -> Dict[str, Any]:
         "agentId": agent_id
     }
     
+    # Add user_id if available
+    if message.user_id:
+        result["userId"] = message.user_id
+    
     if message.status:
         result["status"] = message.status
     
@@ -906,6 +1219,91 @@ def message_to_dict(message: Message) -> Dict[str, Any]:
     return result
 
 
+def agent_to_dict(agent: Agent, include_tools: bool = False, include_capabilities: bool = False) -> Dict[str, Any]:
+    """
+    Convert an Agent model to a dictionary for API responses.
+    
+    Args:
+        agent: The Agent model
+        include_tools: Whether to include tools in the result
+        include_capabilities: Whether to include capabilities in the result
+        
+    Returns:
+        A dictionary representation of the agent
+    """
+    result = {
+        "id": agent.id,
+        "name": agent.name,
+        "type": agent.type,
+        "description": agent.description,
+        "systemPrompt": agent.system_prompt,
+        "createdAt": agent.created_at.isoformat(),
+        "updatedAt": agent.updated_at.isoformat()
+    }
+    
+    # Add optional fields
+    if agent.icon:
+        result["icon"] = agent.icon
+    
+    if agent.meta_data:
+        result["metadata"] = agent.meta_data
+    
+    # Add user_id if available
+    if agent.user_id:
+        result["userId"] = agent.user_id
+    
+    # Add tools if requested
+    if include_tools:
+        tools = AgentRepository.get_tools_for_agent(agent.id)
+        result["tools"] = [
+            {
+                "id": tool.id,
+                "name": tool.name,
+                "description": tool.description,
+                "parameters": tool.parameters,
+                "returns": tool.returns
+            }
+            for tool in tools
+        ]
+    
+    # Add capabilities if requested
+    if include_capabilities:
+        capabilities = AgentRepository.get_capabilities_for_agent(agent.id)
+        result["capabilities"] = [
+            {
+                "id": capability.id,
+                "name": capability.name,
+                "description": capability.description
+            }
+            for capability in capabilities
+        ]
+    
+    return result
+
+
+def user_preference_to_dict(user_preference: UserPreference) -> Dict[str, Any]:
+    """
+    Convert a UserPreference model to a dictionary for API responses.
+    
+    Args:
+        user_preference: The UserPreference model
+        
+    Returns:
+        A dictionary representation of the user preference
+    """
+    result = {
+        "userId": user_preference.user_id,
+        "theme": user_preference.theme,
+        "language": user_preference.language,
+        "notifications": user_preference.notifications,
+        "settings": user_preference.settings,
+        "createdAt": user_preference.created_at.isoformat(),
+        "updatedAt": user_preference.updated_at.isoformat()
+    }
+    
+    return result
+
+
 def conversation_to_dict(conversation: Conversation, include_messages: bool = False) -> Dict[str, Any]:
     """
     Convert a Conversation model to a dictionary for API responses.
@@ -925,6 +1323,10 @@ def conversation_to_dict(conversation: Conversation, include_messages: bool = Fa
         "updatedAt": conversation.updated_at.isoformat(),
         "isActive": conversation.is_active
     }
+    
+    # Add user_id if available
+    if conversation.user_id:
+        result["userId"] = conversation.user_id
     
     if include_messages:
         messages = MessageRepository.get_messages_for_conversation(conversation.id)

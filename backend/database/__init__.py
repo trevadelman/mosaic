@@ -10,10 +10,12 @@ from .repository import (
     ConversationRepository,
     MessageRepository,
     AttachmentRepository,
+    UserPreferenceRepository,
     message_to_dict,
-    conversation_to_dict
+    conversation_to_dict,
+    user_preference_to_dict
 )
-from .service import ChatService, AttachmentService
+from .service import ChatService, AttachmentService, UserPreferenceService
 
 __all__ = [
     # Models
@@ -33,12 +35,15 @@ __all__ = [
     'ConversationRepository',
     'MessageRepository',
     'AttachmentRepository',
+    'UserPreferenceRepository',
     
     # Services
     'ChatService',
     'AttachmentService',
+    'UserPreferenceService',
     
     # Helper functions
     'message_to_dict',
-    'conversation_to_dict'
+    'conversation_to_dict',
+    'user_preference_to_dict'
 ]

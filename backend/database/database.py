@@ -18,14 +18,22 @@ from .models import Base
 # Configure logging
 logger = logging.getLogger("mosaic.database")
 
-# Get database path from environment variable or use default
-DATABASE_PATH = os.getenv("DATABASE_PATH", "database/mosaic.db")
+# Import the settings from the config
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.app.config import settings
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.app.config import settings
+
+# Get database URL from settings
+DATABASE_URL = settings.DATABASE_URL
+
+# Extract database path from URL
+DATABASE_PATH = DATABASE_URL.replace("sqlite:///", "")
 
 # Ensure the database directory exists
 os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
-
-# Create database URL
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
 
 # Create engine with connection pooling
 engine = create_engine(

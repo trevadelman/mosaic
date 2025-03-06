@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react"
 import { Message, WebSocketEvent, Attachment } from "../types"
+import { useAuth } from "@clerk/nextjs"
 
 // WebSocket connection states
 export enum ConnectionState {
@@ -51,12 +52,16 @@ interface WebSocketProviderProps {
 }
 
 export function WebSocketProvider({ children }: WebSocketProviderProps) {
+  // Get user ID from Clerk
+  const { userId } = useAuth()
+  
   // State
   const [connectionState, setConnectionState] = useState<ConnectionState>(ConnectionState.DISCONNECTED)
   const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([])
   
   // Refs
   const socketRef = useRef<WebSocket | null>(null)
+  const userIdRef = useRef<string | null>(null)
   const reconnectAttemptsRef = useRef<number>(0)
   const maxReconnectAttemptsRef = useRef<number>(10)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -278,13 +283,29 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       
       try {
         if (type === "clear_conversation") {
-          // Send clear conversation message
+          // Send clear conversation message with user ID
+          console.log("Sending clear conversation with user ID:", userIdRef.current);
           socketRef.current!.send(JSON.stringify({
-            type: "clear_conversation"
+            type: "clear_conversation",
+            userId: userIdRef.current // Include user ID from Clerk
           }))
           console.log("Clear conversation message sent successfully via WebSocket")
         } else {
-          // Send regular message with optional attachments
+          // Send regular message with optional attachments and user ID
+          console.log("Sending WebSocket message with user ID:", userIdRef.current);
+          console.log("WebSocket message data:", JSON.stringify({
+            type: "message",
+            message: {
+              role: "user",
+              content,
+              agentId,
+              id,
+              timestamp,
+              attachments,
+              userId: userIdRef.current
+            }
+          }));
+          
           socketRef.current!.send(JSON.stringify({
             type: "message",
             message: {
@@ -293,7 +314,8 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
               agentId,
               id,
               timestamp,
-              attachments
+              attachments,
+              userId: userIdRef.current // Include user ID from Clerk
             }
           }))
           console.log("Message sent successfully via WebSocket", attachments ? `with ${attachments.length} attachments` : "")
@@ -368,6 +390,12 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const dispatchEvent = useCallback((event: WebSocketEvent) => {
     eventListenersRef.current.forEach(callback => callback(event))
   }, [])
+
+  // Update userIdRef when userId changes
+  useEffect(() => {
+    userIdRef.current = userId || null
+    console.log("User ID updated:", userId)
+  }, [userId])
 
   // Process message queue when connection state changes
   useEffect(() => {

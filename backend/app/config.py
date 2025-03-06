@@ -19,7 +19,10 @@ class Settings(BaseSettings):
     CORS_ORIGINS: List[str] = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
     
     # Database settings
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./database/mosaic.db")
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL", 
+        f"sqlite:///{os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'database', 'mosaic.db'))}"
+    )
     
     # OpenAI settings
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")

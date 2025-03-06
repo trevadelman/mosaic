@@ -53,19 +53,42 @@ export const agentApi = {
  */
 export const chatApi = {
   // Get chat history with a specific agent
-  getMessages: (agentId: string) => 
-    fetchApi<Message[]>(`/chat/${agentId}/messages`),
+  getMessages: (agentId: string, userId?: string) => 
+    fetchApi<Message[]>(`/chat/${agentId}/messages${userId ? `?user_id=${userId}` : ''}`),
 
   // Send a message to an agent
-  sendMessage: (agentId: string, content: string) =>
-    fetchApi<Message>(`/chat/${agentId}/messages`, {
+  sendMessage: (agentId: string, content: string, userId?: string) =>
+    fetchApi<Message>(`/chat/${agentId}/messages${userId ? `?user_id=${userId}` : ''}`, {
       method: "POST",
       body: JSON.stringify({ content }),
     }),
     
   // Clear chat history with a specific agent
-  clearMessages: (agentId: string) =>
-    fetchApi<{status: string, message: string}>(`/chat/${agentId}/messages`, {
+  clearMessages: (agentId: string, userId?: string) =>
+    fetchApi<{status: string, message: string}>(`/chat/${agentId}/messages${userId ? `?user_id=${userId}` : ''}`, {
+      method: "DELETE",
+    }),
+}
+
+/**
+ * User Data API functions
+ */
+export const userDataApi = {
+  // Export user data
+  exportUserData: (userId: string) => {
+    window.location.href = `${API_BASE_URL}/user-data/export?user_id=${userId}`;
+    return Promise.resolve({ data: { status: "success" } });
+  },
+  
+  // Delete user data
+  deleteUserData: (userId: string) =>
+    fetchApi<{status: string, message: string}>(`/user-data/delete?user_id=${userId}`, {
+      method: "DELETE",
+    }),
+    
+  // Clear user conversations
+  clearUserConversations: (userId: string) =>
+    fetchApi<{status: string, message: string}>(`/user-data/clear-conversations?user_id=${userId}`, {
       method: "DELETE",
     }),
 }

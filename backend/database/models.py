@@ -11,6 +11,45 @@ import datetime
 
 Base = declarative_base()
 
+class User(Base):
+    """
+    Model for a user.
+    
+    Stores user information from Clerk.
+    """
+    __tablename__ = "users"
+    
+    id = Column(String(255), primary_key=True)  # Clerk user ID
+    email = Column(String(255), nullable=True, unique=True, index=True)
+    first_name = Column(String(100), nullable=True)
+    last_name = Column(String(100), nullable=True)
+    user_metadata = Column(JSON, nullable=True)  # Renamed from metadata to avoid conflict with SQLAlchemy
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    
+    def __repr__(self):
+        return f"<User(id='{self.id}', email='{self.email}')>"
+
+class UserPreference(Base):
+    """
+    Model for user preferences.
+    
+    Stores user-specific settings and preferences.
+    """
+    __tablename__ = "user_preferences"
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String(255), nullable=False, unique=True, index=True)
+    theme = Column(String(50), default="system")
+    language = Column(String(10), default="en")
+    notifications = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    settings = Column(JSON, nullable=True)
+    
+    def __repr__(self):
+        return f"<UserPreference(id={self.id}, user_id='{self.user_id}')>"
+
 class Conversation(Base):
     """
     Model for a conversation with an agent.
@@ -21,6 +60,7 @@ class Conversation(Base):
     
     id = Column(Integer, primary_key=True)
     agent_id = Column(String(50), nullable=False, index=True)
+    user_id = Column(String(255), nullable=True, index=True)  # Clerk user ID
     title = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
@@ -44,6 +84,7 @@ class Message(Base):
     
     id = Column(String(36), primary_key=True)  # UUID as string
     conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False)
+    user_id = Column(String(255), nullable=True, index=True)  # Clerk user ID
     role = Column(String(20), nullable=False)  # "user" or "assistant"
     content = Column(Text, nullable=False)
     timestamp = Column(Integer, nullable=False)  # Unix timestamp in milliseconds
@@ -70,6 +111,7 @@ class Attachment(Base):
     
     id = Column(Integer, primary_key=True)
     message_id = Column(String(36), ForeignKey("messages.id"), nullable=False)
+    user_id = Column(String(255), nullable=True, index=True)  # Clerk user ID
     type = Column(String(50), nullable=False)  # "image", "file", etc.
     filename = Column(String(255), nullable=True)
     content_type = Column(String(100), nullable=True)  # MIME type
@@ -117,6 +159,7 @@ class Agent(Base):
     
     id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False, unique=True, index=True)
+    user_id = Column(String(255), nullable=True, index=True)  # Clerk user ID
     type = Column(String(20), nullable=False)  # "Utility", "Specialized", "Supervisor"
     description = Column(Text, nullable=False)
     icon = Column(String(10), nullable=True)  # Emoji icon

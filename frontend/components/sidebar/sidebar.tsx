@@ -6,11 +6,14 @@ import { cn } from "@/lib/utils"
 import {
   BrainCircuit,
   Home,
+  LogIn,
+  LogOut,
   MessageSquare,
   Settings,
   Users,
 } from "lucide-react"
 import { ThemeToggle } from "../theme-toggle"
+import { SignInButton, SignOutButton, useAuth } from "@clerk/nextjs"
 
 const items = [
   {
@@ -42,6 +45,7 @@ const items = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { isSignedIn } = useAuth()
 
   return (
     <div className="flex h-full w-[80px] flex-col items-center justify-between border-r bg-background py-4">
@@ -66,7 +70,28 @@ export function Sidebar() {
           ))}
         </nav>
       </div>
-      <div className="mt-auto pt-4">
+      <div className="mt-auto flex flex-col items-center gap-4">
+        {isSignedIn ? (
+          <SignOutButton>
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+              title="Sign out"
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="sr-only">Sign out</span>
+            </button>
+          </SignOutButton>
+        ) : (
+          <SignInButton mode="modal">
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+              title="Sign in"
+            >
+              <LogIn className="h-5 w-5" />
+              <span className="sr-only">Sign in</span>
+            </button>
+          </SignInButton>
+        )}
         <ThemeToggle />
       </div>
     </div>

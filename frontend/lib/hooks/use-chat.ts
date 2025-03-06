@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { v4 as uuidv4 } from "uuid"
+import { useUser } from "@clerk/nextjs"
 import { Message, Attachment } from "../types"
 import { chatApi } from "../api"
 import { mockMessages } from "../mock-data"
@@ -16,6 +17,7 @@ export function useChat(agentId?: string) {
   const [error, setError] = useState<string | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
   const [sentMessageContents, setSentMessageContents] = useState<Set<string>>(new Set())
+  const { user } = useUser()
   
   // Get WebSocket context
   const { 
@@ -52,7 +54,10 @@ export function useChat(agentId?: string) {
       const fetchMessages = async () => {
         if (!agentId) return
         
-        const response = await chatApi.getMessages(agentId)
+        // Get the user ID if available
+        const userId = user?.id
+        
+        const response = await chatApi.getMessages(agentId, userId)
         
         if (response.error) {
           setError(response.error)
@@ -73,7 +78,7 @@ export function useChat(agentId?: string) {
       console.log("Connecting to WebSocket for agent:", agentId)
       connect(agentId)
     }
-  }, [agentId, connect, disconnect])
+  }, [agentId, connect, disconnect, user])
 
   // Set up WebSocket event listeners
   useEffect(() => {
@@ -299,7 +304,8 @@ export function useChat(agentId?: string) {
             } else {
               // Fallback to API if WebSocket fails and we're not connecting
               console.log("Falling back to API")
-              const response = await chatApi.sendMessage(agentId, content)
+              const userId = user?.id
+              const response = await chatApi.sendMessage(agentId, content, userId)
               
               if (response.error) {
                 setError(response.error)
@@ -332,7 +338,7 @@ export function useChat(agentId?: string) {
         }
       }
     },
-    [agentId, connectionState, wsSendMessage, messages, sentMessageContents]
+    [agentId, connectionState, wsSendMessage, messages, sentMessageContents, user]
   )
 
   // Clear chat history
@@ -340,6 +346,9 @@ export function useChat(agentId?: string) {
     if (!agentId) return
     
     try {
+      // Get the user ID if available
+      const userId = user?.id
+      
       // Try to clear via WebSocket first
       if (connectionState === ConnectionState.CONNECTED) {
         console.log("Clearing chat via WebSocket")
@@ -355,7 +364,7 @@ export function useChat(agentId?: string) {
       
       // Fallback to API
       console.log("Clearing chat via API")
-      const response = await chatApi.clearMessages(agentId)
+      const response = await chatApi.clearMessages(agentId, userId)
       
       if (response.error) {
         setError(response.error)
@@ -368,7 +377,7 @@ export function useChat(agentId?: string) {
       console.error("Error clearing chat:", error)
       setError("Failed to clear chat")
     }
-  }, [agentId, connectionState, wsSendMessage])
+  }, [agentId, connectionState, wsSendMessage, user])
 
   return {
     messages,

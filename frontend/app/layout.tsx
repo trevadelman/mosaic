@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { Sidebar } from '@/components/sidebar/sidebar'
 import { WebSocketProvider } from '@/lib/contexts/websocket-context'
 import { ToastProvider } from '@/components/ui/toast'
+import { ClerkProvider } from '@clerk/nextjs'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,25 +21,27 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <WebSocketProvider>
-            <ToastProvider>
-              <div className="flex h-screen">
-                <Sidebar />
-                <div className="flex-1 overflow-auto">
-                  {children}
+      <ClerkProvider>
+        <body className={inter.className}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <WebSocketProvider>
+              <ToastProvider>
+                <div className="flex h-screen">
+                  <Sidebar />
+                  <div className="flex-1 overflow-auto">
+                    {children}
+                  </div>
                 </div>
-              </div>
-            </ToastProvider>
-          </WebSocketProvider>
-        </ThemeProvider>
-      </body>
+              </ToastProvider>
+            </WebSocketProvider>
+          </ThemeProvider>
+        </body>
+      </ClerkProvider>
     </html>
   )
 }

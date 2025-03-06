@@ -14,18 +14,24 @@ import json
 # Import database modules
 try:
     # Try importing with the full package path (for local development)
-    from mosaic.backend.database import init_db, ChatService, AttachmentService
+    from mosaic.backend.database import init_db, ChatService, AttachmentService, UserPreferenceService
 except ImportError:
     # Fall back to relative import (for Docker environment)
-    from backend.database import init_db, ChatService, AttachmentService
+    from backend.database import init_db, ChatService, AttachmentService, UserPreferenceService
 
-# Import the agent API router
+# Import the API routers
 try:
     # Try importing with the full package path (for local development)
     from mosaic.backend.app.agent_api import get_agent_api_router
+    from mosaic.backend.app.user_api import get_user_api_router
+    from mosaic.backend.app.webhook_api import get_webhook_api_router
+    from mosaic.backend.app.user_data_api import get_user_data_api_router
 except ImportError:
     # Fall back to relative import (for Docker environment)
     from backend.app.agent_api import get_agent_api_router
+    from backend.app.user_api import get_user_api_router
+    from backend.app.webhook_api import get_webhook_api_router
+    from backend.app.user_data_api import get_user_data_api_router
 
 # Configure logging
 logging.basicConfig(
@@ -42,8 +48,11 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Include the agent API router
+# Include the API routers
 app.include_router(get_agent_api_router())
+app.include_router(get_user_api_router())
+app.include_router(get_webhook_api_router())
+app.include_router(get_user_data_api_router())
 
 # Configure CORS
 cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://frontend:3000").split(",")
@@ -223,22 +232,40 @@ async def get_agent(agent_id: str):
 
 # Chat routes
 @app.get("/api/chat/{agent_id}/messages")
-async def get_messages(agent_id: str):
-    """Get all messages for a specific agent."""
+async def get_messages(agent_id: str, user_id: Optional[str] = None):
+    """
+    Get all messages for a specific agent.
+    
+    Args:
+        agent_id: The ID of the agent
+        user_id: Optional user ID to filter by
+        
+    Returns:
+        A list of messages
+    """
     try:
-        # Get messages from the database
-        messages = ChatService.get_conversation_messages(agent_id)
+        # Get messages from the database, filtered by user_id if provided
+        messages = ChatService.get_conversation_messages(agent_id, user_id)
         return messages
     except Exception as e:
         logger.error(f"Error getting messages for agent {agent_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error getting messages: {str(e)}")
 
 @app.delete("/api/chat/{agent_id}/messages")
-async def clear_messages(agent_id: str):
-    """Clear all messages for a specific agent."""
+async def clear_messages(agent_id: str, user_id: Optional[str] = None):
+    """
+    Clear all messages for a specific agent.
+    
+    Args:
+        agent_id: The ID of the agent
+        user_id: Optional user ID to filter by
+        
+    Returns:
+        A status message
+    """
     try:
         # Clear the conversation in the database
-        success = ChatService.clear_conversation(agent_id)
+        success = ChatService.clear_conversation(agent_id, user_id)
         if success:
             return {"status": "success", "message": f"Conversation with agent {agent_id} cleared"}
         else:
@@ -248,8 +275,18 @@ async def clear_messages(agent_id: str):
         raise HTTPException(status_code=500, detail=f"Error clearing messages: {str(e)}")
 
 @app.post("/api/chat/{agent_id}/messages")
-async def send_message(agent_id: str, message: MessageContent):
-    """Send a message to an agent and get a response."""
+async def send_message(agent_id: str, message: MessageContent, user_id: Optional[str] = None):
+    """
+    Send a message to an agent and get a response.
+    
+    Args:
+        agent_id: The ID of the agent
+        message: The message content
+        user_id: Optional user ID to filter by
+        
+    Returns:
+        The created user message
+    """
     try:
         # Create user message in the database
         user_message_id = str(uuid.uuid4())
@@ -259,7 +296,8 @@ async def send_message(agent_id: str, message: MessageContent):
             content=message.content,
             timestamp=int(datetime.now().timestamp() * 1000),
             status="sent",
-            message_id=user_message_id
+            message_id=user_message_id,
+            user_id=user_id
         )
         
         # Get the agent from the initialized agents
@@ -272,7 +310,7 @@ async def send_message(agent_id: str, message: MessageContent):
                 state = {"messages": []}
                 
                 # Get all previous messages for context
-                previous_messages = ChatService.get_messages_for_agent_state(agent_id)
+                previous_messages = ChatService.get_messages_for_agent_state(agent_id, user_id)
                 
                 # Add all messages to the state
                 state["messages"] = previous_messages
@@ -343,7 +381,8 @@ async def send_message(agent_id: str, message: MessageContent):
                     agent_id=agent_id,
                     role="assistant",
                     content=agent_response,
-                    timestamp=int(datetime.now().timestamp() * 1000)
+                    timestamp=int(datetime.now().timestamp() * 1000),
+                    user_id=user_id
                 )
                 
             except Exception as e:
@@ -356,7 +395,8 @@ async def send_message(agent_id: str, message: MessageContent):
                     content=f"Error: {str(e)}",
                     timestamp=int(datetime.now().timestamp() * 1000),
                     status="error",
-                    error=str(e)
+                    error=str(e),
+                    user_id=user_id
                 )
         else:
             # Agent not found
@@ -369,7 +409,8 @@ async def send_message(agent_id: str, message: MessageContent):
                 content=f"Error: Agent '{agent_id}' not found",
                 timestamp=int(datetime.now().timestamp() * 1000),
                 status="error",
-                error=f"Agent '{agent_id}' not found"
+                error=f"Agent '{agent_id}' not found",
+                user_id=user_id
             )
         
         # Return the user message
@@ -618,6 +659,9 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                         
                         logger.info(f"Added special flag to internal message content for file_processing_supervisor: {internal_content}")
                     
+                    # Get user_id from the message data if provided
+                    user_id = message_data.get("userId")
+                    
                     user_message = ChatService.add_message(
                         agent_id=agent_id,
                         role="user",
@@ -625,7 +669,8 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                         timestamp=int(datetime.now().timestamp() * 1000),
                         status="sent",
                         message_id=user_message_id,
-                        client_message_id=message_data.get("clientMessageId")
+                        client_message_id=message_data.get("clientMessageId"),
+                        user_id=user_id
                     )
                     
                     # Add attachments to the message
@@ -702,7 +747,7 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                             state = {"messages": []}
                             
                             # Get all previous messages for context
-                            previous_messages = ChatService.get_messages_for_agent_state(agent_id)
+                            previous_messages = ChatService.get_messages_for_agent_state(agent_id, user_id)
                             
                             # If this is the file_processing_supervisor agent, modify the last message to include the special flag
                             if agent_id == "file_processing_supervisor" and previous_messages:
@@ -858,7 +903,8 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                                 role="assistant",
                                 content=agent_response,
                                 timestamp=int(datetime.now().timestamp() * 1000),
-                                message_id=agent_message_id
+                                message_id=agent_message_id,
+                                user_id=user_id
                             )
                             
                             # Send agent response back to client with a small delay
@@ -887,7 +933,8 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                                 timestamp=int(datetime.now().timestamp() * 1000),
                                 status="error",
                                 error=str(e),
-                                message_id=agent_message_id
+                                message_id=agent_message_id,
+                                user_id=user_id
                             )
                             
                             # Add logs to the message for the response
@@ -940,7 +987,8 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                             timestamp=int(datetime.now().timestamp() * 1000),
                             status="error",
                             error=f"Agent '{agent_id}' not found",
-                            message_id=agent_message_id
+                            message_id=agent_message_id,
+                            user_id=user_id
                         )
                         
                         # Send agent response back to client
@@ -960,8 +1008,11 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
             
             elif data.get("type") == "clear_conversation":
                 try:
+                    # Get user_id from the data if provided
+                    user_id = data.get("userId")
+                    
                     # Clear the conversation in the database
-                    success = ChatService.clear_conversation(agent_id)
+                    success = ChatService.clear_conversation(agent_id, user_id)
                     
                     # Send confirmation back to client
                     await websocket.send_json({
@@ -1113,7 +1164,13 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Close database connection on shutdown."""
-    from mosaic.backend.database import close_db_connection
+    try:
+        # Try importing with the full package path (for local development)
+        from mosaic.backend.database import close_db_connection
+    except ImportError:
+        # Fall back to relative import (for Docker environment)
+        from backend.database import close_db_connection
+    
     logger.info("Closing database connection")
     close_db_connection()
     logger.info("Database connection closed")
