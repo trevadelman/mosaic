@@ -17,6 +17,11 @@ export default function ChatPage() {
     connectionState
   } = useChat(selectedAgent?.id)
 
+  // Handle sending messages with attachments
+  const handleSendMessage = (message: string, attachments?: File[]) => {
+    sendMessage(message, attachments)
+  }
+
   return (
     <div className="flex h-full flex-col md:flex-row">
       {/* Agent selection sidebar */}
@@ -43,7 +48,7 @@ export default function ChatPage() {
       <div className="flex-1">
         <ChatInterface
           messages={messages}
-          onSendMessage={sendMessage}
+          onSendMessage={handleSendMessage}
           onClearChat={clearChat}
           isProcessing={isProcessing}
           selectedAgent={selectedAgent}

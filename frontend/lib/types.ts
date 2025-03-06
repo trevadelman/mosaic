@@ -21,6 +21,17 @@ export interface Agent {
   }
 }
 
+// Attachment types
+export interface Attachment {
+  id: number
+  type: string // "image", "file", etc.
+  filename: string
+  contentType: string
+  size: number
+  url?: string
+  data?: string // Base64 encoded data for small attachments
+}
+
 // Message types
 export interface Message {
   id: string
@@ -31,6 +42,7 @@ export interface Message {
   status?: "sending" | "sent" | "error"
   error?: string
   logs?: string[]  // Array of log messages for this message
+  attachments?: Attachment[] // Array of attachments for this message
 }
 
 // Response types

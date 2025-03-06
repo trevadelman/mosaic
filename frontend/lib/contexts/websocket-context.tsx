@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react"
-import { Message, WebSocketEvent } from "../types"
+import { Message, WebSocketEvent, Attachment } from "../types"
 
 // WebSocket connection states
 export enum ConnectionState {
@@ -15,6 +15,7 @@ export enum ConnectionState {
 interface QueuedMessage {
   agentId: string
   content: string
+  attachments?: Attachment[]
   retries: number
   id: string
   timestamp: number
@@ -23,7 +24,7 @@ interface QueuedMessage {
 // WebSocket context type
 interface WebSocketContextType {
   connectionState: ConnectionState
-  sendMessage: (agentId: string, content: string, type?: string) => Promise<boolean>
+  sendMessage: (agentId: string, content: string, type?: string, attachments?: Attachment[]) => Promise<boolean>
   addEventListener: (callback: (event: WebSocketEvent) => void) => () => void
   connect: (agentId?: string) => void
   disconnect: () => void
@@ -224,7 +225,9 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
             queuedMessage.agentId,
             queuedMessage.content,
             queuedMessage.id,
-            queuedMessage.timestamp
+            queuedMessage.timestamp,
+            "message",
+            queuedMessage.attachments
           )
           
           if (sent) {
@@ -265,7 +268,8 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       content: string,
       id?: string,
       timestamp?: number,
-      type: string = "message"
+      type: string = "message",
+      attachments?: Attachment[]
     ): Promise<boolean> => {
       if (!isConnected()) {
         console.log("WebSocket not connected, cannot send message")
@@ -280,7 +284,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
           }))
           console.log("Clear conversation message sent successfully via WebSocket")
         } else {
-          // Send regular message
+          // Send regular message with optional attachments
           socketRef.current!.send(JSON.stringify({
             type: "message",
             message: {
@@ -288,10 +292,11 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
               content,
               agentId,
               id,
-              timestamp
+              timestamp,
+              attachments
             }
           }))
-          console.log("Message sent successfully via WebSocket")
+          console.log("Message sent successfully via WebSocket", attachments ? `with ${attachments.length} attachments` : "")
         }
         return true
       } catch (error) {
@@ -304,7 +309,12 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
 
   // Send message (public API)
   const sendMessage = useCallback(
-    async (agentId: string, content: string, type: string = "message"): Promise<boolean> => {
+    async (
+      agentId: string, 
+      content: string, 
+      type: string = "message", 
+      attachments?: Attachment[]
+    ): Promise<boolean> => {
       // If sending a clear_conversation message and connected, send it directly
       if (type === "clear_conversation" && isConnected()) {
         return sendMessageInternal(agentId, content, undefined, undefined, type)
@@ -320,6 +330,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
           const queuedMessage: QueuedMessage = {
             agentId,
             content,
+            attachments,
             retries: 0,
             id: Math.random().toString(36).substring(2, 9),
             timestamp: Date.now()
@@ -335,7 +346,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       }
       
       // Send message directly
-      return sendMessageInternal(agentId, content, undefined, undefined, type)
+      return sendMessageInternal(agentId, content, undefined, undefined, type, attachments)
     },
     [connect, isConnected, sendMessageInternal]
   )

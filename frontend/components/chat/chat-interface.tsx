@@ -11,7 +11,7 @@ import { AgentDetails } from "@/components/agents/agent-details"
 
 interface ChatInterfaceProps {
   messages: MessageType[]
-  onSendMessage: (message: string) => void
+  onSendMessage: (message: string, attachments?: File[]) => void
   onClearChat?: () => void
   isProcessing?: boolean
   selectedAgent: Agent | null
@@ -166,7 +166,8 @@ export function ChatInterface({
       <div className="border-t p-4">
         <ChatInput
           onSendMessage={onSendMessage}
-          isDisabled={isProcessing || !selectedAgent}
+          isDisabled={!selectedAgent}
+          isProcessing={isProcessing}
           placeholder={
             selectedAgent
               ? `Message ${selectedAgent.name}...`

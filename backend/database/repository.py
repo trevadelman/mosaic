@@ -8,6 +8,7 @@ to interact with the database.
 
 import logging
 import uuid
+import base64
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
 
@@ -896,7 +897,8 @@ def message_to_dict(message: Message) -> Dict[str, Any]:
                 "filename": attachment.filename,
                 "contentType": attachment.content_type,
                 "size": attachment.size,
-                "url": f"/api/attachments/{attachment.id}" if not attachment.data else None
+                "url": f"/api/attachments/{attachment.id}" if not attachment.data else None,
+                "data": base64.b64encode(attachment.data).decode('ascii') if attachment.data and attachment.type.startswith('image/') else None
             }
             for attachment in attachments
         ]

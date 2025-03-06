@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -6,7 +6,8 @@ import logging
 import os
 import uuid
 import asyncio
-from typing import List, Dict, Any, Optional
+import base64
+from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
 import json
 
@@ -132,6 +133,15 @@ class Agent(BaseModel):
 class MessageContent(BaseModel):
     content: str
 
+class Attachment(BaseModel):
+    id: int
+    type: str
+    filename: str
+    contentType: str
+    size: int
+    url: Optional[str] = None
+    data: Optional[str] = None  # Base64 encoded data
+
 class Message(BaseModel):
     id: str
     role: str
@@ -140,6 +150,7 @@ class Message(BaseModel):
     agentId: Optional[str] = None
     status: Optional[str] = None
     error: Optional[str] = None
+    attachments: Optional[List[Attachment]] = None
 
 # Import the agent registry
 try:
@@ -440,6 +451,102 @@ class WebSocketLogHandler(logging.Handler):
         """Get all logs collected by this handler."""
         return self.log_queue
 
+# Helper function to process attachments
+async def process_attachments(attachments, temp_message_id=None):
+    """Process attachments from the WebSocket message."""
+    processed_attachments = []
+    
+    if not attachments:
+        return processed_attachments
+    
+    # Generate a temporary message ID if not provided
+    if temp_message_id is None:
+        temp_message_id = f"temp_{str(uuid.uuid4())}"
+    
+    logger.info(f"Processing attachments with temporary message ID: {temp_message_id}")
+    
+    for attachment in attachments:
+        # Create a database attachment
+        db_attachment = None
+        
+        # If attachment has base64 data, store it
+        if attachment.get('data'):
+            try:
+                # Decode base64 data
+                file_data = base64.b64decode(attachment['data'])
+                
+                # Store in database with temporary message ID
+                db_attachment = AttachmentService.add_attachment(
+                    message_id=temp_message_id,  # Use temporary ID to satisfy NOT NULL constraint
+                    attachment_type=attachment['type'],
+                    filename=attachment['filename'],
+                    content_type=attachment['contentType'],
+                    size=attachment['size'],
+                    data=file_data
+                )
+                
+                # Add to processed attachments
+                if db_attachment:
+                    processed_attachments.append(db_attachment)
+                
+                logger.info(f"Stored attachment: {attachment['filename']} ({len(file_data)} bytes)")
+            except Exception as e:
+                logger.error(f"Error processing attachment: {str(e)}")
+    
+    return processed_attachments
+
+# Helper function to format messages for LLM with image support
+def format_messages_for_llm(messages):
+    """Format messages for the LLM, including image attachments."""
+    formatted_messages = []
+    
+    for msg in messages:
+        # Basic message format
+        formatted_msg = {
+            "role": msg["role"],
+            "content": []
+        }
+        
+        # Add text content
+        formatted_msg["content"].append({
+            "type": "text",
+            "text": msg["content"]
+        })
+        
+        # Add image attachments if any
+        if msg.get("attachments"):
+            for attachment in msg["attachments"]:
+                if attachment["type"].startswith("image/"):
+                    # Get the image data
+                    image_data = attachment.get("data")
+                    
+                    # If we don't have the data directly, try to get it from the attachment service
+                    if not image_data and attachment.get("id"):
+                        try:
+                            attachment_details = AttachmentService.get_attachment(attachment["id"])
+                            if attachment_details and attachment_details.get("data"):
+                                image_data = attachment_details["data"]
+                                logger.info(f"Retrieved image data from attachment service for ID: {attachment['id']}")
+                        except Exception as e:
+                            logger.error(f"Error retrieving attachment data: {str(e)}")
+                    
+                    if image_data:
+                        # Add image content
+                        image_url = f"data:{attachment['type']};base64,{image_data}"
+                        formatted_msg["content"].append({
+                            "type": "image_url",
+                            "image_url": {
+                                "url": image_url
+                            }
+                        })
+                        logger.info(f"Added image to message: {attachment['filename']} (base64 data redacted)")
+                    else:
+                        logger.warning(f"No image data found for attachment: {attachment['filename']}")
+        
+        formatted_messages.append(formatted_msg)
+    
+    return formatted_messages
+
 @app.websocket("/ws/chat/{agent_id}")
 async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
     client_id = str(uuid.uuid4())
@@ -463,8 +570,17 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                 message_data = data.get("message", {})
                 
                 try:
-                    # Create user message in the database
+                    # Generate a user message ID in advance
                     user_message_id = str(uuid.uuid4())
+                    
+                    # Process attachments if any
+                    attachments = []
+                    if message_data.get("attachments"):
+                        logger.info(f"Processing {len(message_data['attachments'])} attachments for message {user_message_id}")
+                        attachments = await process_attachments(message_data["attachments"], user_message_id)
+                        logger.info(f"Processed {len(attachments)} attachments")
+                    
+                    # Create user message in the database
                     user_message = ChatService.add_message(
                         agent_id=agent_id,
                         role="user",
@@ -474,6 +590,19 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                         message_id=user_message_id,
                         client_message_id=message_data.get("clientMessageId")
                     )
+                    
+                    # Add attachments to the message
+                    for attachment in attachments:
+                        # Update the message_id for the attachment
+                        AttachmentService.update_attachment_message(
+                            attachment_id=attachment["id"],
+                            message_id=user_message_id
+                        )
+                        
+                        # Add attachment to the user message
+                        if "attachments" not in user_message:
+                            user_message["attachments"] = []
+                        user_message["attachments"].append(attachment)
                     
                     # Send confirmation back to client
                     await websocket.send_json({
@@ -538,8 +667,43 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                             # Get all previous messages for context
                             previous_messages = ChatService.get_messages_for_agent_state(agent_id)
                             
-                            # Add all messages to the state
-                            state["messages"] = previous_messages
+                            # Check if we have any image attachments
+                            has_images = False
+                            for msg in previous_messages:
+                                if msg.get("attachments"):
+                                    for attachment in msg.get("attachments", []):
+                                        if attachment.get("type", "").startswith("image/"):
+                                            has_images = True
+                                            break
+                            
+                            # If we have images, format messages for vision model
+                            if has_images:
+                                logger.info("Detected image attachments, formatting for vision model")
+                                formatted_messages = format_messages_for_llm(previous_messages)
+                                state["messages"] = formatted_messages
+                                state["use_vision"] = True
+                                
+                                # Log the formatted messages (without the actual base64 data)
+                                log_formatted_messages = []
+                                for msg in formatted_messages:
+                                    log_msg = msg.copy()
+                                    if "content" in log_msg and isinstance(log_msg["content"], list):
+                                        log_content = []
+                                        for content_item in log_msg["content"]:
+                                            if content_item.get("type") == "image_url":
+                                                log_content.append({
+                                                    "type": "image_url",
+                                                    "image_url": {"url": "[IMAGE DATA]"}
+                                                })
+                                            else:
+                                                log_content.append(content_item)
+                                        log_msg["content"] = log_content
+                                    log_formatted_messages.append(log_msg)
+                                
+                                logger.info(f"Formatted messages for vision model (with image data redacted)")
+                            else:
+                                # Add all messages to the state in standard format
+                                state["messages"] = previous_messages
                             
                             # Invoke the agent
                             logger.info(f"Invoking {agent_id} agent with {len(previous_messages)} previous messages")
@@ -553,20 +717,27 @@ async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
                             # Log the message types for debugging
                             logger.info(f"Result messages types: {[type(msg).__name__ for msg in messages]}")
                             
-                            # Log all messages for debugging
+                            # Log all messages for debugging (with image data redacted)
                             for i, msg in enumerate(messages):
                                 if isinstance(msg, dict):
-                                    logger.info(f"Message {i} (dict): {msg}")
+                                    # Create a redacted copy of the message for logging
+                                    log_msg = msg.copy()
+                                    if "content" in log_msg and isinstance(log_msg["content"], list):
+                                        # Redact image data in content array
+                                        for j, content_item in enumerate(log_msg["content"]):
+                                            if isinstance(content_item, dict) and content_item.get("type") == "image_url":
+                                                log_msg["content"][j] = {"type": "image_url", "image_url": {"url": "[IMAGE DATA REDACTED]"}}
+                                    logger.info(f"Message {i} (dict): {log_msg}")
                                 else:
                                     msg_type = getattr(msg, "type", "N/A")
-                                    msg_content = getattr(msg, "content", "N/A")
                                     
                                     # Log tool usage more explicitly
                                     if msg_type == "tool":
                                         tool_name = getattr(msg, "name", "unknown_tool")
-                                        logger.info(f"Message {i} (ToolMessage): TOOL USED: {tool_name}, result={msg_content}")
+                                        logger.info(f"Message {i} (ToolMessage): TOOL USED: {tool_name}")
                                     else:
-                                        logger.info(f"Message {i} ({type(msg).__name__}): content={msg_content}, type={msg_type}, role={getattr(msg, 'role', 'N/A')}")
+                                        # Don't log the actual content which might contain base64 data
+                                        logger.info(f"Message {i} ({type(msg).__name__}): type={msg_type}, role={getattr(msg, 'role', 'N/A')}")
                             
                             # First try to find the last AIMessage
                             for message_item in reversed(messages):

@@ -7,6 +7,7 @@ interact with the database.
 """
 
 import logging
+import base64
 from typing import List, Dict, Any, Optional, Tuple
 
 from .repository import (
@@ -16,6 +17,8 @@ from .repository import (
     message_to_dict,
     conversation_to_dict
 )
+from .models import Attachment
+from .database import get_db_session
 
 # Configure logging
 logger = logging.getLogger("mosaic.database.service")
@@ -191,7 +194,7 @@ class ChatService:
         return conversation_to_dict(conversation, include_messages=True)
     
     @staticmethod
-    def get_messages_for_agent_state(agent_id: str) -> List[Dict[str, str]]:
+    def get_messages_for_agent_state(agent_id: str) -> List[Dict[str, Any]]:
         """
         Get messages for an agent in a format suitable for the agent state.
         
@@ -208,7 +211,8 @@ class ChatService:
         return [
             {
                 "role": message["role"],
-                "content": message["content"]
+                "content": message["content"],
+                "attachments": message.get("attachments", [])
             }
             for message in messages
         ]
@@ -266,6 +270,31 @@ class AttachmentService:
         }
     
     @staticmethod
+    def update_attachment_message(attachment_id: int, message_id: str) -> bool:
+        """
+        Update the message ID for an attachment.
+        
+        Args:
+            attachment_id: The ID of the attachment
+            message_id: The new message ID
+            
+        Returns:
+            True if the attachment was updated, False otherwise
+        """
+        try:
+            with get_db_session() as session:
+                attachment = session.query(Attachment).filter(Attachment.id == attachment_id).first()
+                if attachment:
+                    attachment.message_id = message_id
+                    session.commit()
+                    logger.info(f"Updated message ID for attachment {attachment_id} to {message_id}")
+                    return True
+                return False
+        except Exception as e:
+            logger.error(f"Error updating attachment message ID: {str(e)}")
+            return False
+    
+    @staticmethod
     def get_attachment(attachment_id: int) -> Optional[Dict[str, Any]]:
         """
         Get an attachment by ID.
@@ -290,5 +319,5 @@ class AttachmentService:
             "contentType": attachment.content_type,
             "size": attachment.size,
             "url": f"/api/attachments/{attachment.id}" if not attachment.data else None,
-            "data": attachment.data
+            "data": base64.b64encode(attachment.data).decode('ascii') if attachment.data and attachment.type.startswith('image/') else None
         }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { v4 as uuidv4 } from "uuid"
-import { Message } from "../types"
+import { Message, Attachment } from "../types"
 import { chatApi } from "../api"
 import { mockMessages } from "../mock-data"
 import { useWebSocket, ConnectionState } from "../contexts/websocket-context"
@@ -153,13 +153,67 @@ export function useChat(agentId?: string) {
     }
   }, [connectionState, error, isInitialized])
 
-  // Send a message
+  // Process files and convert to base64
+  const processFiles = async (files: File[]): Promise<Attachment[]> => {
+    const attachments: Attachment[] = []
+    
+    for (const file of files) {
+      // Create a new attachment
+      const attachment: Attachment = {
+        id: Date.now() + Math.floor(Math.random() * 1000), // Temporary ID
+        type: file.type,
+        filename: file.name,
+        contentType: file.type,
+        size: file.size,
+      }
+      
+      // Convert file to base64 for all file types
+      try {
+        const base64 = await readFileAsBase64(file)
+        attachment.data = base64
+      } catch (error) {
+        console.error("Error converting file to base64:", error)
+      }
+      
+      attachments.push(attachment)
+    }
+    
+    return attachments
+  }
+  
+  // Helper function to read file as base64
+  const readFileAsBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
+          const base64 = reader.result.split(',')[1]
+          resolve(base64)
+        } else {
+          reject(new Error('FileReader result is not a string'))
+        }
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  // Send a message with optional attachments
   const sendMessage = useCallback(
-    async (content: string) => {
-      if (!agentId || !content.trim()) return
+    async (content: string, attachments?: File[]) => {
+      if (!agentId || (!content.trim() && !attachments?.length)) return
 
       setError(null)
       setIsProcessing(true)
+
+      // Process attachments if any
+      let processedAttachments: Attachment[] | undefined
+      if (attachments && attachments.length > 0) {
+        console.log("Processing attachments:", attachments)
+        processedAttachments = await processFiles(attachments)
+        console.log("Processed attachments:", processedAttachments)
+      }
 
       // Create a temporary message
       const tempMessage: Message = {
@@ -168,7 +222,8 @@ export function useChat(agentId?: string) {
         content,
         timestamp: Date.now(),
         agentId,
-        status: "sending"
+        status: "sending",
+        attachments: processedAttachments
       }
 
       // Check if a similar message was recently added
@@ -220,8 +275,10 @@ export function useChat(agentId?: string) {
       } else {
         try {
           // Try to send via WebSocket
-          console.log("Sending message via WebSocket:", content)
-          const sent = await wsSendMessage(agentId, content)
+          console.log("Sending message via WebSocket:", content, processedAttachments ? `with ${processedAttachments.length} attachments` : "")
+          
+          // Send message with attachments
+          const sent = await wsSendMessage(agentId, content, "message", processedAttachments)
           console.log("Message sent successfully:", sent)
           
           // Update message status to sent
