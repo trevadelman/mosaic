@@ -9,8 +9,7 @@ The agent system is organized into the following directories:
 - **base.py**: Contains the base agent framework and agent registry
 - **regular/**: Contains regular (specialized) agents
 - **supervisors/**: Contains supervisor agents that orchestrate regular agents
-- **sandbox/**: Contains sandbox environment for testing new agents
-- **templates/**: Contains templates for creating new agents
+- **internal/**: Contains internal utilities for agent management
 
 ## Architecture
 
@@ -37,7 +36,7 @@ Regular agents (in the `regular/` directory) are built on top of the base agent 
 - **LiteratureAgent**: Searches for academic papers and articles
 - **SafetyAgent**: Validates agent actions for safety
 - **WriterAgent**: Handles file operations
-- **AgentCreatorAgent**: Creates and deploys new agents
+- **StoryWriterAgent**: Generates creative stories based on prompts
 
 ### Supervisor Agents
 
@@ -47,7 +46,28 @@ Supervisor agents (in the `supervisors/` directory) orchestrate multiple regular
 - **Research Supervisor**: Orchestrates web search, browser interaction, data processing, and literature agents for comprehensive research tasks
 - **Multi-Agent Supervisor**: Generic supervisor that can orchestrate any combination of regular agents
 
+### Internal Utilities
+
+Internal utilities (in the `internal/` directory) provide functionality for agent management:
+
+- **AgentGenerator**: Validates agent definitions and handles agent registration
+- **agent_schema.json**: JSON schema for validating agent definitions
+
 ## Usage
+
+### Using Existing Agents
+
+To use an existing agent, you can import it and invoke it directly:
+
+```python
+from mosaic.backend.agents import agent_registry
+
+# Get an agent from the registry
+calculator_agent = agent_registry.get("calculator")
+
+# Invoke the agent
+result = calculator_agent.invoke({"messages": [{"role": "user", "content": "Calculate 2 + 2"}]})
+```
 
 ### Creating a New Agent
 
@@ -245,7 +265,7 @@ This ensures that logs from all specialized agents are captured and displayed in
 
 ## Dynamic Agent Discovery and API Endpoint Generation
 
-The MOSAIC platform now includes a dynamic agent discovery system and automatic API endpoint generation for agents. This makes it easier to create and use new agents without modifying the core application code.
+The MOSAIC platform includes a dynamic agent discovery system and automatic API endpoint generation for agents. This makes it easier to use new agents without modifying the core application code.
 
 ### Dynamic Agent Discovery
 

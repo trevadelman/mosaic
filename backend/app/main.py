@@ -18,14 +18,6 @@ except ImportError:
     # Fall back to relative import (for Docker environment)
     from backend.database import init_db, ChatService, AttachmentService
 
-# Import the agent creator API router
-try:
-    # Try importing with the full package path (for local development)
-    from mosaic.backend.app.agent_creator_api import router as agent_creator_router
-except ImportError:
-    # Fall back to relative import (for Docker environment)
-    from backend.app.agent_creator_api import router as agent_creator_router
-
 # Import the agent API router
 try:
     # Try importing with the full package path (for local development)
@@ -48,9 +40,6 @@ app = FastAPI(
     description="API for Multi-agent Orchestration System for Adaptive Intelligent Collaboration",
     version="0.1.0",
 )
-
-# Include the agent creator API router
-app.include_router(agent_creator_router)
 
 # Include the agent API router
 app.include_router(get_agent_api_router())

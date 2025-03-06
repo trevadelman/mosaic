@@ -11,6 +11,24 @@ The MOSAIC frontend consists of several key components:
 3. **API Client**: Communicates with the backend API
 4. **WebSocket Client**: Handles real-time communication with the backend
 
+## Directory Structure
+
+The frontend is organized into the following directories:
+
+- **app/**: Next.js app directory containing pages and routes
+  - **agents/**: Agent listing page
+  - **chat/**: Chat interface for interacting with agents
+  - **community/**: Community page
+  - **settings/**: Settings page
+- **components/**: Reusable UI components
+  - **agents/**: Agent-related components
+  - **chat/**: Chat interface components
+  - **sidebar/**: Navigation sidebar
+  - **ui/**: Base UI components from shadcn/ui
+- **lib/**: Utility functions and API clients
+  - **contexts/**: React context providers
+  - **hooks/**: Custom React hooks
+
 ## How to Test the Frontend
 
 ### Prerequisites
@@ -45,11 +63,13 @@ This will start the Next.js development server on http://localhost:3000.
 The frontend communicates with the backend through:
 
 1. **REST API Calls**:
-   - `POST /api/query`: Submit a new query to the agent system
-   - `GET /api/history`: Get the history of queries and responses
+   - `GET /api/agents`: Get a list of all available agents
+   - `GET /api/agents/{agent_id}`: Get information about a specific agent
+   - `POST /api/agents/{agent_id}/messages`: Send a message to an agent
+   - `GET /api/agents/{agent_id}/messages`: Get all messages for a specific agent
 
 2. **WebSocket Connection**:
-   - `/ws`: Real-time communication for agent responses and logs
+   - `/ws/chat/{agent_id}`: Real-time communication for agent responses and logs
 
 ## Testing the Full System
 

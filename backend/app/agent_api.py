@@ -33,11 +33,11 @@ except ImportError:
 # Import the agent modules
 try:
     # Try importing with the full package path (for local development)
-    from mosaic.backend.agents.regular import calculator, web_search, browser_interaction, data_processing, literature, agent_creator
+    from mosaic.backend.agents.regular import calculator, web_search, browser_interaction, data_processing, literature
     from mosaic.backend.agents.supervisors import research_assistant
 except ImportError:
     # Fall back to relative import (for Docker environment)
-    from backend.agents.regular import calculator, web_search, browser_interaction, data_processing, literature, agent_creator
+    from backend.agents.regular import calculator, web_search, browser_interaction, data_processing, literature
     from backend.agents.supervisors import research_assistant
 
 # Import the agent runner module to get initialized agents
@@ -473,11 +473,11 @@ class AgentAPI:
                     # Initialize the conversation state
                     state = {"messages": []}
                     
-                    # Add the user message to the state
-                    state["messages"].append({
-                        "role": "user",
-                        "content": message.content
-                    })
+                    # Get all previous messages for context
+                    previous_messages = ChatService.get_messages_for_agent_state(agent_id)
+                    
+                    # Add all messages to the state
+                    state["messages"] = previous_messages
                     
                     # Invoke the agent
                     logger.info(f"Invoking {agent_id} agent")
@@ -723,3 +723,11 @@ def get_agent_api_router():
     # Set up agent routes
     agent_api.setup_agent_routes()
     return agent_api.router
+
+# Import ChatService for getting messages
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.database.service import ChatService
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.database.service import ChatService
