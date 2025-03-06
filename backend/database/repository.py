@@ -181,6 +181,59 @@ class ConversationRepository:
             return conversation
     
     @staticmethod
+    def activate_conversation(conversation_id: int, agent_id: str, user_id: Optional[str] = None) -> Optional[Conversation]:
+        """
+        Activate a conversation and deactivate all other conversations for the same agent and user.
+        
+        Args:
+            conversation_id: The ID of the conversation to activate
+            agent_id: The ID of the agent
+            user_id: Optional user ID to filter by
+            
+        Returns:
+            The activated conversation, or None if not found
+        """
+        with get_db_session() as session:
+            # First, deactivate all conversations for this agent and user
+            query = session.query(Conversation).filter(
+                Conversation.agent_id == agent_id,
+                Conversation.is_active == True
+            )
+            
+            # Filter by user_id if provided
+            if user_id:
+                query = query.filter(Conversation.user_id == user_id)
+                
+            for active_conversation in query.all():
+                active_conversation.is_active = False
+                logger.info(f"Deactivated conversation {active_conversation.id}")
+            
+            # Then, activate the specified conversation
+            conversation = session.query(Conversation).filter(Conversation.id == conversation_id).first()
+            if conversation:
+                conversation.is_active = True
+                session.commit()
+                logger.info(f"Activated conversation {conversation_id}")
+                
+                # Create a new instance of the conversation to return
+                # This avoids the "not bound to a Session" error
+                activated_conversation = Conversation(
+                    id=conversation.id,
+                    agent_id=conversation.agent_id,
+                    title=conversation.title,
+                    is_active=True,
+                    user_id=conversation.user_id,
+                    created_at=conversation.created_at,
+                    updated_at=conversation.updated_at
+                )
+                
+                return activated_conversation
+            else:
+                # If the conversation wasn't found, still commit the deactivations
+                session.commit()
+                return None
+    
+    @staticmethod
     def delete_conversation(conversation_id: int) -> bool:
         """
         Delete a conversation and all its messages.

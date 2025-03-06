@@ -54,11 +54,18 @@ app.include_router(get_user_api_router())
 app.include_router(get_webhook_api_router())
 app.include_router(get_user_data_api_router())
 
+# Import settings
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.app.config import settings
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.app.config import settings
+
 # Configure CORS
-cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://frontend:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -250,6 +257,73 @@ async def get_messages(agent_id: str, user_id: Optional[str] = None):
     except Exception as e:
         logger.error(f"Error getting messages for agent {agent_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error getting messages: {str(e)}")
+
+@app.get("/api/chat/{agent_id}/conversations")
+async def get_conversations(agent_id: str, user_id: Optional[str] = None):
+    """
+    Get conversation history for a specific agent.
+    
+    Args:
+        agent_id: The ID of the agent
+        user_id: Optional user ID to filter by
+        
+    Returns:
+        A list of conversations
+    """
+    try:
+        # Get conversation history from the database, filtered by user_id if provided
+        conversations = ChatService.get_conversation_history(agent_id, user_id)
+        return conversations
+    except Exception as e:
+        logger.error(f"Error getting conversation history for agent {agent_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting conversation history: {str(e)}")
+
+@app.post("/api/chat/{agent_id}/conversations/{conversation_id}/activate")
+async def activate_conversation(agent_id: str, conversation_id: int, user_id: Optional[str] = None):
+    """
+    Activate a specific conversation for an agent.
+    
+    Args:
+        agent_id: The ID of the agent
+        conversation_id: The ID of the conversation to activate
+        user_id: Optional user ID to filter by
+        
+    Returns:
+        The activated conversation
+    """
+    try:
+        # Activate the conversation in the database
+        conversation = ChatService.activate_conversation(conversation_id, agent_id, user_id)
+        if conversation:
+            return conversation
+        else:
+            raise HTTPException(status_code=404, detail=f"Conversation {conversation_id} not found")
+    except Exception as e:
+        logger.error(f"Error activating conversation {conversation_id} for agent {agent_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error activating conversation: {str(e)}")
+
+@app.delete("/api/chat/{agent_id}/conversations/{conversation_id}")
+async def delete_conversation(agent_id: str, conversation_id: int):
+    """
+    Delete a specific conversation for an agent.
+    
+    Args:
+        agent_id: The ID of the agent
+        conversation_id: The ID of the conversation to delete
+        
+    Returns:
+        A status message
+    """
+    try:
+        # Delete the conversation in the database
+        success = ChatService.delete_conversation(conversation_id)
+        if success:
+            return {"status": "success", "message": f"Conversation {conversation_id} deleted"}
+        else:
+            return {"status": "warning", "message": f"Conversation {conversation_id} not found"}
+    except Exception as e:
+        logger.error(f"Error deleting conversation {conversation_id} for agent {agent_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error deleting conversation: {str(e)}")
 
 @app.delete("/api/chat/{agent_id}/messages")
 async def clear_messages(agent_id: str, user_id: Optional[str] = None):

@@ -32,6 +32,18 @@ export interface Attachment {
   data?: string // Base64 encoded data for small attachments
 }
 
+// Conversation types
+export interface Conversation {
+  id: number
+  agentId: string
+  title: string
+  createdAt: string
+  updatedAt: string
+  isActive: boolean
+  userId?: string
+  messages?: Message[]
+}
+
 // Message types
 export interface Message {
   id: string

@@ -2,6 +2,7 @@
 fastapi
 uvicorn
 pydantic
+pydantic-settings  # Added for BaseSettings
 sqlalchemy
 python-dotenv
 websockets
@@ -25,3 +26,5 @@ lxml
 
 # Data processing
 regex
+pandas  # Added for file processing
+tabulate  # Added for markdown tables in file processing

@@ -1,4 +1,4 @@
-import { Agent, ApiResponse, Message, Tool } from "./types"
+import { Agent, ApiResponse, Conversation, Message, Tool } from "./types"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 
@@ -66,6 +66,22 @@ export const chatApi = {
   // Clear chat history with a specific agent
   clearMessages: (agentId: string, userId?: string) =>
     fetchApi<{status: string, message: string}>(`/chat/${agentId}/messages${userId ? `?user_id=${userId}` : ''}`, {
+      method: "DELETE",
+    }),
+    
+  // Get conversation history for a specific agent
+  getConversations: (agentId: string, userId?: string) =>
+    fetchApi<Conversation[]>(`/chat/${agentId}/conversations${userId ? `?user_id=${userId}` : ''}`),
+    
+  // Activate a specific conversation
+  activateConversation: (agentId: string, conversationId: number, userId?: string) =>
+    fetchApi<Conversation>(`/chat/${agentId}/conversations/${conversationId}/activate${userId ? `?user_id=${userId}` : ''}`, {
+      method: "POST",
+    }),
+    
+  // Delete a specific conversation
+  deleteConversation: (agentId: string, conversationId: number) =>
+    fetchApi<{status: string, message: string}>(`/chat/${agentId}/conversations/${conversationId}`, {
       method: "DELETE",
     }),
 }

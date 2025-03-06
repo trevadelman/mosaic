@@ -28,6 +28,24 @@ export function useChat(agentId?: string) {
     disconnect
   } = useWebSocket()
 
+  // Function to fetch messages from the API
+  const fetchMessages = useCallback(async () => {
+    if (!agentId) return
+    
+    // Get the user ID if available
+    const userId = user?.id
+    
+    const response = await chatApi.getMessages(agentId, userId)
+    
+    if (response.error) {
+      setError(response.error)
+    } else if (response.data) {
+      setMessages(response.data)
+    }
+    
+    setIsInitialized(true)
+  }, [agentId, user])
+
   // Initialize WebSocket connection and fetch messages when agentId changes
   useEffect(() => {
     if (!agentId) return
@@ -51,23 +69,6 @@ export function useChat(agentId?: string) {
       }, 500) // Simulate network delay
     } else {
       // Fetch message history from API
-      const fetchMessages = async () => {
-        if (!agentId) return
-        
-        // Get the user ID if available
-        const userId = user?.id
-        
-        const response = await chatApi.getMessages(agentId, userId)
-        
-        if (response.error) {
-          setError(response.error)
-        } else if (response.data) {
-          setMessages(response.data)
-        }
-        
-        setIsInitialized(true)
-      }
-
       fetchMessages()
 
       // Disconnect existing WebSocket connection
@@ -78,7 +79,7 @@ export function useChat(agentId?: string) {
       console.log("Connecting to WebSocket for agent:", agentId)
       connect(agentId)
     }
-  }, [agentId, connect, disconnect, user])
+  }, [agentId, connect, disconnect, fetchMessages])
 
   // Set up WebSocket event listeners
   useEffect(() => {
@@ -383,6 +384,7 @@ export function useChat(agentId?: string) {
     messages,
     sendMessage,
     clearChat,
+    refreshMessages: fetchMessages,
     isProcessing,
     error,
     connectionState

@@ -35,6 +35,8 @@ trap cleanup SIGINT SIGTERM
 # Start the backend
 echo -e "${GREEN}Starting backend service...${NC}"
 cd backend
+# Add the parent directory to the Python path
+export PYTHONPATH=$PYTHONPATH:$(dirname $(pwd))
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload &
 BACKEND_PID=$!
 cd ..

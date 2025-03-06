@@ -165,6 +165,41 @@ class ChatService:
         return True
     
     @staticmethod
+    def activate_conversation(conversation_id: int, agent_id: str, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """
+        Activate a specific conversation and deactivate all other conversations for the same agent and user.
+        
+        Args:
+            conversation_id: The ID of the conversation to activate
+            agent_id: The ID of the agent
+            user_id: Optional user ID to filter by
+            
+        Returns:
+            The activated conversation as a dictionary, or None if not found
+        """
+        # Activate the conversation
+        conversation = ConversationRepository.activate_conversation(conversation_id, agent_id, user_id)
+        
+        if not conversation:
+            return None
+        
+        # Convert to dictionary
+        return conversation_to_dict(conversation)
+    
+    @staticmethod
+    def delete_conversation(conversation_id: int) -> bool:
+        """
+        Delete a conversation and all its messages.
+        
+        Args:
+            conversation_id: The ID of the conversation
+            
+        Returns:
+            True if the conversation was deleted, False otherwise
+        """
+        return ConversationRepository.delete_conversation(conversation_id)
+    
+    @staticmethod
     def get_conversation_history(agent_id: str, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Get the conversation history for an agent.

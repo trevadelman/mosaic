@@ -4,6 +4,7 @@ import { useRef, useEffect } from "react"
 import { Message as MessageType, Agent } from "@/lib/types"
 import { Message } from "./message"
 import { ChatInput } from "./chat-input"
+import { ConversationHistory } from "./conversation-history"
 import { AlertCircle, Loader2, Wifi, WifiOff, Trash2 } from "lucide-react"
 import { ConnectionState } from "@/lib/contexts/websocket-context"
 import { Button } from "@/components/ui/button"
@@ -13,6 +14,7 @@ interface ChatInterfaceProps {
   messages: MessageType[]
   onSendMessage: (message: string, attachments?: File[]) => void
   onClearChat?: () => void
+  refreshMessages?: () => void
   isProcessing?: boolean
   selectedAgent: Agent | null
   error?: string | null
@@ -23,6 +25,7 @@ export function ChatInterface({
   messages,
   onSendMessage,
   onClearChat,
+  refreshMessages,
   isProcessing = false,
   selectedAgent,
   error,
@@ -50,6 +53,22 @@ export function ChatInterface({
           </h2>
           
           <div className="flex items-center gap-3">
+            {/* Conversation History */}
+            {selectedAgent && (
+              <ConversationHistory 
+                agentId={selectedAgent.id} 
+                onConversationSelect={() => {
+                  // Refresh messages when a conversation is selected
+                  if (refreshMessages) {
+                    refreshMessages();
+                  }
+                  if (messagesEndRef.current) {
+                    messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+                  }
+                }}
+              />
+            )}
+            
             {/* Clear chat button */}
             {messages.length > 0 && onClearChat && (
               <Button

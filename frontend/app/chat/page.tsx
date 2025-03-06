@@ -12,6 +12,7 @@ export default function ChatPage() {
     messages, 
     sendMessage, 
     clearChat,
+    refreshMessages,
     isProcessing, 
     error,
     connectionState
@@ -50,6 +51,7 @@ export default function ChatPage() {
           messages={messages}
           onSendMessage={handleSendMessage}
           onClearChat={clearChat}
+          refreshMessages={refreshMessages}
           isProcessing={isProcessing}
           selectedAgent={selectedAgent}
           error={error}

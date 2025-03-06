@@ -10,10 +10,19 @@ import {
   LogOut,
   MessageSquare,
   Settings,
+  User,
   Users,
 } from "lucide-react"
 import { ThemeToggle } from "../theme-toggle"
-import { SignInButton, SignOutButton, useAuth } from "@clerk/nextjs"
+import { SignInButton, SignOutButton, useAuth, useUser } from "@clerk/nextjs"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const items = [
   {
@@ -46,6 +55,7 @@ const items = [
 export function Sidebar() {
   const pathname = usePathname()
   const { isSignedIn } = useAuth()
+  const { user } = useUser()
 
   return (
     <div className="flex h-full w-[80px] flex-col items-center justify-between border-r bg-background py-4">
@@ -72,19 +82,47 @@ export function Sidebar() {
       </div>
       <div className="mt-auto flex flex-col items-center gap-4">
         {isSignedIn ? (
-          <SignOutButton>
-            <button
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
-              title="Sign out"
-            >
-              <LogOut className="h-5 w-5" />
-              <span className="sr-only">Sign out</span>
-            </button>
-          </SignOutButton>
+          <div className="relative">
+            {/* User status indicator - green dot */}
+            <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-background"></div>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground transition-colors hover:bg-accent/80"
+                  title={`Signed in as ${user?.fullName || user?.username || 'User'}`}
+                >
+                  <User className="h-5 w-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" sideOffset={10} className="w-48 rounded-xl">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{user?.fullName || user?.username}</span>
+                    <span className="text-xs text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <Link href="/settings">
+                  <DropdownMenuItem>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                </Link>
+                <DropdownMenuSeparator />
+                <SignOutButton>
+                  <DropdownMenuItem>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </SignOutButton>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         ) : (
           <SignInButton mode="modal">
             <button
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground transition-colors hover:bg-accent/80"
               title="Sign in"
             >
               <LogIn className="h-5 w-5" />

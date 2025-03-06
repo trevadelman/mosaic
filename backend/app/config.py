@@ -16,7 +16,11 @@ class Settings(BaseSettings):
     API_PREFIX: str = "/api"
     
     # CORS settings
-    CORS_ORIGINS: List[str] = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+    @property
+    def cors_origins(self) -> List[str]:
+        """Get CORS origins from environment variable."""
+        cors_origins_str = os.getenv("CORS_ORIGINS", "http://localhost:3000")
+        return [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
     
     # Database settings
     DATABASE_URL: str = os.getenv(

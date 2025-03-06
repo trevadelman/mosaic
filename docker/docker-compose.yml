@@ -9,11 +9,17 @@ services:
       - "3000:3000"
     volumes:
       - ../frontend:/app
-      - /app/node_modules
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost:8000/api
       - NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws
+      # Clerk environment variables
+      - NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/sign-in
+      - NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/sign-up
+      - NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
+      - NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
+    env_file:
+      - ../.env
     depends_on:
       - backend
     networks:
@@ -33,7 +39,7 @@ services:
     environment:
       - ENVIRONMENT=development
       - DATABASE_URL=sqlite:///./database/mosaic.db
-      - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
+      - CORS_ORIGINS=http://localhost:3000
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     env_file:
       - ../.env
