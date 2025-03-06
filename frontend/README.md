@@ -46,8 +46,22 @@ The frontend is organized into the following directories:
 
 2. Create a `.env.local` file in the frontend directory:
    ```
-   NEXT_PUBLIC_API_URL=http://localhost:8000
+   # API URL
+   NEXT_PUBLIC_API_URL=http://localhost:8000/api
+   NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws
+   
+   # Clerk Authentication Keys
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+   CLERK_SECRET_KEY=your_clerk_secret_key
+   
+   # Clerk URLs
+   NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/sign-in
+   NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/sign-up
+   NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
+   NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
    ```
+   
+   You can get the Clerk keys by creating an account at [Clerk.dev](https://clerk.dev) and setting up a new application.
 
 ### Running the Development Server
 
@@ -97,6 +111,29 @@ To test the full system (frontend + backend):
 - **Chat Page**: Interface for interacting with agents
 - **Agents Page**: Overview of available agents
 - **Settings Page**: Configuration options for the application
+- **Auth Pages**: Sign-in and sign-up pages for user authentication
+
+### Authentication
+
+The frontend uses [Clerk](https://clerk.dev) for user authentication and management. This provides:
+
+- User sign-up and sign-in functionality
+- Social login options
+- User profile management
+- Session management
+- Protected routes
+
+The authentication flow is handled by Clerk components and hooks:
+
+- `<ClerkProvider>`: Wraps the application to provide authentication context
+- `<SignInButton>` and `<SignOutButton>`: UI components for authentication actions
+- `useAuth()` and `useUser()`: Hooks to access authentication state and user data
+
+User authentication state is used throughout the application to:
+- Show/hide authenticated content
+- Associate chat conversations with specific users
+- Personalize the user experience
+- Secure API requests with user tokens
 
 ### Components
 

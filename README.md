@@ -37,6 +37,7 @@ MOSAIC is a production-ready system for creating, managing, and interacting with
 ## Key Features
 
 - **Next.js Frontend**: Modern, responsive UI with shadcn components
+- **User Authentication**: Secure authentication with Clerk
 - **FastAPI Backend**: High-performance Python API with WebSocket support
 - **Agent Framework**: Flexible, extensible agent system built on LangChain and LangGraph
 - **Regular Agents**:
@@ -82,6 +83,18 @@ MOSAIC is a production-ready system for creating, managing, and interacting with
    ```
    OPENAI_API_KEY=your_api_key_here
    ```
+
+4. For authentication, create a `.env.local` file in the frontend directory:
+   ```
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+   CLERK_SECRET_KEY=your_clerk_secret_key
+   NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/sign-in
+   NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/sign-up
+   NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
+   NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
+   ```
+   
+   You can get these keys by creating a Clerk account at https://clerk.dev and setting up a new application.
 
 ### Testing the System
 
@@ -170,10 +183,17 @@ This is useful for verifying that the backend is correctly set up and can handle
 
 1. Make sure you have Docker and Docker Compose installed on your system.
 
-2. Create a `.env` file in the mosaic directory with your OpenAI API key:
+2. Create a `.env` file in the mosaic directory with your OpenAI API key and Clerk authentication keys:
    ```
+   # OpenAI API Key
    OPENAI_API_KEY=your_api_key_here
+   
+   # Clerk Authentication Keys
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+   CLERK_SECRET_KEY=your_clerk_secret_key
    ```
+   
+   These environment variables will be passed to the Docker containers through the docker-compose.yml configuration.
 
 3. Build and start the containers:
    ```bash
@@ -277,6 +297,43 @@ For detailed instructions on creating new agents, see the [Creating Agents Guide
   - Agent framework
   - Tool development
   - Supervisor system
+
+## Authentication with Clerk
+
+MOSAIC uses [Clerk](https://clerk.dev) for user authentication and management. Clerk provides a secure, feature-rich authentication system that includes:
+
+- User sign-up and sign-in
+- Social login options
+- Multi-factor authentication
+- User profile management
+- Session management
+
+### Setting Up Clerk
+
+1. Create an account at [Clerk.dev](https://clerk.dev)
+2. Create a new application in the Clerk dashboard
+3. Configure your application settings:
+   - Set the allowed domains to include your development and production domains
+   - Configure the authentication methods you want to support
+   - Set up the appearance and branding options
+
+4. Get your API keys from the Clerk dashboard:
+   - Publishable Key: Used by the frontend to initialize Clerk
+   - Secret Key: Used by the backend to verify authentication
+
+5. Add these keys to your environment:
+   - For local development: Add to `.env.local` in the frontend directory
+   - For Docker: Add to the main `.env` file
+
+### User Data in MOSAIC
+
+When a user authenticates with Clerk, MOSAIC associates their user ID with:
+- Chat conversations
+- Agent interactions
+- User preferences
+- Uploaded files and attachments
+
+This ensures that each user's data is private and only accessible to them when they're logged in.
 
 ## Troubleshooting
 

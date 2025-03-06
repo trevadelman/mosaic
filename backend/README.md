@@ -78,11 +78,35 @@ This will start the FastAPI server on http://localhost:8000. You can access the 
 The frontend communicates with the backend through:
 
 1. **REST API Endpoints**:
-   - `/api/query`: Submit a new query to the agent system
-   - `/api/history`: Get the history of queries and responses
+   - `/api/agents`: Get a list of all available agents
+   - `/api/agents/{agent_id}`: Get information about a specific agent
+   - `/api/agents/{agent_id}/messages`: Send a message to an agent or get all messages for a specific agent
+   - `/api/chat/{agent_id}/conversations`: Get conversation history for a specific agent
+   - `/api/chat/{agent_id}/conversations/{conversation_id}/activate`: Activate a specific conversation
 
 2. **WebSocket Connection**:
-   - `/ws`: Real-time communication for agent responses and logs
+   - `/ws/chat/{agent_id}`: Real-time communication for agent responses and logs
+
+## User Authentication and Data Management
+
+The backend supports user authentication through Clerk. This integration enables:
+
+1. **User-Specific Data**: 
+   - Each user has their own conversation history
+   - Messages are associated with specific users
+   - User preferences are stored in the database
+
+2. **Database Schema**:
+   - The database includes `user_id` columns in relevant tables (conversations, messages, attachments)
+   - User preferences are stored in a dedicated table
+
+3. **API Authentication**:
+   - API endpoints accept a `user_id` parameter to filter data by user
+   - WebSocket connections can be associated with specific users
+
+4. **Migration Support**:
+   - Database migrations are provided to add user-related columns to existing tables
+   - The `add_user_id_columns.py` migration script adds the necessary columns for user data
 
 ## Testing the Full System
 
