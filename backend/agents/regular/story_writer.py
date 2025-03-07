@@ -171,7 +171,7 @@ class StorywriterAgent(BaseAgent):
             description=description or "A creative agent that can generate short stories based on prompts"
         )
         
-        logger.info(f"Initialized story_writer agent with {len(all_tools)} tools")
+        logger.debug(f"Initialized story_writer agent with {len(all_tools)} tools")
     
     def _get_default_prompt(self) -> str:
         """

@@ -49,7 +49,7 @@ class AgentGenerator:
             os.path.dirname(__file__), "agent_schema.json"
         )
         self.schema = self._load_schema()
-        logger.info(f"Initialized agent generator with schema from {self.schema_path}")
+        logger.debug(f"Initialized agent generator with schema from {self.schema_path}")
     
     def _load_schema(self) -> Dict[str, Any]:
         """
@@ -61,7 +61,7 @@ class AgentGenerator:
         try:
             with open(self.schema_path, "r") as f:
                 schema = json.load(f)
-            logger.info(f"Successfully loaded schema from {self.schema_path}")
+            logger.debug(f"Successfully loaded schema from {self.schema_path}")
             return schema
         except Exception as e:
             logger.error(f"Error loading schema: {str(e)}")
@@ -82,7 +82,7 @@ class AgentGenerator:
         """
         try:
             jsonschema.validate(instance=definition, schema=self.schema)
-            logger.info(f"Agent definition for '{definition['agent']['name']}' is valid")
+            logger.debug(f"Agent definition for '{definition['agent']['name']}' is valid")
             return True
         except jsonschema.exceptions.ValidationError as e:
             logger.error(f"Agent definition validation error: {str(e)}")
@@ -101,7 +101,7 @@ class AgentGenerator:
         try:
             with open(file_path, "r") as f:
                 definition = json.load(f)
-            logger.info(f"Successfully loaded agent definition from {file_path}")
+            logger.debug(f"Successfully loaded agent definition from {file_path}")
             return definition
         except Exception as e:
             logger.error(f"Error loading agent definition: {str(e)}")

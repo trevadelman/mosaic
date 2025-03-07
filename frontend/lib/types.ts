@@ -71,3 +71,5 @@ export type WebSocketEvent =
   | { type: "typing", agentId: string }
   | { type: "log_update", log: string, messageId: string }
   | { type: "error", error: string }
+  | { type: "ui_event", data: any }
+  | { type: "component_registrations", data: any }

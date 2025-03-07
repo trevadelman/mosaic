@@ -147,6 +147,30 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         } else if (data.type === "pong") {
           // Received pong from server (keep-alive response)
           console.log("Received pong from server")
+        } else if (data.type === "ui_event") {
+          console.log("UI event received:", data)
+          
+          // Dispatch a custom event for UI components to listen to
+          const customEvent = new CustomEvent('ui_event', { detail: data.data });
+          window.dispatchEvent(customEvent);
+          
+          // Also dispatch through our regular event system
+          dispatchEvent({ 
+            type: "ui_event", 
+            data: data.data
+          })
+        } else if (data.type === "component_registrations") {
+          console.log("Component registrations received:", data)
+          
+          // Dispatch a custom event for UI components to listen to
+          const customEvent = new CustomEvent('component_registrations', { detail: data.data });
+          window.dispatchEvent(customEvent);
+          
+          // Also dispatch through our regular event system
+          dispatchEvent({ 
+            type: "component_registrations", 
+            data: data.data
+          })
         }
       } catch (error) {
         console.error("Error parsing WebSocket message:", error)

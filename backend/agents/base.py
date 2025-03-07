@@ -181,7 +181,7 @@ class AgentRegistry:
             self.logger.warning(f"Agent '{agent.name}' already registered. Overwriting.")
         
         self.agents[agent.name] = agent
-        self.logger.info(f"Registered agent '{agent.name}'")
+        self.logger.debug(f"Registered agent '{agent.name}'")
     
     def get(self, name: str) -> Optional[BaseAgent]:
         """

@@ -51,7 +51,7 @@ class AgentDiscovery:
         try:
             self.agents_module = importlib.import_module(agents_package)
             self.agents_path = os.path.dirname(self.agents_module.__file__)
-            logger.info(f"Agents module found at: {self.agents_path}")
+            logger.debug(f"Agents module found at: {self.agents_path}")
             
             # Define paths for regular and supervisor agents
             self.regular_agents_path = os.path.join(self.agents_path, "regular")
@@ -61,8 +61,8 @@ class AgentDiscovery:
             os.makedirs(self.regular_agents_path, exist_ok=True)
             os.makedirs(self.supervisors_path, exist_ok=True)
             
-            logger.info(f"Regular agents path: {self.regular_agents_path}")
-            logger.info(f"Supervisors path: {self.supervisors_path}")
+            logger.debug(f"Regular agents path: {self.regular_agents_path}")
+            logger.debug(f"Supervisors path: {self.supervisors_path}")
         except ImportError:
             logger.error(f"Could not import agents package: {agents_package}")
             self.agents_module = None
@@ -94,7 +94,7 @@ class AgentDiscovery:
             self._discover_agents_in_directory(self.supervisors_path, f"{self.agents_package}.supervisors")
         
         # Discover agents in the main agents directory (for backward compatibility)
-        logger.info(f"Discovering agents in main directory: {self.agents_path}")
+        logger.debug(f"Discovering agents in main directory: {self.agents_path}")
         self._discover_agents_in_directory(self.agents_path, self.agents_package, skip_dirs=["regular", "supervisors", "sandbox"])
         
         return self.discovered_agents
@@ -117,7 +117,7 @@ class AgentDiscovery:
                 issubclass(obj, BaseAgent) and 
                 obj != BaseAgent):
                 agent_classes[name] = obj
-                logger.info(f"Found agent class: {name}")
+                logger.debug(f"Found agent class: {name}")
         
         return agent_classes
     
@@ -139,7 +139,7 @@ class AgentDiscovery:
                 name.startswith("register_") and 
                 "model" in inspect.signature(obj).parameters):
                 registration_functions[name] = obj
-                logger.info(f"Found registration function: {name}")
+                logger.debug(f"Found registration function: {name}")
         
         return registration_functions
     
@@ -161,7 +161,7 @@ class AgentDiscovery:
                 name.startswith("create_") and 
                 "model" in inspect.signature(obj).parameters):
                 supervisor_functions[name] = obj
-                logger.info(f"Found supervisor function: {name}")
+                logger.debug(f"Found supervisor function: {name}")
         
         return supervisor_functions
     
@@ -308,7 +308,7 @@ class AgentDiscovery:
             module_name = f"{package_prefix}.{name}"
             try:
                 module = importlib.import_module(module_name)
-                logger.info(f"Examining module: {module_name}")
+                logger.debug(f"Examining module: {module_name}")
                 
                 # Look for agent classes that inherit from BaseAgent
                 agent_classes = self._find_agent_classes(module)
@@ -342,7 +342,7 @@ class AgentDiscovery:
                     
                     logger.info(f"Discovered agent: {name} with {len(agent_classes)} classes, {len(registration_functions)} registration functions, and {len(supervisor_functions)} supervisor functions")
                 else:
-                    logger.info(f"No agent classes or registration functions found in module: {module_name}")
+                    logger.debug(f"No agent classes or registration functions found in module: {module_name}")
             
             except ImportError as e:
                 logger.error(f"Error importing module {module_name}: {str(e)}")
@@ -402,7 +402,7 @@ class AgentDiscovery:
         # Call each registration function with the model
         for func_name, func in self.registration_functions.items():
             try:
-                logger.info(f"Registering agent with function: {func_name}")
+                logger.debug(f"Registering agent with function: {func_name}")
                 agent = func(model)
                 
                 if agent:

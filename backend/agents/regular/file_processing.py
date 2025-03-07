@@ -524,7 +524,7 @@ class FileProcessingAgent(BaseAgent):
             icon=icon
         )
         
-        logger.info(f"Initialized file processing agent with {len(all_tools)} tools")
+        logger.debug(f"Initialized file processing agent with {len(all_tools)} tools")
     
     def _get_default_prompt(self) -> str:
         """

@@ -466,7 +466,7 @@ class SafetyAgent(BaseAgent):
             description=description or "Safety Agent for validating and approving operations"
         )
         
-        logger.info(f"Initialized safety agent with {len(all_tools)} tools")
+        logger.debug(f"Initialized safety agent with {len(all_tools)} tools")
     
     def _get_default_prompt(self) -> str:
         """

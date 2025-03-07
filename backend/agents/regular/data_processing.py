@@ -221,7 +221,7 @@ class DataProcessingAgent(BaseAgent):
             icon=icon
         )
         
-        logger.info(f"Initialized data processing agent with {len(all_tools)} tools")
+        logger.debug(f"Initialized data processing agent with {len(all_tools)} tools")
     
     def _get_default_prompt(self) -> str:
         """

@@ -53,7 +53,7 @@ def initialize_agents():
     discovered_agents = discover_and_register_agents(model)
     initialized_agents.update(discovered_agents)
     
-    logger.info(f"Initialized {len(initialized_agents)} agents: {', '.join(initialized_agents.keys())}")
+    logger.debug(f"Initialized {len(initialized_agents)} agents: {', '.join(initialized_agents.keys())}")
     
     return initialized_agents
 

@@ -413,7 +413,7 @@ class WriterAgent(BaseAgent):
             description=description or "Writer Agent for secure file operations"
         )
         
-        logger.info(f"Initialized writer agent with {len(all_tools)} tools")
+        logger.debug(f"Initialized writer agent with {len(all_tools)} tools")
     
     def _get_default_prompt(self) -> str:
         """

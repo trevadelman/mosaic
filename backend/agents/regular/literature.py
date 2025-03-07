@@ -236,7 +236,7 @@ class LiteratureAgent(BaseAgent):
             icon=icon
         )
         
-        logger.info(f"Initialized literature agent with {len(all_tools)} tools")
+        logger.debug(f"Initialized literature agent with {len(all_tools)} tools")
     
     def _get_default_prompt(self) -> str:
         """

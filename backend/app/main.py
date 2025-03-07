@@ -199,13 +199,15 @@ async def debug_agents():
         "cors_origins": os.getenv("CORS_ORIGINS", "").split(",")
     }
 
-# Import the agent API for metadata extraction
+# Import the agent API for metadata extraction and UI WebSocket handler
 try:
     # Try importing with the full package path (for local development)
     from mosaic.backend.app.agent_api import agent_api
+    from mosaic.backend.app.ui_websocket_handler import handle_ui_websocket
 except ImportError:
     # Fall back to relative import (for Docker environment)
     from backend.app.agent_api import agent_api
+    from backend.app.ui_websocket_handler import handle_ui_websocket
 
 # Agent routes
 @app.get("/api/agents")
@@ -661,6 +663,20 @@ def format_messages_for_llm(messages):
         formatted_messages.append(formatted_msg)
     
     return formatted_messages
+
+@app.websocket("/ws/ui/{agent_id}")
+async def ui_websocket_endpoint(websocket: WebSocket, agent_id: str):
+    """
+    WebSocket endpoint for UI events.
+    
+    This endpoint handles WebSocket connections for custom UI components.
+    It allows the frontend to communicate with the backend for UI events.
+    
+    Args:
+        websocket: The WebSocket connection
+        agent_id: The agent ID
+    """
+    await handle_ui_websocket(websocket, agent_id)
 
 @app.websocket("/ws/chat/{agent_id}")
 async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):

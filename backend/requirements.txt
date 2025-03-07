@@ -27,6 +27,8 @@ lxml
 # Data processing
 regex
 pandas  # Added for file processing
+numpy  # Added for numerical operations
+yfinance  # Added for financial data
 tabulate  # Added for markdown tables in file processing
 openpyxl>=3.0.0  # Added for Excel XLSX file support
 xlrd>=2.0.1  # Added for Excel XLS file support
