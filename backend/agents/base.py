@@ -168,6 +168,7 @@ class AgentRegistry:
             cls._instance = super(AgentRegistry, cls).__new__(cls)
             cls._instance.agents = {}
             cls._instance.logger = logging.getLogger("mosaic.agent_registry")
+            cls._instance.agent_relationships = {}  # Store agent relationships
         return cls._instance
     
     def register(self, agent: BaseAgent) -> None:
@@ -257,6 +258,24 @@ class AgentRegistry:
             supervisor_name=name,
             output_mode=output_mode
         )
+        
+        # Store the relationship between the supervisor and its sub-agents
+        self.agent_relationships[name] = {
+            "type": "supervisor",
+            "sub_agents": agent_names
+        }
+        
+        # Store the relationship between each sub-agent and the supervisor
+        for agent_name in agent_names:
+            if agent_name not in self.agent_relationships:
+                self.agent_relationships[agent_name] = {
+                    "type": "agent",
+                    "supervisors": []
+                }
+            
+            # Add this supervisor to the agent's list of supervisors if not already there
+            if name not in self.agent_relationships[agent_name].get("supervisors", []):
+                self.agent_relationships[agent_name].setdefault("supervisors", []).append(name)
         
         self.logger.info(f"Successfully created supervisor '{name}'")
         return supervisor

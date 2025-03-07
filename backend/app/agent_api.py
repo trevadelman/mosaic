@@ -328,39 +328,30 @@ class AgentAPI:
             "subAgents": []
         }
         
-        # Check if the agent is a CompiledStateGraph (supervisor)
-        is_supervisor = not hasattr(agent, 'description')
+        # Import the agent registry to access relationship information
+        try:
+            # Try importing with the full package path (for local development)
+            from mosaic.backend.agents.base import agent_registry
+        except ImportError:
+            # Fall back to relative import (for Docker environment)
+            from backend.agents.base import agent_registry
         
-        if is_supervisor:
-            # For supervisor agents, extract sub-agents
-            # This is a simplified implementation - in a real system, you would
-            # extract this information from the agent's graph structure
-            if agent_id == "research_supervisor":
-                relationships["subAgents"] = [
-                    "web_search",
-                    "browser_interaction",
-                    "data_processing",
-                    "literature"
-                ]
-            elif agent_id == "file_processing_supervisor":
-                relationships["subAgents"] = [
-                    "file_processing"
-                ]
+        # Get the relationships from the agent registry
+        agent_relationships = getattr(agent_registry, "agent_relationships", {})
+        
+        # Get the relationship information for this agent
+        agent_info = agent_relationships.get(agent_id, {})
+        
+        # Check if this is a supervisor agent
+        if agent_info.get("type") == "supervisor":
+            # For supervisor agents, get the sub-agents
+            relationships["subAgents"] = agent_info.get("sub_agents", [])
         else:
-            # For regular agents, check if they are used by any supervisor
-            initialized_agents = get_initialized_agents()
-            for supervisor_id, supervisor in initialized_agents.items():
-                if not hasattr(supervisor, 'description'):  # Is a supervisor
-                    # Check if this agent is used by the supervisor
-                    # This is a simplified implementation - in a real system, you would
-                    # extract this information from the supervisor's graph structure
-                    if (supervisor_id == "research_supervisor" and agent_id in [
-                        "web_search",
-                        "browser_interaction",
-                        "data_processing",
-                        "literature"
-                    ]) or (supervisor_id == "file_processing_supervisor" and agent_id == "file_processing"):
-                        relationships["supervisor"] = supervisor_id
+            # For regular agents, get the supervisor
+            supervisors = agent_info.get("supervisors", [])
+            if supervisors:
+                # Use the first supervisor in the list
+                relationships["supervisor"] = supervisors[0]
         
         return relationships
     
