@@ -1,7 +1,8 @@
 "use client"
 
 import { Agent } from "@/lib/types"
-import { BrainCircuit } from "lucide-react"
+import { BrainCircuit, LayoutDashboard } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import {
   Accordion,
   AccordionContent,
@@ -13,6 +14,7 @@ interface AgentSelectorProps {
   agents: Agent[]
   selectedAgent: Agent | null
   onSelect: (agent: Agent) => void
+  onOpenUI?: (agent: Agent) => void
   loading?: boolean
 }
 
@@ -20,6 +22,7 @@ export function AgentSelector({
   agents,
   selectedAgent,
   onSelect,
+  onOpenUI,
   loading = false
 }: AgentSelectorProps) {
   if (loading) {
@@ -82,9 +85,8 @@ export function AgentSelector({
           <AccordionContent className="pb-1 pt-0">
             <div className="space-y-1">
               {groupedAgents[type].map((agent) => (
-                <button
+                <div
                   key={agent.id}
-                  onClick={() => onSelect(agent)}
                   className={`flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors hover:bg-accent ${
                     selectedAgent?.id === agent.id ? "bg-accent" : ""
                   }`}
@@ -97,62 +99,83 @@ export function AgentSelector({
                     )}
                   </div>
                   <div className="flex-1 space-y-1">
-                    <p className="font-medium leading-none">{agent.name}</p>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {agent.description}
-                    </p>
-                    {agent.capabilities && agent.capabilities.length > 0 && (
-                      <div className="flex flex-wrap gap-1 pt-1">
-                        {agent.capabilities.slice(0, 3).map((capability) => (
-                          <span
-                            key={capability}
-                            className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold"
-                          >
-                            {capability}
-                          </span>
-                        ))}
-                        {agent.capabilities.length > 3 && (
-                          <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold">
-                            +{agent.capabilities.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {agent.tools && agent.tools.length > 0 && (
-                      <div className="flex flex-wrap gap-1 pt-1">
-                        <span className="text-xs text-muted-foreground">Tools:</span>
-                        {agent.tools.slice(0, 2).map((tool) => (
-                          <span
-                            key={tool.id}
-                            className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold"
-                            title={tool.description}
-                          >
-                            {tool.name}
-                          </span>
-                        ))}
-                        {agent.tools.length > 2 && (
-                          <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
-                            +{agent.tools.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {agent.relationships && (agent.relationships.supervisor || (agent.relationships.subAgents && agent.relationships.subAgents.length > 0)) && (
-                      <div className="flex flex-wrap gap-1 pt-1">
-                        {agent.relationships.supervisor && (
-                          <span className="text-xs text-muted-foreground">
-                            Supervisor: {agent.relationships.supervisor}
-                          </span>
-                        )}
-                        {agent.relationships.subAgents && agent.relationships.subAgents.length > 0 && (
-                          <span className="text-xs text-muted-foreground">
-                            Sub-agents: {agent.relationships.subAgents.length}
-                          </span>
-                        )}
-                      </div>
-                    )}
+                    <div className="flex justify-between items-center">
+                      <p className="font-medium leading-none">{agent.name}</p>
+                      {onOpenUI && agent.hasUI && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenUI(agent);
+                          }}
+                          title="Open UI"
+                        >
+                          <LayoutDashboard className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => onSelect(agent)}
+                      className="w-full text-left"
+                    >
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {agent.description}
+                      </p>
+                      {agent.capabilities && agent.capabilities.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {agent.capabilities.slice(0, 3).map((capability) => (
+                            <span
+                              key={capability}
+                              className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold"
+                            >
+                              {capability}
+                            </span>
+                          ))}
+                          {agent.capabilities.length > 3 && (
+                            <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold">
+                              +{agent.capabilities.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {agent.tools && agent.tools.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          <span className="text-xs text-muted-foreground">Tools:</span>
+                          {agent.tools.slice(0, 2).map((tool) => (
+                            <span
+                              key={tool.id}
+                              className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold"
+                              title={tool.description}
+                            >
+                              {tool.name}
+                            </span>
+                          ))}
+                          {agent.tools.length > 2 && (
+                            <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">
+                              +{agent.tools.length - 2}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {agent.relationships && (agent.relationships.supervisor || (agent.relationships.subAgents && agent.relationships.subAgents.length > 0)) && (
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {agent.relationships.supervisor && (
+                            <span className="text-xs text-muted-foreground">
+                              Supervisor: {agent.relationships.supervisor}
+                            </span>
+                          )}
+                          {agent.relationships.subAgents && agent.relationships.subAgents.length > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              Sub-agents: {agent.relationships.subAgents.length}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </button>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           </AccordionContent>

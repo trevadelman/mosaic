@@ -1,14 +1,34 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useAgents } from "@/lib/hooks/use-agents"
-import { BrainCircuit, Info, Settings } from "lucide-react"
+import { AgentSelector } from "@/components/agents/agent-selector"
+import { BrainCircuit, LayoutDashboard, MessageSquare } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Agent } from "@/lib/types"
 
 export default function AgentsPage() {
+  const router = useRouter()
   const { agents, loading, error } = useAgents()
-  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
 
-  const selectedAgent = agents.find(agent => agent.id === selectedAgentId)
+  // Handle selecting an agent
+  const handleSelectAgent = (agent: Agent) => {
+    setSelectedAgent(agent)
+  }
+
+  // Handle opening the agent UI
+  const handleOpenUI = (agent: Agent) => {
+    router.push(`/agent-ui?agentId=${agent.id}`)
+  }
+
+  // Handle opening the chat
+  const handleOpenChat = () => {
+    if (selectedAgent) {
+      router.push(`/chat?agentId=${selectedAgent.id}`)
+    }
+  }
 
   return (
     <div className="container mx-auto p-6">
@@ -26,128 +46,94 @@ export default function AgentsPage() {
         </div>
       )}
 
-      {loading ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <div
-              key={i}
-              className="rounded-lg border bg-card p-6 shadow-sm animate-pulse"
-            >
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-muted"></div>
-                <div className="space-y-2">
-                  <div className="h-4 w-24 rounded bg-muted"></div>
-                  <div className="h-3 w-32 rounded bg-muted"></div>
-                </div>
-              </div>
-              <div className="mt-4 space-y-2">
-                <div className="h-3 w-full rounded bg-muted"></div>
-                <div className="h-3 w-4/5 rounded bg-muted"></div>
-              </div>
-            </div>
-          ))}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-1 border rounded-lg p-4">
+          <h2 className="text-xl font-bold mb-4">Available Agents</h2>
+          <AgentSelector
+            agents={agents}
+            selectedAgent={selectedAgent}
+            onSelect={handleSelectAgent}
+            onOpenUI={handleOpenUI}
+            loading={loading}
+          />
         </div>
-      ) : agents.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-12 text-center shadow-sm">
-          <BrainCircuit className="h-12 w-12 text-muted-foreground" />
-          <h2 className="mt-4 text-xl font-semibold">No agents available</h2>
-          <p className="mt-2 text-muted-foreground">
-            There are no agents registered in the system.
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {agents.map((agent) => (
-            <div
-              key={agent.id}
-              className={`rounded-lg border bg-card p-6 shadow-sm transition-colors hover:border-primary/50 ${
-                selectedAgentId === agent.id ? "border-primary" : ""
-              }`}
-              onClick={() => setSelectedAgentId(agent.id)}
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                  {agent.icon ? (
-                    <span className="text-lg">{agent.icon}</span>
-                  ) : (
-                    <BrainCircuit className="h-6 w-6" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-semibold">{agent.name}</h3>
-                  <p className="text-sm text-muted-foreground">{agent.type}</p>
+        
+        <div className="md:col-span-2">
+          {selectedAgent ? (
+            <div className="border rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold">{selectedAgent.name}</h2>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                    {selectedAgent.type}
+                  </span>
                 </div>
               </div>
-              <p className="mt-4 text-sm text-muted-foreground">
-                {agent.description}
-              </p>
-              {agent.capabilities && agent.capabilities.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {agent.capabilities.map((capability) => (
-                    <span
-                      key={capability}
-                      className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold"
-                    >
-                      {capability}
-                    </span>
-                  ))}
+              
+              <p className="text-muted-foreground mb-6">{selectedAgent.description}</p>
+              
+              {selectedAgent.capabilities && selectedAgent.capabilities.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-semibold mb-2">Capabilities</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedAgent.capabilities.map((capability: string) => (
+                      <span
+                        key={capability}
+                        className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+                      >
+                        {capability}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
-              <div className="mt-6 flex justify-end gap-2">
-                <button
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  aria-label="Agent information"
+              
+              {selectedAgent.tools && selectedAgent.tools.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-semibold mb-2">Tools</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedAgent.tools.map((tool: any) => (
+                      <span
+                        key={tool.id}
+                        className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold"
+                        title={tool.description}
+                      >
+                        {tool.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => handleOpenUI(selectedAgent)}
+                  className="flex items-center gap-2"
                 >
-                  <Info className="h-4 w-4" />
-                </button>
-                <button
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  aria-label="Agent settings"
+                  <LayoutDashboard className="h-4 w-4" />
+                  Open UI
+                </Button>
+                <Button
+                  onClick={handleOpenChat}
+                  className="flex items-center gap-2"
                 >
-                  <Settings className="h-4 w-4" />
-                </button>
+                  <MessageSquare className="h-4 w-4" />
+                  Chat with Agent
+                </Button>
               </div>
             </div>
-          ))}
-        </div>
-      )}
-
-      {selectedAgent && (
-        <div className="mt-8 rounded-lg border bg-card p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">{selectedAgent.name}</h2>
-            <div className="flex items-center gap-2">
-              <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                {selectedAgent.type}
-              </span>
+          ) : (
+            <div className="flex flex-col items-center justify-center rounded-lg border p-12 text-center h-full">
+              <BrainCircuit className="h-12 w-12 text-muted-foreground" />
+              <h2 className="mt-4 text-xl font-semibold">No agent selected</h2>
+              <p className="mt-2 text-muted-foreground">
+                Select an agent from the list to view details and interact with it.
+              </p>
             </div>
-          </div>
-          <p className="mt-2 text-muted-foreground">{selectedAgent.description}</p>
-          
-          <div className="mt-6">
-            <h3 className="font-semibold">Capabilities</h3>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {selectedAgent.capabilities.map((capability) => (
-                <span
-                  key={capability}
-                  className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold"
-                >
-                  {capability}
-                </span>
-              ))}
-            </div>
-          </div>
-          
-          <div className="mt-6 flex justify-end gap-2">
-            <button
-              className="inline-flex h-9 items-center justify-center rounded-md border bg-background px-4 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-              onClick={() => window.location.href = `/chat?agent=${selectedAgent.id}`}
-            >
-              Chat with Agent
-            </button>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }

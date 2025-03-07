@@ -58,10 +58,11 @@ export const AgentUIProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     // Create a WebSocket connection to the UI endpoint
     const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000/ws';
-    console.log(`Connecting to UI WebSocket at ${wsUrl}/ui/financial_supervisor`);
+    const agentId = UI_AGENT_ID;
+    console.log(`Connecting to UI WebSocket at ${wsUrl}/ui/${agentId}`);
     
-    // Use financial_supervisor as the agent ID for the UI WebSocket
-    const socket = new WebSocket(`${wsUrl}/ui/financial_supervisor`);
+    // Use the agent ID for the UI WebSocket
+    const socket = new WebSocket(`${wsUrl}/ui/${agentId}`);
     
     // Store the socket in state
     setUiSocket(socket);

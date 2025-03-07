@@ -2,6 +2,7 @@
  * Financial Components Registry
  * 
  * This file registers all financial components with the component registry.
+ * Currently only includes the StockChart component for simplicity.
  */
 
 import { registerComponentImplementation } from '../../../lib/agent-ui/component-registry';

@@ -5,9 +5,12 @@ import { Message as MessageType, Agent } from "@/lib/types"
 import { Message } from "./message"
 import { ChatInput } from "./chat-input"
 import { ConversationHistory } from "./conversation-history"
-import { AlertCircle, Loader2, Wifi, WifiOff, Trash2 } from "lucide-react"
+import { AlertCircle, Loader2, Wifi, WifiOff, Trash2, LayoutDashboard, Link } from "lucide-react"
 import { ConnectionState } from "@/lib/contexts/websocket-context"
+import { useAgentContext } from "@/lib/contexts/agent-context"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { AgentDetails } from "@/components/agents/agent-details"
 
 interface ChatInterfaceProps {
@@ -19,7 +22,9 @@ interface ChatInterfaceProps {
   selectedAgent: Agent | null
   error?: string | null
   connectionState?: ConnectionState
+  onOpenUI?: () => void
 }
+
 
 export function ChatInterface({
   messages,
@@ -29,7 +34,8 @@ export function ChatInterface({
   isProcessing = false,
   selectedAgent,
   error,
-  connectionState = ConnectionState.DISCONNECTED
+  connectionState = ConnectionState.DISCONNECTED,
+  onOpenUI
 }: ChatInterfaceProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -38,9 +44,6 @@ export function ChatInterface({
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
     }
-    
-    // Debug messages
-    console.log("Messages updated:", messages)
   }, [messages])
 
   return (
@@ -53,6 +56,21 @@ export function ChatInterface({
           </h2>
           
           <div className="flex items-center gap-3">
+            {/* Clear chat button */}
+            {messages.length > 0 && onClearChat && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                onClick={onClearChat}
+                disabled={isProcessing}
+                title="Clear conversation"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                <span className="text-xs">Clear Chat</span>
+              </Button>
+            )}
+            
             {/* Conversation History */}
             {selectedAgent && (
               <ConversationHistory 
@@ -69,18 +87,17 @@ export function ChatInterface({
               />
             )}
             
-            {/* Clear chat button */}
-            {messages.length > 0 && onClearChat && (
+            {/* Open UI button */}
+            {selectedAgent && selectedAgent.hasUI && onOpenUI && (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="h-8 px-2 text-muted-foreground hover:text-foreground"
-                onClick={onClearChat}
-                disabled={isProcessing}
-                title="Clear conversation"
+                onClick={onOpenUI}
+                className="flex items-center gap-2 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
+                title="Open Agent UI"
               >
-                <Trash2 className="h-4 w-4 mr-1" />
-                <span className="text-xs">Clear</span>
+                <LayoutDashboard className="h-4 w-4" />
+                <span>Open UI</span>
               </Button>
             )}
             

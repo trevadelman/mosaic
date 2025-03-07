@@ -39,11 +39,22 @@ export function useAgents() {
         if (response.error) {
           setError(response.error)
         } else if (response.data) {
-          setAgents(response.data)
+          // Fetch hasUI information for each agent
+          const agentsWithUI = await Promise.all(
+            response.data.map(async (agent) => {
+              const hasUIResponse = await agentApi.hasUI(agent.id)
+              return {
+                ...agent,
+                hasUI: hasUIResponse.data?.hasUI || false
+              }
+            })
+          )
+          
+          setAgents(agentsWithUI)
           
           // Select the first agent by default if none is selected
-          if (response.data.length > 0 && !selectedAgent) {
-            setSelectedAgent(response.data[0])
+          if (agentsWithUI.length > 0 && !selectedAgent) {
+            setSelectedAgent(agentsWithUI[0])
           }
         }
 

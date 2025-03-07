@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { Sidebar } from '@/components/sidebar/sidebar'
 import { WebSocketProvider } from '@/lib/contexts/websocket-context'
 import { AgentUIProvider } from '@/lib/contexts/agent-ui-context'
+import { AgentProvider } from '@/lib/contexts/agent-context'
 import { AgentModal } from '@/components/agent-ui/agent-modal'
 import { ToastProvider } from '@/components/ui/toast'
 import { ClerkProvider } from '@clerk/nextjs'
@@ -35,18 +36,20 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <WebSocketProvider>
-              <AgentUIProvider>
-                <ToastProvider>
-                  <div className="flex h-screen">
-                    <Sidebar />
-                    <div className="flex-1 overflow-auto">
-                      {children}
+              <AgentProvider>
+                <AgentUIProvider>
+                  <ToastProvider>
+                    <div className="flex h-screen">
+                      <Sidebar />
+                      <div className="flex-1 overflow-auto">
+                        {children}
+                      </div>
+                      {/* Agent Modal for custom UI components */}
+                      <AgentModal />
                     </div>
-                    {/* Agent Modal for custom UI components */}
-                    <AgentModal />
-                  </div>
-                </ToastProvider>
-              </AgentUIProvider>
+                  </ToastProvider>
+                </AgentUIProvider>
+              </AgentProvider>
             </WebSocketProvider>
           </ThemeProvider>
         </body>

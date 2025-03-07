@@ -15,45 +15,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 
-// Mock data for demonstration purposes
-const generateMockData = (days = 30) => {
-  const data = [];
-  let price = 150;
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-  
-  for (let i = 0; i < days; i++) {
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + i);
-    
-    // Random price movement
-    const change = (Math.random() - 0.5) * 5;
-    price += change;
-    
-    // Ensure price doesn't go below 50
-    price = Math.max(50, price);
-    
-    // Generate OHLC data
-    const open = price;
-    const high = price + Math.random() * 3;
-    const low = price - Math.random() * 3;
-    const close = price + (Math.random() - 0.5) * 2;
-    
-    // Generate volume data
-    const volume = Math.floor(Math.random() * 1000000) + 500000;
-    
-    data.push({
-      date: date.toISOString().split('T')[0],
-      open,
-      high,
-      low,
-      close,
-      volume
-    });
-  }
-  
-  return data;
-};
+
 
 interface StockChartProps {
   /** The ID of the component */
@@ -66,6 +28,8 @@ interface StockChartProps {
   title?: string;
   /** The description of the chart */
   description?: string;
+  /** Function to send UI events */
+  sendUIEvent?: (event: any) => void;
 }
 
 export const StockChart: React.FC<StockChartProps> = ({
@@ -76,7 +40,7 @@ export const StockChart: React.FC<StockChartProps> = ({
   description = 'Interactive stock chart'
 }) => {
   const { sendUIEvent } = useAgentUI();
-  const [data, setData] = useState(generateMockData());
+  const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [timeRange, setTimeRange] = useState('1M');
   const [chartType, setChartType] = useState('line');
@@ -89,9 +53,9 @@ export const StockChart: React.FC<StockChartProps> = ({
     loadingRef.current = loading;
   }, [loading]);
   
-  // Request data from the backend when the component mounts or when symbol/timeRange changes
+  // Request data from the backend when the component mounts or when currentSymbol/timeRange changes
   useEffect(() => {
-    console.log(`StockChart: Requesting data for ${symbol} with range ${timeRange}`);
+    console.log(`StockChart: Requesting data for ${currentSymbol} with range ${timeRange}`);
     
     // Set up an event listener for data responses
     const handleUIEvent = (event: CustomEvent<any>) => {
@@ -136,7 +100,7 @@ export const StockChart: React.FC<StockChartProps> = ({
         component: componentId,
         action: 'get_stock_data',
         data: {
-          symbol,
+          symbol: currentSymbol,
           range: timeRange
         }
       });
@@ -148,8 +112,8 @@ export const StockChart: React.FC<StockChartProps> = ({
         console.log('Timeout reached, checking if still loading');
         // Use a ref to check the current loading state
         if (loadingRef.current) {
-          console.log('Still loading after timeout, falling back to mock data');
-          setData(generateMockData());
+          console.log('Still loading after timeout, showing data unavailable message');
+          setData([]);
           setLoading(false);
         } else {
           console.log('No longer loading, data was received before timeout');
@@ -158,9 +122,9 @@ export const StockChart: React.FC<StockChartProps> = ({
     } catch (error) {
       console.error('Error sending UI event:', error);
       
-      // Fall back to mock data if there's an error
-      console.log('Falling back to mock data');
-      setData(generateMockData());
+      // Show data unavailable message
+      console.log('Error occurred, showing data unavailable message');
+      setData([]);
       setLoading(false);
     }
     
@@ -172,7 +136,7 @@ export const StockChart: React.FC<StockChartProps> = ({
         clearTimeout(timeoutId);
       }
     };
-  }, [componentId, symbol, timeRange, sendUIEvent]);
+  }, [componentId, currentSymbol, timeRange, sendUIEvent]);
   
   // Handle time range change
   const handleTimeRangeChange = (range: string) => {
@@ -194,71 +158,23 @@ export const StockChart: React.FC<StockChartProps> = ({
       console.log(`StockChart: Requested data for ${currentSymbol} with new range ${range}`);
       
       // Set a timeout to stop loading after 10 seconds if no response is received
-      setTimeout(() => {
-        console.log('Timeout check for time range change');
-        // Need to check the current state since it might have changed
-        if (loadingRef.current) {
-          console.log('Timeout reached for time range change, falling back to mock data');
-          
-          // Generate new mock data based on the range
-          let days = 30;
-          switch (range) {
-            case '1D':
-              days = 1;
-              break;
-            case '1W':
-              days = 7;
-              break;
-            case '1M':
-              days = 30;
-              break;
-            case '3M':
-              days = 90;
-              break;
-            case '1Y':
-              days = 365;
-              break;
-            case '5Y':
-              days = 365 * 5;
-              break;
-          }
-          
-          setData(generateMockData(days));
-          setLoading(false);
-        } else {
-          console.log('No longer loading for time range change, data was received');
-        }
-      }, 10000); // Increased to 10 seconds
+                      setTimeout(() => {
+                        console.log('Timeout check for time range change');
+                        // Need to check the current state since it might have changed
+                        if (loadingRef.current) {
+                          console.log('Timeout reached for time range change, showing data unavailable message');
+                          setData([]);
+                          setLoading(false);
+                        } else {
+                          console.log('No longer loading for time range change, data was received');
+                        }
+                      }, 10000); // Increased to 10 seconds
     } catch (error) {
       console.error('Error sending UI event:', error);
       
-      // Fall back to mock data if there's an error
-      console.log('Falling back to mock data for time range change');
-      
-      // Generate new mock data based on the range
-      let days = 30;
-      switch (range) {
-        case '1D':
-          days = 1;
-          break;
-        case '1W':
-          days = 7;
-          break;
-        case '1M':
-          days = 30;
-          break;
-        case '3M':
-          days = 90;
-          break;
-        case '1Y':
-          days = 365;
-          break;
-        case '5Y':
-          days = 365 * 5;
-          break;
-      }
-      
-      setData(generateMockData(days));
+      // Show data unavailable message
+      console.log('Error occurred, showing data unavailable message');
+      setData([]);
       setLoading(false);
     }
   };
@@ -308,8 +224,8 @@ export const StockChart: React.FC<StockChartProps> = ({
                         console.log('Timeout check for symbol change');
                         // Need to check the current state since it might have changed
                         if (loadingRef.current) {
-                          console.log('Timeout reached for symbol change, falling back to mock data');
-                          setData(generateMockData());
+                          console.log('Timeout reached for symbol change, showing data unavailable message');
+                          setData([]);
                           setLoading(false);
                         } else {
                           console.log('No longer loading for symbol change, data was received');
@@ -318,10 +234,10 @@ export const StockChart: React.FC<StockChartProps> = ({
                     } catch (error) {
                       console.error('Error sending UI event:', error);
                       
-                      // Fall back to mock data if there's an error
-                      console.log('Falling back to mock data for symbol change');
+                      // Show data unavailable message
+                      console.log('Error occurred, showing data unavailable message');
                       setCurrentSymbol(newSymbol);
-                      setData(generateMockData());
+                      setData([]);
                       setLoading(false);
                     }
                   }
@@ -370,8 +286,8 @@ export const StockChart: React.FC<StockChartProps> = ({
         </div>
       </div>
       
-      {/* Chart content */}
-      <div className="flex-1 p-4">
+      {/* Chart content - Increased width for better visibility on MacBook screens */}
+      <div className="flex-1 p-4 w-full">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -388,7 +304,7 @@ export const StockChart: React.FC<StockChartProps> = ({
                 </p>
               </div>
               
-              <div className="flex-1">
+              <div className="flex-1" style={{ minHeight: '400px' }}>
                 {data.length > 0 ? (
                   <div className="w-full h-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -399,8 +315,7 @@ export const StockChart: React.FC<StockChartProps> = ({
                           <YAxis domain={['auto', 'auto']} />
                           <Tooltip />
                           <Legend />
-                          <Line type="monotone" dataKey="close" stroke="#8884d8" name="Close Price" />
-                          <Line type="monotone" dataKey="open" stroke="#82ca9d" name="Open Price" />
+                          <Line type="monotone" dataKey="close" stroke="#8884d8" name="Price" />
                         </LineChart>
                       ) : chartType === 'bar' ? (
                         <BarChart data={data}>

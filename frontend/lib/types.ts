@@ -19,6 +19,7 @@ export interface Agent {
     supervisor?: string
     subAgents?: string[]
   }
+  hasUI?: boolean
 }
 
 // Attachment types

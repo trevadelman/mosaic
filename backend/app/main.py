@@ -678,6 +678,77 @@ async def ui_websocket_endpoint(websocket: WebSocket, agent_id: str):
     """
     await handle_ui_websocket(websocket, agent_id)
 
+@app.get("/api/agents/{agent_id}/ui-components")
+async def get_agent_ui_components(agent_id: str):
+    """Get the UI components for a specific agent."""
+    try:
+        # Import the UI component registry
+        try:
+            # Try importing with the full package path (for local development)
+            from mosaic.backend.ui.base import ui_component_registry
+            from mosaic.backend.agents.base import agent_registry
+        except ImportError:
+            # Fall back to relative import (for Docker environment)
+            from backend.ui.base import ui_component_registry
+            from backend.agents.base import agent_registry
+        
+        # Get the agent from the registry
+        agent = agent_registry.get(agent_id)
+        
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        # Get the components associated with this agent
+        agent_components = agent_registry.get_ui_components(agent_id)
+        
+        if not agent_components:
+            return {"components": []}
+        
+        # Format the component registrations
+        registrations = []
+        for component_id in agent_components:
+            component = ui_component_registry.get(component_id)
+            if component:
+                registrations.append({
+                    "id": component.component_id,
+                    "name": component.name,
+                    "description": component.description,
+                    "features": component.required_features
+                })
+        
+        return {"components": registrations}
+    except Exception as e:
+        logger.error(f"Error getting UI components for agent {agent_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/agents/{agent_id}/has-ui")
+async def agent_has_ui(agent_id: str):
+    """Check if an agent has UI components."""
+    try:
+        # Import the agent registry
+        try:
+            # Try importing with the full package path (for local development)
+            from mosaic.backend.agents.base import agent_registry
+        except ImportError:
+            # Fall back to relative import (for Docker environment)
+            from backend.agents.base import agent_registry
+        
+        # Get the agent from the registry
+        agent = agent_registry.get(agent_id)
+        
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        # Get the components associated with this agent
+        agent_components = agent_registry.get_ui_components(agent_id)
+        
+        # Return whether the agent has UI components
+        return {"hasUI": len(agent_components) > 0}
+    except Exception as e:
+        logger.error(f"Error checking if agent {agent_id} has UI components: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.websocket("/ws/chat/{agent_id}")
 async def chat_websocket_endpoint(websocket: WebSocket, agent_id: str):
     client_id = str(uuid.uuid4())
@@ -1234,26 +1305,52 @@ async def simulate_agent_processing(websocket: WebSocket, agent_id: str, content
 try:
     # Try importing with the full package path (for local development)
     from mosaic.backend.app.agent_runner import initialize_agents, get_initialized_agents
+    from mosaic.backend.app.ui_component_discovery import discover_and_register_components
 except ImportError:
     # Fall back to relative import (for Docker environment)
     from backend.app.agent_runner import initialize_agents, get_initialized_agents
+    from backend.app.ui_component_discovery import discover_and_register_components
+
+# Import the UI WebSocket handler, connection manager, and request tracker
+try:
+    # Try importing with the full package path (for local development)
+    from mosaic.backend.app.agent_api import agent_api
+    from mosaic.backend.app.ui_websocket_handler import handle_ui_websocket, start_cleanup_task
+    from mosaic.backend.app.request_tracker import request_tracker
+except ImportError:
+    # Fall back to relative import (for Docker environment)
+    from backend.app.agent_api import agent_api
+    from backend.app.ui_websocket_handler import handle_ui_websocket, start_cleanup_task
+    from backend.app.request_tracker import request_tracker
 
 # Initialize the agents on startup
 @app.on_event("startup")
 async def startup_event():
-    """Initialize the agents and database on startup."""
+    """Initialize the agents, UI components, and database on startup."""
     # Initialize the database
     logger.info("Initializing database")
     init_db()
     logger.info("Database initialized")
     
     # Initialize the agents
+    logger.info("Initializing agents")
     initialize_agents()
+    logger.info("Agents initialized")
+    
+    # Discover and register UI components
+    logger.info("Discovering and registering UI components")
+    ui_components = discover_and_register_components()
+    logger.info(f"Registered {len(ui_components)} UI components")
+    
+    # Start the UI connection manager cleanup task
+    logger.info("Starting UI connection manager cleanup task")
+    start_cleanup_task()
+    logger.info("UI connection manager cleanup task started")
 
-# Close database connection on shutdown
+# Close database connection and request tracker on shutdown
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Close database connection on shutdown."""
+    """Close database connection and request tracker on shutdown."""
     try:
         # Try importing with the full package path (for local development)
         from mosaic.backend.database import close_db_connection
@@ -1264,6 +1361,11 @@ async def shutdown_event():
     logger.info("Closing database connection")
     close_db_connection()
     logger.info("Database connection closed")
+    
+    # Close the request tracker
+    logger.info("Closing request tracker")
+    request_tracker.close()
+    logger.info("Request tracker closed")
 
 # Run the application
 if __name__ == "__main__":

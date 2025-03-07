@@ -7,12 +7,25 @@ import { Message, Attachment } from "../types"
 import { chatApi } from "../api"
 import { mockMessages } from "../mock-data"
 import { useWebSocket, ConnectionState } from "../contexts/websocket-context"
+import { useAgentContext } from "../contexts/agent-context"
 
 // Always use the actual API in Docker environment
 const USE_MOCK_DATA = false
 
 export function useChat(agentId?: string) {
-  const [messages, setMessages] = useState<Message[]>([])
+  // Get agent context for preserving conversation state
+  const { 
+    conversationContext, 
+    updateConversationContext, 
+    clearConversationContext
+  } = useAgentContext();
+  
+  // Initialize messages from context if available
+  const initialMessages = agentId && conversationContext[agentId] 
+    ? conversationContext[agentId].messages 
+    : [];
+  
+  const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
@@ -27,6 +40,13 @@ export function useChat(agentId?: string) {
     connect,
     disconnect
   } = useWebSocket()
+  
+  // Update context when messages change
+  useEffect(() => {
+    if (agentId && messages.length > 0 && isInitialized) {
+      updateConversationContext(agentId, messages);
+    }
+  }, [agentId, messages, updateConversationContext, isInitialized]);
 
   // Function to fetch messages from the API
   const fetchMessages = useCallback(async () => {
@@ -359,6 +379,9 @@ export function useChat(agentId?: string) {
           // Reset messages
           setMessages([])
           setError(null)
+          
+          // Clear conversation context
+          clearConversationContext(agentId)
           return
         }
       }
@@ -373,12 +396,15 @@ export function useChat(agentId?: string) {
         // Reset messages
         setMessages([])
         setError(null)
+        
+        // Clear conversation context
+        clearConversationContext(agentId)
       }
     } catch (error) {
       console.error("Error clearing chat:", error)
       setError("Failed to clear chat")
     }
-  }, [agentId, connectionState, wsSendMessage, user])
+  }, [agentId, connectionState, wsSendMessage, user, clearConversationContext])
 
   return {
     messages,

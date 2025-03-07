@@ -70,6 +70,33 @@ calculator_agent = agent_registry.get("calculator")
 result = calculator_agent.invoke({"messages": [{"role": "user", "content": "Calculate 2 + 2"}]})
 ```
 
+### Using Agent Tools Directly
+
+You can also access and use an agent's tools directly, which is particularly useful for UI components:
+
+```python
+from mosaic.backend.agents import agent_registry
+
+# Get an agent from the registry
+financial_agent = agent_registry.get("financial_analysis")
+
+# Find a specific tool
+get_stock_history_tool = None
+for tool in financial_agent.tools:
+    if tool.name == "get_stock_history_tool":
+        get_stock_history_tool = tool
+        break
+
+# Use the tool directly
+if get_stock_history_tool:
+    result = get_stock_history_tool.invoke({
+        "symbol": "AAPL",
+        "period": "1mo",
+        "interval": "1d"
+    })
+    print(result)
+```
+
 ### Creating a New Agent
 
 To create a new agent, inherit from the `BaseAgent` class and implement the required methods:
@@ -367,7 +394,108 @@ To add support for a new file type:
 
 The modular design of the file processing system makes it easy to extend with support for additional file types while maintaining a consistent user experience.
 
+## Agent UI Framework Integration
+
+The MOSAIC platform includes a powerful Agent UI Framework that enables rich, interactive user interfaces for specialized agents beyond the traditional chat interface. This framework allows agents to offer visualizations, data processing tools, and interactive components tailored to their specific capabilities.
+
+### Associating UI Components with Agents
+
+To associate a UI component with an agent, you can use the `register_ui_component` method of the agent registry:
+
+```python
+from mosaic.backend.ui.base import ui_component_registry
+from mosaic.backend.agents.base import agent_registry
+
+# Register the component with the agent
+if "financial_analysis" in agent_registry.list_agents():
+    agent_registry.register_ui_component("financial_analysis", "stock-chart")
+```
+
+This associates the `stock-chart` UI component with the `financial_analysis` agent, allowing the frontend to display the component when the user interacts with the agent.
+
+### Exposing Agent Tools to UI Components
+
+UI components can use agent tools directly to retrieve data. This approach replaces the previous DataProvider abstraction layer, allowing UI components to directly leverage the full capabilities of agents, including their reasoning abilities and error handling.
+
+When creating an agent that will be used with UI components, make sure to:
+
+1. **Create well-documented tools**: Tools should have clear docstrings and parameter descriptions
+2. **Return structured data**: Tools should return data in a structured format that can be easily parsed by UI components
+3. **Handle errors gracefully**: Tools should include robust error handling to provide meaningful error messages
+
+Example of a tool designed for UI components:
+
+```python
+@tool
+def get_stock_history_tool(symbol: str, period: str = "1mo", interval: str = "1d") -> dict:
+    """
+    Get historical stock data for a given symbol.
+    
+    Args:
+        symbol: The stock symbol (e.g., AAPL, MSFT, GOOGL)
+        period: The time period (e.g., 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max)
+        interval: The data interval (e.g., 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo)
+        
+    Returns:
+        A dictionary containing the historical stock data with dates and prices
+    """
+    try:
+        # Get stock data using yfinance
+        import yfinance as yf
+        ticker = yf.Ticker(symbol)
+        history = ticker.history(period=period, interval=interval)
+        
+        # Format the data for the UI component
+        dates = history.index.strftime('%Y-%m-%d').tolist()
+        prices = history['Close'].tolist()
+        
+        return {
+            "symbol": symbol,
+            "period": period,
+            "interval": interval,
+            "dates": dates,
+            "prices": prices,
+            "high": history['High'].tolist(),
+            "low": history['Low'].tolist(),
+            "open": history['Open'].tolist(),
+            "volume": history['Volume'].tolist()
+        }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "message": f"Failed to get stock history for {symbol}"
+        }
+```
+
+### UI Component Discovery
+
+The UI component discovery system automatically scans the UI components directory for Python files, extracts component classes, and registers them with the UI component registry. This means you can create a new UI component by simply adding a new file to the UI components directory.
+
+When a user interacts with an agent that has associated UI components, the frontend will automatically display those components, providing a rich, interactive experience beyond the traditional chat interface.
+
+### Example: Financial Analysis Agent with Stock Chart Component
+
+The `financial_analysis` agent provides a good example of integration with the Agent UI Framework:
+
+1. The agent includes tools for retrieving stock data:
+   - `get_stock_price_tool`: Gets the current price of a stock
+   - `get_stock_history_tool`: Gets historical stock data
+   - `get_company_info_tool`: Gets information about a company
+
+2. The `stock-chart` UI component uses these tools to retrieve and visualize stock data:
+   - It calls the `get_stock_history_tool` to get historical stock data
+   - It formats the data for visualization
+   - It renders an interactive chart in the frontend
+
+3. The agent and component are associated through the agent registry:
+   ```python
+   agent_registry.register_ui_component("financial_analysis", "stock-chart")
+   ```
+
+This integration provides a seamless experience for users, allowing them to interact with the agent through both the chat interface and specialized UI components.
+
 ## References
 
 - [LangChain Documentation](https://python.langchain.com/docs/get_started/introduction)
 - [LangGraph Documentation](https://langchain-ai.github.io/langgraph/)
+- [Agent UI Framework Documentation](../ui/README.md)

@@ -153,13 +153,62 @@ def get_stock_history_tool(symbol: str, period: str = "1y", interval: str = "1d"
         response += f"Minimum Price: ${min_price:.2f}\n"
         response += f"Maximum Price: ${max_price:.2f}\n\n"
         
-        # Add a sample of the data
-        response += "Sample of Historical Data:\n"
-        sample_size = min(5, len(history))
-        sample = history.iloc[-sample_size:]
+        # Add the historical data
+        response += "Historical Data:\n"
         
-        for date, row in sample.iterrows():
-            response += f"{date.strftime('%Y-%m-%d')}: Open ${row['Open']:.2f}, High ${row['High']:.2f}, Low ${row['Low']:.2f}, Close ${row['Close']:.2f}, Volume {int(row['Volume'])}\n"
+        # Determine the number of data points to include based on the period and interval
+        if period == "1d" and interval == "15m":
+            # For 1 day with 15-minute intervals, include all data points
+            # This will give us about 26 data points for a trading day (6.5 hours / 15 minutes)
+            data_to_include = history
+        elif period == "1d":
+            # For 1 day with other intervals, include all data points
+            data_to_include = history
+        elif period == "5d":
+            # For 5 days, include all data points
+            data_to_include = history
+        elif period == "1wk":
+            # For 1 week, include all data points
+            data_to_include = history
+        elif period == "1mo":
+            # For 1 month, include all data points but limit to 30
+            data_to_include = history.iloc[-min(30, len(history)):]
+        elif period == "3mo":
+            # For 3 months, include weekly data (about 12 points)
+            data_to_include = history.iloc[::5][-min(30, len(history)):]
+        elif period == "6mo":
+            # For 6 months, include bi-weekly data (about 12 points)
+            data_to_include = history.iloc[::10][-min(30, len(history)):]
+        elif period == "1y":
+            # For 1 year, include monthly data (about 12 points)
+            data_to_include = history.iloc[::20][-min(30, len(history)):]
+        elif period == "5y":
+            # For 5 years, include quarterly data (about 20 points)
+            data_to_include = history.iloc[::60][-min(30, len(history)):]
+        else:
+            # Log the unknown period
+            logger.warning(f"Unknown period: {period}, defaulting to 30 data points")
+            # Default to 30 data points
+            data_to_include = history.iloc[::max(1, len(history) // 30)][-min(30, len(history)):]
+        
+        # Ensure we include the most recent data point
+        if len(data_to_include) > 0 and data_to_include.index[-1] != history.index[-1]:
+            data_to_include = pd.concat([data_to_include, history.iloc[[-1]]])
+        
+        # Sort by date
+        data_to_include = data_to_include.sort_index()
+        
+        # Add data points to the response
+        for date, row in data_to_include.iterrows():
+            # Format the date based on the interval
+            if interval == "15m":
+                # For 15-minute intervals, include the time
+                date_str = date.strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                # For daily intervals, just include the date
+                date_str = date.strftime('%Y-%m-%d')
+            
+            response += f"{date_str}: Open ${row['Open']:.2f}, High ${row['High']:.2f}, Low ${row['Low']:.2f}, Close ${row['Close']:.2f}, Volume {int(row['Volume'])}\n"
         
         logger.info(f"Successfully retrieved stock history for '{symbol}'")
         return response
@@ -691,4 +740,8 @@ def register_financial_analysis_agent(model: LanguageModelLike) -> FinancialAnal
     
     financial_analysis = FinancialAnalysisAgent(model=model)
     agent_registry.register(financial_analysis)
+    
+    # Register UI components for this agent
+    agent_registry.register_ui_component("financial_analysis", "stock-chart")
+    
     return financial_analysis

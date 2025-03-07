@@ -46,6 +46,9 @@ export const agentApi = {
   
   // Get relationships for a specific agent
   getAgentRelationships: (id: string) => fetchApi<Agent['relationships']>(`/agents/${id}/relationships`),
+  
+  // Check if an agent has UI components
+  hasUI: (id: string) => fetchApi<{hasUI: boolean}>(`/agents/${id}/has-ui`),
 }
 
 /**

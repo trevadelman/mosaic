@@ -226,11 +226,36 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     setConnectionState(ConnectionState.DISCONNECTED)
   }, [])
 
-  // Reconnect to WebSocket
+  // Reconnect to WebSocket with improved error handling
   const reconnect = useCallback(() => {
     console.log("Reconnecting WebSocket...")
+    
+    // Track reconnection attempt
+    const attempt = reconnectAttemptsRef.current + 1
+    console.log(`Reconnection attempt ${attempt}/${maxReconnectAttemptsRef.current}`)
+    
+    // Disconnect first to ensure clean state
     disconnect()
-    connect(currentAgentIdRef.current)
+    
+    // Add a small delay before reconnecting to avoid rapid reconnection attempts
+    setTimeout(() => {
+      // Check if we've exceeded max reconnection attempts
+      if (attempt > maxReconnectAttemptsRef.current) {
+        console.error(`Maximum reconnection attempts (${maxReconnectAttemptsRef.current}) exceeded`)
+        setConnectionState(ConnectionState.DISCONNECTED)
+        dispatchEvent({ 
+          type: "error", 
+          error: `Failed to reconnect after ${maxReconnectAttemptsRef.current} attempts` 
+        })
+        return
+      }
+      
+      // Update reconnection attempts
+      reconnectAttemptsRef.current = attempt
+      
+      // Attempt to reconnect
+      connect(currentAgentIdRef.current)
+    }, 100)
   }, [connect, disconnect])
 
   // Check if WebSocket is connected

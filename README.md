@@ -40,6 +40,7 @@ MOSAIC is a production-ready system for creating, managing, and interacting with
 - **User Authentication**: Secure authentication with Clerk
 - **FastAPI Backend**: High-performance Python API with WebSocket support
 - **Agent Framework**: Flexible, extensible agent system built on LangChain and LangGraph
+- **Agent UI Framework**: Rich, interactive UI components for specialized agent interfaces
 - **Regular Agents**:
   - **Calculator Agent**: Performs mathematical operations
   - **Web Search Agent**: Searches the web and retrieves webpage content
@@ -49,10 +50,16 @@ MOSAIC is a production-ready system for creating, managing, and interacting with
   - **Safety Agent**: Validates agent actions for safety
   - **Writer Agent**: Handles file operations
   - **Agent Creator Agent**: Creates and deploys new agents
+  - **Financial Analysis Agent**: Analyzes stock data and provides financial insights
 - **Supervisor Agents**:
   - **Calculator Supervisor**: Orchestrates the calculator agent
   - **Research Supervisor**: Orchestrates multiple agents for comprehensive research tasks
   - **Multi-Agent Supervisor**: Generic supervisor that can orchestrate any combination of agents
+  - **Financial Supervisor**: Orchestrates financial analysis tasks
+- **UI Components**:
+  - **Stock Chart Component**: Interactive stock chart visualization
+  - **Data Visualization Component**: Comprehensive charting capabilities
+  - **Research Paper Component**: Academic paper search and visualization
 - **Dynamic Agent Discovery**: Automatically discovers and registers both regular agents and supervisors
 - **Database-Driven Agent Metadata**: Store and manage agent definitions, tools, and capabilities in the database
 - **JSON Template Integration**: Convert between JSON templates and database records for agent definitions

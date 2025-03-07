@@ -8,8 +8,9 @@ The MOSAIC frontend consists of several key components:
 
 1. **Next.js Application**: Provides the core framework for the frontend
 2. **UI Components**: Reusable components built with shadcn/ui
-3. **API Client**: Communicates with the backend API
-4. **WebSocket Client**: Handles real-time communication with the backend
+3. **Agent UI Framework**: Rich, interactive UI components for specialized agent interfaces
+4. **API Client**: Communicates with the backend API
+5. **WebSocket Client**: Handles real-time communication with the backend
 
 ## Directory Structure
 
@@ -141,6 +142,134 @@ User authentication state is used throughout the application to:
 - **Chat Interface**: Components for the chat interface
 - **Agent Visualization**: Components for visualizing agent responses
 - **Theme Provider**: Handles dark/light theme switching
+
+## Agent UI Framework
+
+The MOSAIC frontend includes a powerful Agent UI Framework that enables rich, interactive user interfaces for specialized agents beyond the traditional chat interface. This framework allows agents to offer visualizations, data processing tools, and interactive components tailored to their specific capabilities.
+
+### Key Components
+
+- **Agent UI Container**: Main container for agent-specific UI components
+  - Located in `components/agent-ui/agent-ui-container.tsx`
+  - Handles loading, rendering, and communication with UI components
+
+- **Component Registry**: Registers React component implementations for UI components
+  - Located in `lib/agent-ui/component-registry.ts`
+  - Maps component IDs to their React implementations
+
+- **Agent UI Context**: Provides context for agent UI components
+  - Located in `lib/contexts/agent-ui-context.tsx`
+  - Manages WebSocket communication and event handling
+
+- **Specialized UI Components**: React implementations of UI components
+  - Located in `components/agent-ui/` (organized by agent type)
+  - Examples include:
+    - `financial/stock-chart.tsx`: Interactive stock chart visualization
+    - `research/research-paper.tsx`: Academic paper search and visualization
+
+### Communication Flow
+
+1. **Component Registration**:
+   - React components register with the component registry
+   - Components are mapped to their backend counterparts by ID
+
+2. **WebSocket Connection**:
+   - When a user opens an agent UI, a WebSocket connection is established
+   - The connection is specific to the agent and client
+   - Events are routed through this connection
+
+3. **Event Flow**:
+   - Frontend components send events to the backend through the WebSocket
+   - Backend components process events and send responses
+   - Events can include data requests, user actions, and UI updates
+
+### Creating a New UI Component
+
+To create a new frontend UI component:
+
+1. **Create a new TypeScript/React file** in `components/agent-ui/`
+2. **Implement the React component** with appropriate props and state
+3. **Register the component** in the component registry
+
+Example:
+```tsx
+// components/agent-ui/my-agent/my-visualization.tsx
+import React, { useState, useEffect } from 'react';
+import { useAgentUI } from '../../../lib/contexts/agent-ui-context';
+
+interface MyVisualizationProps {
+  componentId: string;
+  agentId: string;
+}
+
+export const MyVisualization: React.FC<MyVisualizationProps> = ({
+  componentId,
+  agentId,
+}) => {
+  const { sendUIEvent } = useAgentUI();
+  const [data, setData] = useState<any[]>([]);
+  
+  useEffect(() => {
+    // Set up event listener
+    const handleUIEvent = (event: CustomEvent<any>) => {
+      // Handle events
+    };
+    
+    window.addEventListener('ui_event', handleUIEvent as EventListener);
+    
+    // Request data
+    sendUIEvent({
+      type: 'data_request',
+      component: componentId,
+      action: 'get_data',
+      data: {}
+    });
+    
+    return () => {
+      window.removeEventListener('ui_event', handleUIEvent as EventListener);
+    };
+  }, [componentId, agentId, sendUIEvent]);
+  
+  return (
+    <div>
+      {/* Render visualization */}
+    </div>
+  );
+};
+```
+
+```typescript
+// components/agent-ui/my-agent/index.ts
+import { registerComponentImplementation } from '../../../lib/agent-ui/component-registry';
+import { MyVisualization } from './my-visualization';
+
+// Register the component
+registerComponentImplementation('my-visualization', MyVisualization);
+
+// Export components
+export { MyVisualization };
+```
+
+### Best Practices
+
+1. **Component Naming**:
+   - Use kebab-case for component IDs (e.g., `stock-chart`)
+   - Use PascalCase for React component names (e.g., `StockChart`)
+
+2. **Event Handling**:
+   - Use descriptive event names (e.g., `get_stock_data`, `change_symbol`)
+   - Include all necessary data in event payloads
+   - Handle errors gracefully and provide meaningful error messages
+
+3. **State Management**:
+   - Keep component state in React hooks
+   - Use context for shared state between components
+   - Handle loading and error states appropriately
+
+4. **Component Organization**:
+   - Group related components in directories by agent type
+   - Use index.ts files to export and register components
+   - Keep component implementations focused and single-purpose
 
 ## Development Guidelines
 
