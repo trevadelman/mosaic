@@ -2,36 +2,50 @@
 
 MOSAIC is a production-ready system for creating, managing, and interacting with intelligent agents. It builds upon the proof-of-concept multi-agent orchestration system to create a robust, extensible platform for agent-based applications.
 
+## Quick Start
+
+**New to MOSAIC?** Check out these beginner-friendly guides to get started quickly:
+
+- [**QUICKSTART.md**](QUICKSTART.md): Simple step-by-step instructions to get MOSAIC up and running
+- [**Creating Agents**](backend/agents/CREATING_AGENTS.md): Learn how to create your own custom agents
+- [**Creating Agent UIs**](backend/agents/CREATING_AGENT_UIS.md): Create specialized user interfaces for your agents
+
+These guides are designed to be accessible even if you're new to programming or AI systems.
+
 ## System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                      Docker Environment                         │
-│                                                                 │
-│  ┌─────────────────┐           ┌──────────────────────────┐    │
-│  │                 │           │                          │    │
-│  │  Next.js        │           │  FastAPI Backend         │    │
-│  │  Frontend       │◄─────────►│                          │    │
-│  │  (Port 3000)    │   REST    │  (Port 8000)             │    │
-│  │                 │    +      │                          │    │
-│  │  - UI Components│  WebSocket│  - API Endpoints         │    │
-│  │  - Chat Interface│          │  - WebSocket Server      │    │
-│  │  - Agent UI     │           │  - Database Access       │    │
-│  │                 │           │                          │    │
-│  └─────────────────┘           └──────────┬───────────────┘    │
-│                                           │                     │
-│                                           ▼                     │
-│                               ┌──────────────────────────┐     │
-│                               │                          │     │
-│                               │  Agent System            │     │
-│                               │                          │     │
-│                               │  - Base Agent Framework  │     │
-│                               │  - Specialized Agents    │     │
-│                               │  - Supervisor System     │     │
-│                               │                          │     │
-│                               └──────────────────────────┘     │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           Docker Environment                                │
+│                                                                             │
+│  ┌──────────────────┐           ┌──────────────────────────┐                │
+│  │                  │           │                          │                │
+│  │  Next.js         │           │  FastAPI Backend         │                │
+│  │  Frontend        │◄─────────►│                          │                │
+│  │  (Port 3000)     │   REST    │  (Port 8000)             │                │
+│  │                  │    +      │                          │                │
+│  │  - UI Components │  WebSocket│  - API Endpoints         │                │
+│  │  - Chat Interface│           │  - WebSocket Server      │    ┌─────────┐ │
+│  │  - Agent UI      │           │  - Agent Discovery       │◄──►│ SQLite  │ │
+│  │  - Specialized   │           │  - Database Access       │    │ Database│ │
+│  │    UI Components │           │                          │    └─────────┘ │
+│  │                  │           │                          │                │
+│  └────────┬─────────┘           └──────────┬───────────────┘                │
+│           │                               │                                 │
+│           │                               ▼                                 │
+│           │                   ┌──────────────────────────┐                  │
+│           │                   │                          │                  │
+│           │                   │  Agent System            │                  │
+│           │                   │                          │                  │
+│           └───────────────────►  - Base Agent Framework  │                  │
+│                               │  - Specialized Agents    │                  │
+│             Direct            │  - Supervisor System     │                  │
+│             Agent-UI          │  - Agent UI Components   │                  │
+│             Communication     │  - Agent Tools           │                  │
+│                               │                          │                  │
+│                               └──────────────────────────┘                  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Key Features
@@ -281,7 +295,7 @@ See the [ROADMAP.md](ROADMAP.md) file for the current development status and upc
 
 ### Creating Agents
 
-For detailed instructions on creating new agents, see the [Creating Agents Guide](CREATING_AGENTS.md). This guide covers:
+For detailed instructions on creating new agents, see the [Creating Agents Guide](backend/agents/CREATING_AGENTS.md). This guide covers:
 
 - Different approaches to creating agents (JSON templates, API, Python scripts, UI)
 - Agent structure and schema

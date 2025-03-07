@@ -177,5 +177,6 @@ Once you're comfortable with the basics:
 - Try the specialized UI components for data visualization
 - Check out the [documentation](README.md) for more detailed information
 - Learn how to [create your own agents](backend/agents/CREATING_AGENTS.md)
+- Learn how to [create custom UIs for agents](backend/agents/CREATING_AGENT_UIS.md)
 
 Happy exploring!

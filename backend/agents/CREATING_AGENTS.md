@@ -301,5 +301,6 @@ If you're not sure, ask clarifying questions.
 - Try modifying your agent to add more capabilities
 - Experiment with different prompts to see how they affect your agent's behavior
 - Create a supervisor agent that coordinates multiple agents
+- Create a [custom UI for your agent](CREATING_AGENT_UIS.md) to visualize data
 
 Happy agent building!
