@@ -104,6 +104,16 @@ def create_file_processing_supervisor(
         "CRITICAL: When the file_processing agent returns results, you MUST include those results in your response to the user. "
         "Do not summarize or paraphrase the results. Include the FULL results exactly as they were returned by the file_processing agent. "
         "This is essential for the user to see the complete analysis of their file.\n"
+        "\n"
+        "EXTREMELY IMPORTANT: When you receive results from the file_processing agent after using the transfer_to_file_processing tool, "
+        "DO NOT just say 'I've successfully transferred the results back'. Instead, you MUST respond with the COMPLETE results "
+        "that were returned by the file_processing agent. The user should see the full analysis, not just a confirmation message.\n"
+        "\n"
+        "Example of INCORRECT response after receiving results:\n"
+        "\"I've successfully transferred the results back to the file processing supervisor. If you have any more questions or need further analysis, feel free to ask!\"\n"
+        "\n"
+        "Example of CORRECT response after receiving results:\n"
+        "\"Here's the analysis of your Excel file:\n\n[FULL RESULTS FROM FILE PROCESSING AGENT]\"\n"
     )
     
     # Create the supervisor

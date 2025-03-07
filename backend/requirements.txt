@@ -28,3 +28,5 @@ lxml
 regex
 pandas  # Added for file processing
 tabulate  # Added for markdown tables in file processing
+openpyxl>=3.0.0  # Added for Excel XLSX file support
+xlrd>=2.0.1  # Added for Excel XLS file support

@@ -39,6 +39,9 @@ def process_excel_file_tool(file_data_base64: str, file_name: str) -> str:
     """
     logger.info(f"Processing Excel file: {file_name}")
     try:
+        # Initialize file_data to None to ensure it's always defined
+        file_data = None
+        
         # Log the length of the base64 data
         logger.info(f"Base64 data length: {len(file_data_base64)}")
         
@@ -92,9 +95,15 @@ def process_excel_file_tool(file_data_base64: str, file_name: str) -> str:
             except Exception as e:
                 logger.error(f"Error retrieving attachment from database: {str(e)}")
         
-        # Make sure the base64 data is properly padded
-        # Add padding if needed (base64 strings should have a length that is a multiple of 4)
+        # Process the base64 data if available
         if file_data_base64:
+            # Clean up the base64 data first to fix common issues
+            file_data_base64 = file_data_base64.replace(' ', '+')
+            file_data_base64 = file_data_base64.replace('\n', '')
+            file_data_base64 = file_data_base64.replace('\r', '')
+            
+            # Make sure the base64 data is properly padded
+            # Add padding if needed (base64 strings should have a length that is a multiple of 4)
             padding_needed = len(file_data_base64) % 4
             if padding_needed > 0:
                 file_data_base64 += "=" * (4 - padding_needed)
@@ -106,11 +115,7 @@ def process_excel_file_tool(file_data_base64: str, file_name: str) -> str:
                 logger.info(f"Successfully decoded base64 data, length: {len(file_data)}")
             except Exception as e:
                 logger.error(f"Error decoding base64 data: {str(e)}")
-                # Try to fix common base64 issues
-                file_data_base64 = file_data_base64.replace(' ', '+')
-                file_data_base64 = file_data_base64.replace('\n', '')
-                file_data_base64 = file_data_base64.replace('\r', '')
-                logger.info("Cleaned up base64 data, trying again")
+                logger.info("Trying alternative base64 decoding approach")
                 try:
                     file_data = base64.b64decode(file_data_base64)
                     logger.info(f"Successfully decoded base64 data after cleanup, length: {len(file_data)}")
@@ -149,7 +154,25 @@ def process_excel_file_tool(file_data_base64: str, file_name: str) -> str:
         
         # Read Excel file
         logger.info(f"Reading Excel file with pandas...")
-        df = pd.read_excel(io.BytesIO(file_data))
+        try:
+            # Try with default engine
+            df = pd.read_excel(io.BytesIO(file_data))
+        except Exception as e:
+            logger.error(f"Error reading Excel file with default engine: {str(e)}")
+            try:
+                # Try with openpyxl engine
+                logger.info("Trying with openpyxl engine...")
+                df = pd.read_excel(io.BytesIO(file_data), engine="openpyxl")
+            except Exception as e2:
+                logger.error(f"Error reading Excel file with openpyxl engine: {str(e2)}")
+                try:
+                    # Try with xlrd engine
+                    logger.info("Trying with xlrd engine...")
+                    df = pd.read_excel(io.BytesIO(file_data), engine="xlrd")
+                except Exception as e3:
+                    logger.error(f"Error reading Excel file with xlrd engine: {str(e3)}")
+                    # If all engines fail, raise the original error
+                    raise e
         
         # Get basic information about the dataframe
         rows = len(df)
@@ -239,6 +262,9 @@ def analyze_excel_data_tool(file_data_base64: str, file_name: str, analysis_type
     """
     logger.info(f"Performing {analysis_type} analysis on Excel file: {file_name}")
     try:
+        # Initialize file_data to None to ensure it's always defined
+        file_data = None
+        
         # Log the length of the base64 data
         logger.info(f"Base64 data length: {len(file_data_base64)}")
         
@@ -292,9 +318,15 @@ def analyze_excel_data_tool(file_data_base64: str, file_name: str, analysis_type
             except Exception as e:
                 logger.error(f"Error retrieving attachment from database: {str(e)}")
         
-        # Make sure the base64 data is properly padded
-        # Add padding if needed (base64 strings should have a length that is a multiple of 4)
+        # Process the base64 data if available
         if file_data_base64:
+            # Clean up the base64 data first to fix common issues
+            file_data_base64 = file_data_base64.replace(' ', '+')
+            file_data_base64 = file_data_base64.replace('\n', '')
+            file_data_base64 = file_data_base64.replace('\r', '')
+            
+            # Make sure the base64 data is properly padded
+            # Add padding if needed (base64 strings should have a length that is a multiple of 4)
             padding_needed = len(file_data_base64) % 4
             if padding_needed > 0:
                 file_data_base64 += "=" * (4 - padding_needed)
@@ -306,11 +338,7 @@ def analyze_excel_data_tool(file_data_base64: str, file_name: str, analysis_type
                 logger.info(f"Successfully decoded base64 data, length: {len(file_data)}")
             except Exception as e:
                 logger.error(f"Error decoding base64 data: {str(e)}")
-                # Try to fix common base64 issues
-                file_data_base64 = file_data_base64.replace(' ', '+')
-                file_data_base64 = file_data_base64.replace('\n', '')
-                file_data_base64 = file_data_base64.replace('\r', '')
-                logger.info("Cleaned up base64 data, trying again")
+                logger.info("Trying alternative base64 decoding approach")
                 try:
                     file_data = base64.b64decode(file_data_base64)
                     logger.info(f"Successfully decoded base64 data after cleanup, length: {len(file_data)}")
@@ -349,7 +377,25 @@ def analyze_excel_data_tool(file_data_base64: str, file_name: str, analysis_type
         
         # Read Excel file
         logger.info(f"Reading Excel file with pandas...")
-        df = pd.read_excel(io.BytesIO(file_data))
+        try:
+            # Try with default engine
+            df = pd.read_excel(io.BytesIO(file_data))
+        except Exception as e:
+            logger.error(f"Error reading Excel file with default engine: {str(e)}")
+            try:
+                # Try with openpyxl engine
+                logger.info("Trying with openpyxl engine...")
+                df = pd.read_excel(io.BytesIO(file_data), engine="openpyxl")
+            except Exception as e2:
+                logger.error(f"Error reading Excel file with openpyxl engine: {str(e2)}")
+                try:
+                    # Try with xlrd engine
+                    logger.info("Trying with xlrd engine...")
+                    df = pd.read_excel(io.BytesIO(file_data), engine="xlrd")
+                except Exception as e3:
+                    logger.error(f"Error reading Excel file with xlrd engine: {str(e3)}")
+                    # If all engines fail, raise the original error
+                    raise e
         
         # Perform the requested analysis
         if analysis_type.lower() == "correlation":
@@ -544,6 +590,11 @@ class FileProcessingAgent(BaseAgent):
                         attachment_filename = attachment.get("filename", "unknown_file")
                         attachment_content_type = attachment.get("contentType", "application/octet-stream")
                         
+                        # Get the user_id from the message if available
+                        user_id = message.get("user_id")
+                        if user_id:
+                            logger.info(f"Found user_id: {user_id}")
+                        
                         has_attachments = True
                         logger.info(f"Found attachment: {attachment_filename} ({attachment_content_type})")
                         break
@@ -604,7 +655,15 @@ class FileProcessingAgent(BaseAgent):
                                 from backend.database.models import Attachment as AttachmentModel
                             
                             with get_db_session() as session:
-                                db_attachment = session.query(AttachmentModel).filter(AttachmentModel.id == attachment_id).first()
+                                # Include user_id in the query if available
+                                query = session.query(AttachmentModel).filter(AttachmentModel.id == attachment_id)
+                                
+                                # If user_id is available, filter by it as well
+                                user_id = message.get("user_id")
+                                if user_id:
+                                    query = query.filter(AttachmentModel.user_id == user_id)
+                                
+                                db_attachment = query.first()
                                 if db_attachment and db_attachment.data:
                                     # Convert binary data to base64
                                     attachment_data = base64.b64encode(db_attachment.data).decode('ascii')
@@ -648,7 +707,25 @@ class FileProcessingAgent(BaseAgent):
                             
                             # Read Excel file
                             logger.info(f"Reading Excel file with pandas (fallback)...")
-                            df = pd.read_excel(io.BytesIO(file_data))
+                            try:
+                                # Try with default engine
+                                df = pd.read_excel(io.BytesIO(file_data))
+                            except Exception as e:
+                                logger.error(f"Error reading Excel file with default engine (fallback): {str(e)}")
+                                try:
+                                    # Try with openpyxl engine
+                                    logger.info("Trying with openpyxl engine (fallback)...")
+                                    df = pd.read_excel(io.BytesIO(file_data), engine="openpyxl")
+                                except Exception as e2:
+                                    logger.error(f"Error reading Excel file with openpyxl engine (fallback): {str(e2)}")
+                                    try:
+                                        # Try with xlrd engine
+                                        logger.info("Trying with xlrd engine (fallback)...")
+                                        df = pd.read_excel(io.BytesIO(file_data), engine="xlrd")
+                                    except Exception as e3:
+                                        logger.error(f"Error reading Excel file with xlrd engine (fallback): {str(e3)}")
+                                        # If all engines fail, raise the original error
+                                        raise e
                             
                             # Get basic information about the dataframe
                             rows = len(df)
