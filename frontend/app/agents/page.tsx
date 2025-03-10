@@ -18,10 +18,7 @@ export default function AgentsPage() {
     setSelectedAgent(agent)
   }
 
-  // Handle opening the agent UI
-  const handleOpenUI = (agent: Agent) => {
-    router.push(`/agent-ui?agentId=${agent.id}`)
-  }
+  // UI functionality removed
 
   // Handle opening the chat
   const handleOpenChat = () => {
@@ -53,7 +50,6 @@ export default function AgentsPage() {
             agents={agents}
             selectedAgent={selectedAgent}
             onSelect={handleSelectAgent}
-            onOpenUI={handleOpenUI}
             loading={loading}
           />
         </div>
@@ -106,14 +102,6 @@ export default function AgentsPage() {
               )}
               
               <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => handleOpenUI(selectedAgent)}
-                  className="flex items-center gap-2"
-                >
-                  <LayoutDashboard className="h-4 w-4" />
-                  Open UI
-                </Button>
                 <Button
                   onClick={handleOpenChat}
                   className="flex items-center gap-2"

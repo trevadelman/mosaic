@@ -18,13 +18,7 @@ from langgraph.prebuilt import create_react_agent
 from langgraph.graph import StateGraph
 from langgraph.pregel import Pregel
 
-# Import UI component types
-try:
-    # Try importing with the full package path (for local development)
-    from mosaic.backend.ui.base import UIComponent
-except ImportError:
-    # Fall back to relative import (for Docker environment)
-    from backend.ui.base import UIComponent
+# No UI component imports needed
 
 # Configure logging
 logger = logging.getLogger("mosaic.agents")
@@ -177,7 +171,6 @@ class AgentRegistry:
             cls._instance.agents = {}
             cls._instance.logger = logging.getLogger("mosaic.agent_registry")
             cls._instance.agent_relationships = {}  # Store agent relationships
-            cls._instance.ui_components = {}  # agent_id -> [component_id]
         return cls._instance
     
     def register(self, agent: BaseAgent) -> None:
@@ -217,77 +210,7 @@ class AgentRegistry:
         """
         return list(self.agents.keys())
     
-    def register_ui_component(self, agent_id: str, component_id: str) -> None:
-        """
-        Register a UI component for an agent.
-        
-        Args:
-            agent_id: The ID of the agent
-            component_id: The ID of the component
-        """
-        # Check if the agent exists
-        if agent_id not in self.agents:
-            self.logger.warning(f"Agent '{agent_id}' not found in registry")
-            return
-        
-        # Import the UI component registry to check if the component exists
-        try:
-            # Try importing with the full package path (for local development)
-            from mosaic.backend.ui.base import ui_component_registry
-        except ImportError:
-            # Fall back to relative import (for Docker environment)
-            from backend.ui.base import ui_component_registry
-        
-        # Check if the component exists
-        component = ui_component_registry.get(component_id)
-        if not component:
-            self.logger.warning(f"Component '{component_id}' not found in registry")
-            return
-        
-        # Initialize the component list for this agent if it doesn't exist
-        if agent_id not in self.ui_components:
-            self.ui_components[agent_id] = []
-        
-        # Add the component to the agent's component list if not already there
-        if component_id not in self.ui_components[agent_id]:
-            self.ui_components[agent_id].append(component_id)
-            self.logger.info(f"Registered UI component '{component_id}' for agent '{agent_id}'")
-            
-            # Register the component for the agent in the UI component registry
-            ui_component_registry.register_for_agent(agent_id, component_id)
-    
-    def get_ui_components(self, agent_id: str) -> List[str]:
-        """
-        Get all UI components registered for an agent.
-        
-        Args:
-            agent_id: The ID of the agent
-            
-        Returns:
-            A list of component IDs
-        """
-        return self.ui_components.get(agent_id, [])
-    
-    def get_ui_component_registrations(self, agent_id: str) -> List[Dict[str, Any]]:
-        """
-        Get all UI component registrations for an agent.
-        
-        Args:
-            agent_id: The ID of the agent
-            
-        Returns:
-            A list of component registrations
-        """
-        # Import the UI component registry to get the registrations
-        try:
-            # Try importing with the full package path (for local development)
-            from mosaic.backend.ui.base import ui_component_registry
-        except ImportError:
-            # Fall back to relative import (for Docker environment)
-            from backend.ui.base import ui_component_registry
-        
-        # Get the registrations from the UI component registry
-        return ui_component_registry.get_registrations_for_agent(agent_id)
+    # UI component methods removed
     
     def create_supervisor(
         self,

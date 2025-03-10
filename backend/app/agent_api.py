@@ -267,6 +267,8 @@ class AgentAPI:
                 for tool in agent.tools:
                     capabilities.append(tool.name.replace("_", " ").title())
                 metadata["capabilities"] = capabilities
+            
+            # UI-related code removed
         
         return metadata
     

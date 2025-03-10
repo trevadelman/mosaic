@@ -626,6 +626,112 @@ def get_stock_comparison_tool(symbols: str) -> str:
         }
         return f"Error comparing stocks: {json.dumps(error_report, indent=2)}"
 
+# Define the stock chart tool
+@tool
+def stock_chart_tool(symbol: str = "AAPL", range_value: str = "1M") -> Dict[str, Any]:
+    """
+    Generate a stock chart visualization for a given symbol and time range.
+    
+    Args:
+        symbol: The stock symbol (e.g., AAPL, MSFT, GOOGL)
+        range_value: The time range (1D, 5D, 1W, 1M, 3M, 6M, 1Y, 5Y)
+        
+    Returns:
+        A dictionary containing the stock data
+    """
+    logger.info(f"Generating stock chart for '{symbol}' with range '{range_value}'")
+    try:
+        # Convert range to period and interval
+        period = _convert_range_to_agent_period(range_value)
+        interval = "15m" if range_value == "1D" else "1d"
+        
+        # Get the stock data
+        ticker = yf.Ticker(symbol)
+        history = ticker.history(period=period, interval=interval)
+        
+        if history.empty:
+            return {
+                "symbol": symbol,
+                "range": range_value,
+                "data": [],
+                "error": f"No historical data found for {symbol} with range {range_value}",
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        # Convert the data to a list of dictionaries
+        data_points = []
+        for date, row in history.iterrows():
+            # Format the date based on the interval
+            if interval == "15m":
+                # For 15-minute intervals, include the time
+                date_str = date.strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                # For daily intervals, just include the date
+                date_str = date.strftime('%Y-%m-%d')
+            
+            data_points.append({
+                "date": date_str,
+                "open": float(row['Open']),
+                "high": float(row['High']),
+                "low": float(row['Low']),
+                "close": float(row['Close']),
+                "volume": int(row['Volume'])
+            })
+        
+        # Create the stock data object
+        stock_data = {
+            "symbol": symbol,
+            "range": range_value,
+            "data": data_points,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        logger.info(f"Generated stock chart with {len(data_points)} data points for {symbol} with range {range_value}")
+        return stock_data
+    
+    except Exception as e:
+        logger.error(f"Error generating stock chart for '{symbol}': {str(e)}")
+        return {
+            "symbol": symbol,
+            "range": range_value,
+            "data": [],
+            "error": f"Error generating stock chart: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+# Helper function to convert range to period
+def _convert_range_to_agent_period(range_value: str) -> str:
+    """
+    Convert a range value to a period string for the agent's get_stock_history_tool.
+    
+    Args:
+        range_value: The range value (1D, 1W, 1M, 3M, 6M, 1Y, 5Y)
+        
+    Returns:
+        A period string for the agent
+    """
+    if range_value == "1D":
+        return "1d"
+    elif range_value == "5D":
+        return "5d"
+    elif range_value == "1W":
+        return "1wk"  # Add support for 1 week
+    elif range_value == "1M":
+        return "1mo"
+    elif range_value == "3M":
+        return "3mo"
+    elif range_value == "6M":
+        return "6mo"
+    elif range_value == "1Y":
+        return "1y"
+    elif range_value == "5Y":
+        return "5y"
+    else:
+        logger.warning(f"Unknown range value: {range_value}, defaulting to 1 month")
+        return "1mo"  # Default to 1 month
+
+# No WebSocket handlers needed
+
 class FinancialAnalysisAgent(BaseAgent):
     """
     Financial analysis agent that can analyze stock data and provide financial insights.
@@ -664,7 +770,8 @@ class FinancialAnalysisAgent(BaseAgent):
             get_stock_history_tool,
             get_company_info_tool,
             calculate_technical_indicators_tool,
-            get_stock_comparison_tool
+            get_stock_comparison_tool,
+            stock_chart_tool
         ]
         
         # Combine with any additional tools
@@ -676,7 +783,8 @@ class FinancialAnalysisAgent(BaseAgent):
                 "Stock Price Analysis", 
                 "Technical Indicators", 
                 "Company Information", 
-                "Stock Comparison"
+                "Stock Comparison",
+                "Stock Data Analysis"
             ]
         
         super().__init__(
@@ -704,12 +812,17 @@ class FinancialAnalysisAgent(BaseAgent):
             "Your job is to provide accurate financial insights and analysis based on stock market data. "
             "\n\n"
             "You have tools for stock price retrieval, historical data analysis, company information, "
-            "technical indicators, and stock comparison: "
+            "technical indicators, stock comparison, and visualization: "
             "- Use get_stock_price_tool to get the current price and basic information for a stock. "
             "- Use get_stock_history_tool to get historical price data for a stock. "
             "- Use get_company_info_tool to get detailed information about a company. "
             "- Use calculate_technical_indicators_tool to calculate technical indicators like SMA, EMA, MACD, RSI, and Bollinger Bands. "
             "- Use get_stock_comparison_tool to compare multiple stocks based on key metrics. "
+            "- Use stock_chart_tool to generate an interactive stock chart visualization for a given symbol and time range. "
+            "\n\n"
+            "IMPORTANT: You have access to real-time financial data through your tools. When a user asks about current market conditions "
+            "or stock prices, ALWAYS use your tools to fetch the latest data. DO NOT refuse requests based on any knowledge cutoff date. "
+            "Your tools can access current market data regardless of the date mentioned by the user. "
             "\n\n"
             "Always provide factual information based on the data from your tools. "
             "If you cannot find information, clearly state that and explain why. "
@@ -731,17 +844,10 @@ def register_financial_analysis_agent(model: LanguageModelLike) -> FinancialAnal
     Returns:
         The created financial analysis agent
     """
-    try:
-        # Try importing with the full package path (for local development)
-        from mosaic.backend.agents.base import agent_registry
-    except ImportError:
-        # Fall back to relative import (for Docker environment)
-        from backend.agents.base import agent_registry
+    # Create the agent with a consistent name
+    financial_analysis = FinancialAnalysisAgent(name="financial_analysis", model=model)
     
-    financial_analysis = FinancialAnalysisAgent(model=model)
+    # Register the agent with the registry
     agent_registry.register(financial_analysis)
-    
-    # Register UI components for this agent
-    agent_registry.register_ui_component("financial_analysis", "stock-chart")
     
     return financial_analysis

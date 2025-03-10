@@ -70,144 +70,25 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const currentAgentIdRef = useRef<string | undefined>(undefined)
   const eventListenersRef = useRef<((event: WebSocketEvent) => void)[]>([])
 
-  // Connect to WebSocket
-  const connect = useCallback((agentId?: string) => {
-    // If already connected or reconnecting, return
-    if (
-      socketRef.current?.readyState === WebSocket.OPEN ||
-      isReconnectingRef.current
-    ) {
-      return
-    }
+  // Dispatch event to all listeners
+  const dispatchEvent = useCallback((event: WebSocketEvent) => {
+    eventListenersRef.current.forEach(callback => callback(event))
+  }, [])
 
-    // Update state
-    isReconnectingRef.current = true
-    setConnectionState(ConnectionState.CONNECTING)
-    currentAgentIdRef.current = agentId
-
-    // Create WebSocket URL
-    const url = agentId ? `${WS_URL}/chat/${agentId}` : WS_URL
-    console.log(`Connecting to WebSocket: ${url}`)
-
-    // Create WebSocket
-    socketRef.current = new WebSocket(url)
-
-    // WebSocket event handlers
-    socketRef.current.onopen = () => {
-      console.log("WebSocket connected")
-      reconnectAttemptsRef.current = 0
-      isReconnectingRef.current = false
-      setConnectionState(ConnectionState.CONNECTED)
-      dispatchEvent({ type: "connect" })
-
-      // Process any queued messages
-      processMessageQueue()
-
-      // Set up keep-alive ping
-      if (keepAliveIntervalRef.current) {
-        clearInterval(keepAliveIntervalRef.current)
-      }
-
-      keepAliveIntervalRef.current = setInterval(() => {
-        if (isConnected()) {
-          console.log("Sending keep-alive ping")
-          try {
-            socketRef.current!.send(JSON.stringify({ type: "ping" }))
-          } catch (error) {
-            console.error("Error sending keep-alive ping:", error)
-            reconnect()
-          }
-        } else {
-          reconnect()
-        }
-      }, 30000) // 30 seconds
-    }
-
-    socketRef.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        
-        if (data.type === "message") {
-          dispatchEvent({ 
-            type: "message", 
-            message: data.message 
-          })
-        } else if (data.type === "typing") {
-          dispatchEvent({ 
-            type: "typing", 
-            agentId: data.agentId 
-          })
-        } else if (data.type === "log_update") {
-          console.log("Log update received:", data)
-          dispatchEvent({ 
-            type: "log_update", 
-            log: data.log,
-            messageId: data.messageId
-          })
-        } else if (data.type === "pong") {
-          // Received pong from server (keep-alive response)
-          console.log("Received pong from server")
-        } else if (data.type === "ui_event") {
-          console.log("UI event received:", data)
-          
-          // Dispatch a custom event for UI components to listen to
-          const customEvent = new CustomEvent('ui_event', { detail: data.data });
-          window.dispatchEvent(customEvent);
-          
-          // Also dispatch through our regular event system
-          dispatchEvent({ 
-            type: "ui_event", 
-            data: data.data
-          })
-        } else if (data.type === "component_registrations") {
-          console.log("Component registrations received:", data)
-          
-          // Dispatch a custom event for UI components to listen to
-          const customEvent = new CustomEvent('component_registrations', { detail: data.data });
-          window.dispatchEvent(customEvent);
-          
-          // Also dispatch through our regular event system
-          dispatchEvent({ 
-            type: "component_registrations", 
-            data: data.data
-          })
-        }
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error)
-      }
-    }
-
-    socketRef.current.onclose = (event) => {
-      console.log("WebSocket disconnected:", event.reason)
-      setConnectionState(ConnectionState.DISCONNECTED)
-      dispatchEvent({ 
-        type: "disconnect", 
-        reason: event.reason 
-      })
-      
-      socketRef.current = null
-      
-      // Attempt to reconnect if not closed intentionally
-      if (!event.wasClean && reconnectAttemptsRef.current < maxReconnectAttemptsRef.current) {
-        setConnectionState(ConnectionState.RECONNECTING)
-        reconnectTimeoutRef.current = setTimeout(() => {
-          reconnectAttemptsRef.current++
-          connect(currentAgentIdRef.current)
-        }, 1000 * Math.pow(2, reconnectAttemptsRef.current)) // Exponential backoff
-      }
-    }
-
-    socketRef.current.onerror = (error) => {
-      console.error("WebSocket error:", error)
-      dispatchEvent({ 
-        type: "error", 
-        error: "Connection error" 
-      })
-    }
+  // Check if WebSocket is connected
+  const isConnected = useCallback(() => {
+    return socketRef.current !== null && socketRef.current.readyState === WebSocket.OPEN
   }, [])
 
   // Disconnect from WebSocket
   const disconnect = useCallback(() => {
+    console.log("Disconnecting WebSocket")
+    
+    // Reset reconnection attempts
+    reconnectAttemptsRef.current = 0
+    isReconnectingRef.current = false
+    
+    // Clear timeouts and intervals
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current)
       reconnectTimeoutRef.current = null
@@ -218,50 +99,77 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
       keepAliveIntervalRef.current = null
     }
     
+    // Close the socket
     if (socketRef.current) {
-      socketRef.current.close()
+      // Create a local reference to avoid race conditions
+      const socket = socketRef.current
+      
+      // Set to null first to prevent reconnection attempts
       socketRef.current = null
+      
+      // Then close the socket
+      try {
+        socket.close(1000, "Closed by client")
+      } catch (error) {
+        console.error("Error closing WebSocket:", error)
+      }
     }
 
+    // Update state
     setConnectionState(ConnectionState.DISCONNECTED)
+    currentAgentIdRef.current = undefined
   }, [])
 
-  // Reconnect to WebSocket with improved error handling
-  const reconnect = useCallback(() => {
-    console.log("Reconnecting WebSocket...")
-    
-    // Track reconnection attempt
-    const attempt = reconnectAttemptsRef.current + 1
-    console.log(`Reconnection attempt ${attempt}/${maxReconnectAttemptsRef.current}`)
-    
-    // Disconnect first to ensure clean state
-    disconnect()
-    
-    // Add a small delay before reconnecting to avoid rapid reconnection attempts
-    setTimeout(() => {
-      // Check if we've exceeded max reconnection attempts
-      if (attempt > maxReconnectAttemptsRef.current) {
-        console.error(`Maximum reconnection attempts (${maxReconnectAttemptsRef.current}) exceeded`)
-        setConnectionState(ConnectionState.DISCONNECTED)
-        dispatchEvent({ 
-          type: "error", 
-          error: `Failed to reconnect after ${maxReconnectAttemptsRef.current} attempts` 
-        })
-        return
+  // Send message internal implementation
+  const sendMessageInternal = useCallback(
+    async (
+      agentId: string,
+      content: string,
+      id?: string,
+      timestamp?: number,
+      type: string = "message",
+      attachments?: Attachment[]
+    ): Promise<boolean> => {
+      if (!isConnected()) {
+        console.log("WebSocket not connected, cannot send message")
+        return false
       }
       
-      // Update reconnection attempts
-      reconnectAttemptsRef.current = attempt
-      
-      // Attempt to reconnect
-      connect(currentAgentIdRef.current)
-    }, 100)
-  }, [connect, disconnect])
-
-  // Check if WebSocket is connected
-  const isConnected = useCallback(() => {
-    return socketRef.current !== null && socketRef.current.readyState === WebSocket.OPEN
-  }, [])
+      try {
+        if (type === "clear_conversation") {
+          // Send clear conversation message with user ID
+          console.log("Sending clear conversation with user ID:", userIdRef.current)
+          socketRef.current!.send(JSON.stringify({
+            type: "clear_conversation",
+            userId: userIdRef.current // Include user ID from Clerk
+          }))
+          console.log("Clear conversation message sent successfully via WebSocket")
+        } else {
+          // Send regular message with optional attachments and user ID
+          console.log("Sending WebSocket message with user ID:", userIdRef.current)
+          
+          socketRef.current!.send(JSON.stringify({
+            type: "message",
+            message: {
+              role: "user",
+              content,
+              agentId,
+              id,
+              timestamp,
+              attachments,
+              userId: userIdRef.current // Include user ID from Clerk
+            }
+          }))
+          console.log("Message sent successfully via WebSocket", attachments ? `with ${attachments.length} attachments` : "")
+        }
+        return true
+      } catch (error) {
+        console.error("Error sending message:", error)
+        return false
+      }
+    },
+    [isConnected]
+  )
 
   // Process message queue
   const processMessageQueue = useCallback(() => {
@@ -313,70 +221,181 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     }
     
     processQueue()
-  }, [messageQueue])
+  }, [messageQueue, isConnected, sendMessageInternal, dispatchEvent])
 
-  // Send message internal implementation
-  const sendMessageInternal = useCallback(
-    async (
-      agentId: string,
-      content: string,
-      id?: string,
-      timestamp?: number,
-      type: string = "message",
-      attachments?: Attachment[]
-    ): Promise<boolean> => {
-      if (!isConnected()) {
-        console.log("WebSocket not connected, cannot send message")
-        return false
+  // Connect to WebSocket
+  const connect = useCallback((agentId?: string) => {
+    // If already connected to the same agent, return
+    if (
+      socketRef.current?.readyState === WebSocket.OPEN &&
+      currentAgentIdRef.current === agentId
+    ) {
+      console.log(`Already connected to agent ${agentId}, reusing connection`)
+      return
+    }
+    
+    // If reconnecting, clear the timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current)
+      reconnectTimeoutRef.current = null
+    }
+    
+    // If there's an existing connection, close it first
+    if (socketRef.current) {
+      console.log("Closing existing WebSocket connection before creating a new one")
+      socketRef.current.close()
+      socketRef.current = null
+    }
+
+    // Update state
+    isReconnectingRef.current = true
+    setConnectionState(ConnectionState.CONNECTING)
+    currentAgentIdRef.current = agentId
+
+    // Create WebSocket URL
+    const url = agentId ? `${WS_URL}/chat/${agentId}` : WS_URL
+    console.log(`Connecting to WebSocket: ${url}`)
+
+    // Create WebSocket with a small delay to ensure clean state
+    setTimeout(() => {
+      // Create WebSocket
+      socketRef.current = new WebSocket(url)
+
+      // WebSocket event handlers
+      if (socketRef.current) {
+        socketRef.current.onopen = () => {
+          console.log("WebSocket connected")
+          reconnectAttemptsRef.current = 0
+          isReconnectingRef.current = false
+          setConnectionState(ConnectionState.CONNECTED)
+          dispatchEvent({ type: "connect" })
+
+          // Process any queued messages
+          processMessageQueue()
+
+          // Set up keep-alive ping
+          if (keepAliveIntervalRef.current) {
+            clearInterval(keepAliveIntervalRef.current)
+          }
+
+          keepAliveIntervalRef.current = setInterval(() => {
+            if (isConnected()) {
+              console.log("Sending keep-alive ping")
+              try {
+                socketRef.current!.send(JSON.stringify({ type: "ping" }))
+              } catch (error) {
+                console.error("Error sending keep-alive ping:", error)
+                reconnect()
+              }
+            } else {
+              reconnect()
+            }
+          }, 30000) // 30 seconds
+        }
+
+        socketRef.current.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data)
+            
+            if (data.type === "message") {
+              dispatchEvent({ 
+                type: "message", 
+                message: data.message 
+              })
+            } else if (data.type === "typing") {
+              dispatchEvent({ 
+                type: "typing", 
+                agentId: data.agentId 
+              })
+            } else if (data.type === "log_update") {
+              console.log("Log update received:", data)
+              dispatchEvent({ 
+                type: "log_update", 
+                log: data.log,
+                messageId: data.messageId
+              })
+            } else if (data.type === "pong") {
+              // Received pong from server (keep-alive response)
+              console.log("Received pong from server")
+            }
+          } catch (error) {
+            console.error("Error parsing WebSocket message:", error)
+          }
+        }
+
+        socketRef.current.onclose = (event) => {
+          console.log("WebSocket disconnected:", event.reason)
+          setConnectionState(ConnectionState.DISCONNECTED)
+          dispatchEvent({ 
+            type: "disconnect", 
+            reason: event.reason 
+          })
+          
+          socketRef.current = null
+          
+          // Attempt to reconnect if not closed intentionally and not during a manual disconnect
+          if (!event.wasClean && reconnectAttemptsRef.current < maxReconnectAttemptsRef.current) {
+            console.log(`Scheduling reconnection attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttemptsRef.current}`)
+            setConnectionState(ConnectionState.RECONNECTING)
+            
+            // Clear any existing reconnect timeout
+            if (reconnectTimeoutRef.current) {
+              clearTimeout(reconnectTimeoutRef.current)
+            }
+            
+            // Set up new reconnect timeout with exponential backoff
+            const delay = 1000 * Math.pow(2, reconnectAttemptsRef.current)
+            console.log(`Will attempt reconnection in ${delay}ms`)
+            
+            reconnectTimeoutRef.current = setTimeout(() => {
+              reconnectAttemptsRef.current++
+              connect(currentAgentIdRef.current)
+            }, delay)
+          }
+        }
+
+        socketRef.current.onerror = (error) => {
+          console.error("WebSocket error:", error)
+          dispatchEvent({ 
+            type: "error", 
+            error: "Connection error" 
+          })
+        }
+      }
+    }, 100)
+  }, [dispatchEvent, isConnected, processMessageQueue])
+
+  // Reconnect to WebSocket with improved error handling
+  const reconnect = useCallback(() => {
+    console.log("Reconnecting WebSocket...")
+    
+    // Track reconnection attempt
+    const attempt = reconnectAttemptsRef.current + 1
+    console.log(`Reconnection attempt ${attempt}/${maxReconnectAttemptsRef.current}`)
+    
+    // Disconnect first to ensure clean state
+    disconnect()
+    
+    // Add a small delay before reconnecting to avoid rapid reconnection attempts
+    setTimeout(() => {
+      // Check if we've exceeded max reconnection attempts
+      if (attempt > maxReconnectAttemptsRef.current) {
+        console.error(`Maximum reconnection attempts (${maxReconnectAttemptsRef.current}) exceeded`)
+        setConnectionState(ConnectionState.DISCONNECTED)
+        dispatchEvent({ 
+          type: "error", 
+          error: `Failed to reconnect after ${maxReconnectAttemptsRef.current} attempts` 
+        })
+        return
       }
       
-      try {
-        if (type === "clear_conversation") {
-          // Send clear conversation message with user ID
-          console.log("Sending clear conversation with user ID:", userIdRef.current);
-          socketRef.current!.send(JSON.stringify({
-            type: "clear_conversation",
-            userId: userIdRef.current // Include user ID from Clerk
-          }))
-          console.log("Clear conversation message sent successfully via WebSocket")
-        } else {
-          // Send regular message with optional attachments and user ID
-          console.log("Sending WebSocket message with user ID:", userIdRef.current);
-          console.log("WebSocket message data:", JSON.stringify({
-            type: "message",
-            message: {
-              role: "user",
-              content,
-              agentId,
-              id,
-              timestamp,
-              attachments,
-              userId: userIdRef.current
-            }
-          }));
-          
-          socketRef.current!.send(JSON.stringify({
-            type: "message",
-            message: {
-              role: "user",
-              content,
-              agentId,
-              id,
-              timestamp,
-              attachments,
-              userId: userIdRef.current // Include user ID from Clerk
-            }
-          }))
-          console.log("Message sent successfully via WebSocket", attachments ? `with ${attachments.length} attachments` : "")
-        }
-        return true
-      } catch (error) {
-        console.error("Error sending message:", error)
-        return false
-      }
-    },
-    []
-  )
+      // Update reconnection attempts
+      reconnectAttemptsRef.current = attempt
+      
+      // Attempt to reconnect
+      connect(currentAgentIdRef.current)
+    }, 100)
+  }, [connect, disconnect, dispatchEvent])
 
   // Send message (public API)
   const sendMessage = useCallback(
@@ -437,11 +456,6 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     },
     []
   )
-
-  // Dispatch event to all listeners
-  const dispatchEvent = useCallback((event: WebSocketEvent) => {
-    eventListenersRef.current.forEach(callback => callback(event))
-  }, [])
 
   // Update userIdRef when userId changes
   useEffect(() => {

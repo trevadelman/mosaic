@@ -1,7 +1,7 @@
 "use client"
 
 import { Agent } from "@/lib/types"
-import { BrainCircuit, LayoutDashboard } from "lucide-react"
+import { BrainCircuit } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Accordion,
@@ -14,7 +14,6 @@ interface AgentSelectorProps {
   agents: Agent[]
   selectedAgent: Agent | null
   onSelect: (agent: Agent) => void
-  onOpenUI?: (agent: Agent) => void
   loading?: boolean
 }
 
@@ -22,7 +21,6 @@ export function AgentSelector({
   agents,
   selectedAgent,
   onSelect,
-  onOpenUI,
   loading = false
 }: AgentSelectorProps) {
   if (loading) {
@@ -101,20 +99,7 @@ export function AgentSelector({
                   <div className="flex-1 space-y-1">
                     <div className="flex justify-between items-center">
                       <p className="font-medium leading-none">{agent.name}</p>
-                      {onOpenUI && agent.hasUI && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="ml-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onOpenUI(agent);
-                          }}
-                          title="Open UI"
-                        >
-                          <LayoutDashboard className="h-4 w-4" />
-                        </Button>
-                      )}
+                      {/* UI button removed */}
                     </div>
                     <button
                       onClick={() => onSelect(agent)}

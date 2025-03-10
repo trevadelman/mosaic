@@ -8,7 +8,6 @@ import { useAgents } from "@/lib/hooks/use-agents"
 import { useChat } from "@/lib/hooks/use-chat"
 import { useAgentContext } from "@/lib/contexts/agent-context"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard } from "lucide-react"
 
 export default function ChatPage() {
   const router = useRouter()
@@ -49,12 +48,7 @@ export default function ChatPage() {
     sendMessage(message, attachments)
   }
 
-  // Handle switching to agent UI
-  const handleOpenUI = () => {
-    if (selectedAgent) {
-      router.push(`/agent-ui?agentId=${selectedAgent.id}`)
-    }
-  }
+  // UI-related code removed
 
   return (
     <div className="flex h-full flex-col md:flex-row">
@@ -72,7 +66,6 @@ export default function ChatPage() {
               agents={agents} 
               selectedAgent={selectedAgent} 
               onSelect={selectAgent} 
-              onOpenUI={handleOpenUI}
               loading={agentsLoading}
             />
           </div>
@@ -90,7 +83,6 @@ export default function ChatPage() {
           selectedAgent={selectedAgent}
           error={error}
           connectionState={connectionState}
-          onOpenUI={handleOpenUI}
         />
       </div>
     </div>

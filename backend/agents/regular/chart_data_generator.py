@@ -298,7 +298,4 @@ def register_chart_data_generator_agent(model: LanguageModelLike) -> ChartDataGe
     chart_data_generator = ChartDataGeneratorAgent(model=model)
     agent_registry.register(chart_data_generator)
     
-    # Register UI component for this agent
-    agent_registry.register_ui_component("chart_data_generator", "chart-visualizer")
-    
     return chart_data_generator

@@ -5,7 +5,7 @@ import { Message as MessageType, Agent } from "@/lib/types"
 import { Message } from "./message"
 import { ChatInput } from "./chat-input"
 import { ConversationHistory } from "./conversation-history"
-import { AlertCircle, Loader2, Wifi, WifiOff, Trash2, LayoutDashboard, Link } from "lucide-react"
+import { AlertCircle, Loader2, Wifi, WifiOff, Trash2, Link } from "lucide-react"
 import { ConnectionState } from "@/lib/contexts/websocket-context"
 import { useAgentContext } from "@/lib/contexts/agent-context"
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,6 @@ interface ChatInterfaceProps {
   selectedAgent: Agent | null
   error?: string | null
   connectionState?: ConnectionState
-  onOpenUI?: () => void
 }
 
 
@@ -34,8 +33,7 @@ export function ChatInterface({
   isProcessing = false,
   selectedAgent,
   error,
-  connectionState = ConnectionState.DISCONNECTED,
-  onOpenUI
+  connectionState = ConnectionState.DISCONNECTED
 }: ChatInterfaceProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -87,19 +85,7 @@ export function ChatInterface({
               />
             )}
             
-            {/* Open UI button */}
-            {selectedAgent && selectedAgent.hasUI && onOpenUI && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onOpenUI}
-                className="flex items-center gap-2 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
-                title="Open Agent UI"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                <span>Open UI</span>
-              </Button>
-            )}
+            {/* UI button removed */}
             
             {/* Connection status indicator */}
             {connectionState && (
