@@ -92,13 +92,34 @@ Before writing any code, define:
    """
    ```
 
-### 3. Import Required Modules
+### 3. Install Required Dependencies
+
+If your agent requires external libraries, make sure to install them:
+
+```bash
+pip install package1 package2 package3
+```
+
+For example, the financial analysis agent requires:
+
+```bash
+pip install yfinance pandas numpy
+```
+
+### 4. Import Required Modules
 
 Add the necessary imports to your agent file:
 
 ```python
 import logging
+import json
 from typing import List, Dict, Any, Optional
+# Import any external libraries your agent needs
+# For example, for a financial analysis agent:
+# import yfinance as yf
+# import pandas as pd
+# import numpy as np
+# from datetime import datetime, timedelta
 
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.tools import BaseTool, tool
@@ -114,9 +135,9 @@ except ImportError:
 logger = logging.getLogger("mosaic.agents.my_new_agent")
 ```
 
-### 4. Define Agent Tools
+### 4. Define Agent Tools and Helper Functions
 
-Tools are functions that your agent can use to perform tasks. Define them using the `@tool` decorator:
+Tools are functions that your agent can use to perform tasks. Define them using the `@tool` decorator. You can also create helper functions that aren't directly exposed as tools but support your agent's functionality:
 
 ```python
 @tool
@@ -133,10 +154,31 @@ def my_tool_function(param1: str, param2: int) -> str:
     """
     logger.info(f"Tool function called with params: {param1}, {param2}")
     
-    # Implement your tool logic here
-    result = f"Processed {param1} {param2} times"
+    try:
+        # Implement your tool logic here
+        result = f"Processed {param1} {param2} times"
+        
+        logger.info(f"Successfully processed: {result}")
+        return result
     
-    return result
+    except Exception as e:
+        # Log the error
+        logger.error(f"Error processing request: {str(e)}")
+        
+        # Create a detailed error report
+        error_report = {
+            "task": "My Tool Function",
+            "status": "Failed",
+            "params": {
+                "param1": param1,
+                "param2": param2
+            },
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
+        
+        # Return a user-friendly error message
+        return f"Error processing request: {json.dumps(error_report, indent=2)}"
 ```
 
 You can define multiple tools for your agent. Each tool should:
@@ -144,6 +186,66 @@ You can define multiple tools for your agent. Each tool should:
 - Include detailed docstrings
 - Handle errors gracefully
 - Log important information
+
+#### Helper Functions
+
+You can also create helper functions that aren't directly exposed as tools:
+
+```python
+# Helper function not decorated with @tool
+def _convert_range_to_period(range_value: str) -> str:
+    """
+    Convert a range value to a period string.
+    
+    Args:
+        range_value: The range value (1D, 1W, 1M, 3M, 6M, 1Y, 5Y)
+        
+    Returns:
+        A period string
+    """
+    if range_value == "1D":
+        return "1d"
+    elif range_value == "1W":
+        return "1wk"
+    elif range_value == "1M":
+        return "1mo"
+    # Add more mappings as needed
+    else:
+        logger.warning(f"Unknown range value: {range_value}, defaulting to 1 month")
+        return "1mo"  # Default value
+```
+
+#### Different Return Types
+
+Tools can return different types of data:
+
+1. **String Return Type**: Most common, returns formatted text results
+   ```python
+   @tool
+   def get_text_data(param: str) -> str:
+       """Return text data."""
+       return f"Processed: {param}"
+   ```
+
+2. **Dictionary Return Type**: For structured data or visualization
+   ```python
+   @tool
+   def get_chart_data(symbol: str) -> Dict[str, Any]:
+       """Return data for chart visualization."""
+       return {
+           "symbol": symbol,
+           "data": [{"date": "2023-01-01", "value": 100}, {"date": "2023-01-02", "value": 105}],
+           "type": "line_chart"
+       }
+   ```
+
+3. **List Return Type**: For collections of items
+   ```python
+   @tool
+   def get_items(count: int) -> List[str]:
+       """Return a list of items."""
+       return [f"Item {i}" for i in range(count)]
+   ```
 
 ### 5. Create the Agent Class
 

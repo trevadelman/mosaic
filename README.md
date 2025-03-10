@@ -7,8 +7,7 @@ MOSAIC is a production-ready system for creating, managing, and interacting with
 **New to MOSAIC?** Check out these beginner-friendly guides to get started quickly:
 
 - [**QUICKSTART.md**](QUICKSTART.md): Simple step-by-step instructions to get MOSAIC up and running
-- [**Creating Agents**](backend/agents/CREATING_AGENTS.md): Learn how to create your own custom agents
-- [**Creating Agent UIs**](backend/agents/CREATING_AGENT_UIS.md): Create specialized user interfaces for your agents
+- [**Creating Agents**](backend/agents/CREATING_A_NEW_AGENT.md): Learn how to create your own custom agents
 
 These guides are designed to be accessible even if you're new to programming or AI systems.
 
@@ -24,26 +23,25 @@ These guides are designed to be accessible even if you're new to programming or 
 │  │  Frontend        │◄─────────►│                          │                │
 │  │  (Port 3000)     │   REST    │  (Port 8000)             │                │
 │  │                  │    +      │                          │                │
-│  │  - UI Components │  WebSocket│  - API Endpoints         │                │
+│  │  -               │  WebSocket│  - API Endpoints         │                │
 │  │  - Chat Interface│           │  - WebSocket Server      │    ┌─────────┐ │
-│  │  - Agent UI      │           │  - Agent Discovery       │◄──►│ SQLite  │ │
-│  │  - Specialized   │           │  - Database Access       │    │ Database│ │
-│  │    UI Components │           │                          │    └─────────┘ │
+│  │                  │           │  - Agent Discovery       │◄──►│ SQLite  │ │
+│  │                  │           │  - Database Access       │    │ Database│ │
+│  │                  │           │                          │    └─────────┘ │
 │  │                  │           │                          │                │
-│  └────────┬─────────┘           └──────────┬───────────────┘                │
-│           │                               │                                 │
-│           │                               ▼                                 │
-│           │                   ┌──────────────────────────┐                  │
-│           │                   │                          │                  │
-│           │                   │  Agent System            │                  │
-│           │                   │                          │                  │
-│           └───────────────────►  - Base Agent Framework  │                  │
-│                               │  - Specialized Agents    │                  │
-│             Direct            │  - Supervisor System     │                  │
-│             Agent-UI          │  - Agent UI Components   │                  │
-│             Communication     │  - Agent Tools           │                  │
-│                               │                          │                  │
-│                               └──────────────────────────┘                  │
+│  └──────────────────┘           └──────────────────────────┘                │
+│                                          │                                  │
+│                                          ▼                                  │
+│                              ┌──────────────────────────┐                   │
+│                              │                          │                   │
+│                              │  Agent System            │                   │
+│                              │                          │                   │
+│                              │  - Base Agent Framework  │                   │
+│                              │  - Specialized Agents    │                   │
+│                              │  - Supervisor System     │                   │
+│                              │  - Agent Tools           │                   │
+│                              │                          │                   │
+│                              └──────────────────────────┘                   │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -54,7 +52,6 @@ These guides are designed to be accessible even if you're new to programming or 
 - **User Authentication**: Secure authentication with Clerk
 - **FastAPI Backend**: High-performance Python API with WebSocket support
 - **Agent Framework**: Flexible, extensible agent system built on LangChain and LangGraph
-- **Agent UI Framework**: Rich, interactive UI components for specialized agent interfaces
 - **Regular Agents**:
   - **Calculator Agent**: Performs mathematical operations
   - **Web Search Agent**: Searches the web and retrieves webpage content
@@ -70,10 +67,6 @@ These guides are designed to be accessible even if you're new to programming or 
   - **Research Supervisor**: Orchestrates multiple agents for comprehensive research tasks
   - **Multi-Agent Supervisor**: Generic supervisor that can orchestrate any combination of agents
   - **Financial Supervisor**: Orchestrates financial analysis tasks
-- **UI Components**:
-  - **Stock Chart Component**: Interactive stock chart visualization
-  - **Data Visualization Component**: Comprehensive charting capabilities
-  - **Research Paper Component**: Academic paper search and visualization
 - **Dynamic Agent Discovery**: Automatically discovers and registers both regular agents and supervisors
 - **Database-Driven Agent Metadata**: Store and manage agent definitions, tools, and capabilities in the database
 - **JSON Template Integration**: Convert between JSON templates and database records for agent definitions
@@ -295,7 +288,7 @@ See the [ROADMAP.md](ROADMAP.md) file for the current development status and upc
 
 ### Creating Agents
 
-For detailed instructions on creating new agents, see the [Creating Agents Guide](backend/agents/CREATING_AGENTS.md). This guide covers:
+For detailed instructions on creating new agents, see the [Creating Agents Guide](backend/agents/CREATING_A_NEW_AGENT.md). This guide covers:
 
 - Different approaches to creating agents (JSON templates, API, Python scripts, UI)
 - Agent structure and schema

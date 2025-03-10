@@ -4,7 +4,7 @@ Welcome to MOSAIC! This guide will help you get up and running quickly, even if 
 
 ## What is MOSAIC?
 
-MOSAIC is a platform that lets you interact with intelligent agents through chat and specialized user interfaces. These agents can help with tasks like:
+MOSAIC is a platform that lets you interact with intelligent agents through chat. These agents can help with tasks like:
 
 - Searching the web and processing information
 - Analyzing financial data and visualizing stock charts
@@ -146,10 +146,9 @@ If the startup script doesn't work for you, you can start the services manually:
 Once MOSAIC is running, you can:
 
 1. **Chat with Agents**: Select an agent from the sidebar and start chatting
-2. **Use Specialized UIs**: Some agents have specialized UI components - look for the UI button next to these agents
-3. **Upload Files**: You can upload files for agents to process
-4. **Search the Web**: Ask agents to search for information online
-5. **Analyze Data**: Use the financial analysis agent to explore stock data
+2. **Upload Files**: You can upload files for agents to process
+3. **Search the Web**: Ask agents to search for information online
+4. **Analyze Data**: Use the financial analysis agent to explore stock data
 
 ## Troubleshooting
 
@@ -174,9 +173,7 @@ If you encounter problems:
 Once you're comfortable with the basics:
 
 - Explore different agents and their capabilities
-- Try the specialized UI components for data visualization
 - Check out the [documentation](README.md) for more detailed information
-- Learn how to [create your own agents](backend/agents/CREATING_AGENTS.md)
-- Learn how to [create custom UIs for agents](backend/agents/CREATING_AGENT_UIS.md)
+- Learn how to [create your own agents](backend/agents/CREATING_A_NEW_AGENT.md)
 
 Happy exploring!
