@@ -1,339 +1,318 @@
 # MOSAIC Agent UI Framework
 
+This document explains how the hasUI framework works in MOSAIC, allowing agents to have custom UI components that provide rich, interactive interfaces beyond simple text chat.
+
 ## Overview
 
-The MOSAIC Agent UI Framework provides a flexible system for creating rich, interactive user interfaces for agents beyond the traditional chat interface. This framework allows agents to offer specialized visualizations, data processing tools, and interactive components tailored to their specific capabilities.
+The MOSAIC Agent UI Framework connects backend agents with frontend UI components through a WebSocket-based communication system. This enables agents to have custom interfaces that can visualize data, accept user input, and provide interactive experiences.
 
 ## Architecture
 
-The Agent UI Framework follows a modular architecture with clear separation between backend and frontend components:
+The framework consists of several key components:
 
 ### Backend Components
 
-1. **UI Component Base Classes**
-   - Located in `mosaic/backend/ui/base.py`
-   - Provides abstract base classes for UI components
-   - Handles component registration and discovery
+1. **UI Component Registry**: Manages UI component registrations
+   - Located in `backend/ui/base.py`
+   - Provides methods to register and retrieve UI components
 
-2. **UI Component Implementations**
-   - Located in `mosaic/backend/ui/components/`
-   - Specialized implementations for different types of UI components
-   - Examples include `stock_chart.py`, etc.
+2. **Agent Registry**: Manages agent registrations and their associated UI components
+   - Located in `backend/agents/base.py`
+   - Provides methods to register agents and associate UI components with them
 
-3. **UI WebSocket Handler**
-   - Located in `mosaic/backend/app/ui_websocket_handler.py`
-   - Manages WebSocket connections for real-time communication
-   - Routes events between UI components and frontend
+3. **WebSocket Handlers**: Handle communication between frontend and backend
+   - Located in `backend/app/ui_websocket_handler.py`
+   - Manages WebSocket connections and routes messages to the appropriate handlers
 
-4. **UI Component Discovery**
-   - Located in `mosaic/backend/app/ui_component_discovery.py`
-   - Discovers and registers UI components for agents
-   - Maps components to agents based on capabilities
+4. **UI Connection Manager**: Manages WebSocket connections for UI components
+   - Located in `backend/app/ui_connection_manager.py`
+   - Tracks connections by agent, component, and client
 
 ### Frontend Components
 
-1. **Component Registry**
-   - Located in `mosaic/frontend/lib/agent-ui/component-registry.ts`
-   - Registers React component implementations for UI components
-   - Maps component IDs to their React implementations
+1. **Component Registry**: Maps component IDs to React components
+   - Located in `frontend/lib/agent-ui/component-registry.ts`
+   - Provides methods to register and retrieve UI component implementations
 
-2. **Agent UI Container**
-   - Located in `mosaic/frontend/components/agent-ui/agent-ui-container.tsx`
-   - Main container for agent-specific UI components
-   - Handles loading, rendering, and communication with UI components
+2. **WebSocket Context**: Manages WebSocket connections
+   - Located in `frontend/lib/contexts/websocket-context.tsx`
+   - Provides methods to send and receive messages
 
-3. **UI Component Implementations**
-   - Located in `mosaic/frontend/components/agent-ui/`
-   - React implementations of UI components
-   - Organized by agent type (e.g., `financial/`, `research/`, etc.)
+3. **Agent UI Context**: Manages UI component state and communication
+   - Located in `frontend/lib/contexts/agent-ui-context.tsx`
+   - Provides methods to register components and send UI events
 
-4. **WebSocket Context**
-   - Located in `mosaic/frontend/lib/contexts/websocket-context.tsx`
-   - Provides WebSocket connection for real-time communication
-   - Handles message routing and event dispatching
+4. **Agent UI Container**: Renders the appropriate UI component
+   - Located in `frontend/components/agent-ui/agent-ui-container.tsx`
+   - Manages the lifecycle of UI components
 
-## Communication Flow
+### Communication Flow
 
-1. **Component Registration**
-   - Backend UI components register with the UI component registry
-   - Frontend React components register with the component registry
-   - Components are mapped to agents based on capabilities
+1. Frontend connects to backend via WebSockets
+2. Backend sends component registrations to frontend
+3. Frontend renders the appropriate component
+4. Components communicate with backend via WebSocket events
+5. Backend processes events and sends responses back to frontend
 
-2. **WebSocket Connection**
-   - When a user opens an agent UI, a WebSocket connection is established
-   - The connection is specific to the agent and client
-   - Events are routed through this connection
+## Implementation Guide
 
-3. **Event Flow**
-   - Frontend components send events to the backend through the WebSocket
-   - Backend components process events and send responses
-   - Events can include data requests, user actions, and UI updates
+### 1. Create a Backend UI Component
 
-4. **Data Flow**
-   - Backend components fetch data directly from agent tools
-   - UI components should use agent tools exclusively for data retrieval
-   - Data is processed and formatted for the frontend
-   - Frontend components render the data in the UI
-
-## Using Agent Tools for Data Retrieval
-
-The recommended approach for data retrieval in UI components is to use agent tools directly:
-
-1. **Access the Agent**
-   - Get the initialized agent using `get_initialized_agents()`
-   - Retrieve the specific agent by ID
-
-2. **Find the Appropriate Tool**
-   - Iterate through the agent's tools to find the one you need
-   - Tools are identified by their name (e.g., `get_stock_history_tool`)
-
-3. **Invoke the Tool**
-   - Call the tool's `invoke()` method with the appropriate parameters
-   - Process the response as needed
-
-Example:
 ```python
-async def _get_data_from_agent(self, params):
-    try:
-        # Get the agent
-        from mosaic.backend.app.agent_runner import get_initialized_agents
-        initialized_agents = get_initialized_agents()
-        agent = initialized_agents.get("my_agent")
-        
-        if not agent:
-            raise ValueError(f"Agent 'my_agent' not found")
-        
-        # Find the tool
-        tool = None
-        for t in agent.tools:
-            if t.name == "my_data_tool":
-                tool = t
-                break
-        
-        if not tool:
-            raise ValueError(f"Tool 'my_data_tool' not found in agent 'my_agent'")
-        
-        # Invoke the tool
-        response = tool.invoke({
-            "param1": params.get("param1"),
-            "param2": params.get("param2")
-        })
-        
-        # Process the response
-        # ...
-        
-        return processed_data
-    
-    except Exception as e:
-        logger.error(f"Error getting data from agent: {str(e)}")
-        return {"error": str(e)}
-```
+# In mosaic/backend/ui/components/your_component.py
+from mosaic.backend.ui.base import UIComponent, ui_component_registry
+from mosaic.backend.agents.base import agent_registry
 
-## Creating a New UI Component
-
-### Backend Component
-
-1. **Create a new Python file** in `mosaic/backend/ui/components/`
-2. **Inherit from an appropriate base class**:
-   - `VisualizationComponent` for data visualizations
-   - `InteractiveComponent` for interactive components
-   - `DataInputComponent` for data input components
-3. **Implement required methods**:
-   - `__init__`: Initialize the component with ID, name, and description
-   - `handle_*`: Event handlers for different actions
-4. **Register the component** with the UI component registry
-
-Example:
-```python
-from mosaic.backend.ui.components.visualization import VisualizationComponent
-from mosaic.backend.ui.base import ui_component_registry
-
-class MyVisualizationComponent(VisualizationComponent):
+class YourComponent(UIComponent):
     def __init__(self):
         super().__init__(
-            component_id="my-visualization",
-            name="My Visualization",
-            description="A custom visualization component"
+            component_id="your-component-id",  # Must match frontend component ID
+            name="Your Component Name",
+            description="Description of your component",
+            required_features=["feature1", "feature2"],
+            default_modal_config={
+                "title": "Your Component",
+                "width": "80%",
+                "height": "80%",
+                "resizable": True
+            }
         )
         
-        # Register event handlers
-        self.register_handler("get_data", self.handle_get_data)
+        # Register handlers for actions
+        self.register_handler("action1", self.handle_action1)
         
-    async def handle_get_data(self, websocket, event_data, agent_id, client_id):
-        # Get data from agent tool
-        data = await self._get_data_from_agent(event_data.get("data", {}))
+    async def handle_action1(self, websocket, event, agent_id, client_id):
+        # Handle the action
+        # Get the agent
+        agent = await self._get_agent_runner()
+        
+        # Process the request
+        result = await agent.run_tool(...)
         
         # Send response
-        await self._send_data_response(websocket, event_data, data, agent_id, client_id)
+        await self._send_response(websocket, event, {
+            "success": True,
+            "data": result
+        })
     
-    async def _get_data_from_agent(self, params):
-        # Implementation of agent tool data retrieval
-        # ...
+    async def _get_agent_runner(self):
+        """
+        Get the agent instance.
+        """
+        try:
+            from mosaic.backend.app.agent_runner import get_initialized_agents
+        except ImportError:
+            from backend.app.agent_runner import get_initialized_agents
+        
+        # Get the initialized agents
+        agents = get_initialized_agents()
+        
+        # Return the specific agent
+        return agents.get("your_agent_id")
 
 # Create and register the component
-my_visualization_component = MyVisualizationComponent()
-ui_component_registry.register(my_visualization_component)
+your_component = YourComponent()
+ui_component_registry.register(your_component)
+
+# Register the component with the agent if it exists
+if "your_agent_id" in agent_registry.list_agents():
+    agent_registry.register_ui_component("your_agent_id", your_component.component_id)
+    logger.info(f"Registered {your_component.name} component with your_agent_id agent")
 ```
 
-### Frontend Component
+### 2. Create a Frontend UI Component
 
-1. **Create a new TypeScript/React file** in `mosaic/frontend/components/agent-ui/`
-2. **Implement the React component** with appropriate props and state
-3. **Register the component** in an index.ts file
-
-Example:
 ```tsx
-// mosaic/frontend/components/agent-ui/my-agent/my-visualization.tsx
-import React, { useState, useEffect } from 'react';
-import { useAgentUI } from '../../../lib/contexts/agent-ui-context';
+// In mosaic/frontend/components/agent-ui/your-agent/your-component.tsx
+"use client"
 
-interface MyVisualizationProps {
+import React, { useState, useEffect } from 'react';
+
+interface YourComponentProps {
   componentId: string;
   agentId: string;
+  sendUIEvent: (event: any) => void;
 }
 
-export const MyVisualization: React.FC<MyVisualizationProps> = ({
+export const YourComponent: React.FC<YourComponentProps> = ({
   componentId,
   agentId,
+  sendUIEvent,
 }) => {
-  const { sendUIEvent } = useAgentUI();
-  const [data, setData] = useState<any[]>([]);
+  // State
+  const [data, setData] = useState<any>(null);
   
+  // Effect to set up event listener for responses
   useEffect(() => {
-    // Set up event listener
     const handleUIEvent = (event: CustomEvent<any>) => {
-      // Handle events
+      const data = event.detail;
+      
+      // Check if this event is for our component
+      if (data.component === componentId && data.action === 'action1') {
+        if (data.success) {
+          setData(data.data);
+        }
+      }
     };
     
+    // Add event listener
     window.addEventListener('ui_event', handleUIEvent as EventListener);
     
-    // Request data
+    // Request initial data
     sendUIEvent({
       type: 'data_request',
       component: componentId,
-      action: 'get_data',
+      action: 'action1',
       data: {}
     });
     
+    // Clean up
     return () => {
       window.removeEventListener('ui_event', handleUIEvent as EventListener);
     };
-  }, [componentId, agentId, sendUIEvent]);
+  }, [componentId, sendUIEvent]);
   
   return (
-    <div>
-      {/* Render visualization */}
+    <div className="p-4">
+      <h2 className="text-2xl font-bold mb-4">Your Component</h2>
+      {/* Render your component UI */}
     </div>
   );
 };
 ```
 
-```typescript
-// mosaic/frontend/components/agent-ui/my-agent/index.ts
+### 3. Register the Frontend Component
+
+```ts
+// In mosaic/frontend/components/agent-ui/your-agent/index.ts
+"use client"
+
 import { registerComponentImplementation } from '../../../lib/agent-ui/component-registry';
-import { MyVisualization } from './my-visualization';
+import { YourComponent } from './your-component';
 
 // Register the component
-console.log('Registering MyVisualization component implementation');
-registerComponentImplementation('my-visualization', MyVisualization);
+registerComponentImplementation('your-component-id', YourComponent);
 
-// Export components
-export { MyVisualization };
+// Export the component
+export { YourComponent };
 
-// Export component IDs
-export const MY_AGENT_COMPONENTS = {
-  MY_VISUALIZATION: 'my-visualization'
+// Export component ID
+export const YOUR_AGENT_COMPONENTS = {
+  YOUR_COMPONENT: 'your-component-id'
 };
 
 // Log that the module has been loaded
-console.log('My agent components module loaded');
+console.log('Your agent components module loaded');
 ```
 
-## Registering Components with Agents
+### 4. Import the Component in the Root Layout
 
-To associate a UI component with an agent:
+```tsx
+// In mosaic/frontend/app/layout.tsx
+// Import component registries
+import '@/components/agent-ui/financial'
+import '@/components/agent-ui/chart-data-generator'
+import '@/components/agent-ui/your-agent'
+```
 
-1. **In the agent's module**, import the UI component registry
-2. **Register the component with the agent** using the agent's ID
+### 5. Register the UI Component in the Agent Registration Function
 
-Example:
 ```python
-from mosaic.backend.ui.base import ui_component_registry
-from mosaic.backend.agents.base import agent_registry
-
-# Register the component with the agent
-if "my_agent" in agent_registry.list_agents():
-    agent_registry.register_ui_component("my_agent", "my-visualization")
+# In mosaic/backend/agents/regular/your_agent.py
+def register_your_agent(model):
+    agent = YourAgent("your_agent", model)
+    agent_registry.register(agent)
+    
+    # Explicitly register the UI component with the agent
+    agent_registry.register_ui_component("your_agent", "your-component-id")
+    
+    return agent
 ```
 
-## Best Practices
+## Key Points for Successful Implementation
 
-1. **Component Naming**
-   - Use kebab-case for component IDs (e.g., `stock-chart`)
-   - Use PascalCase for React component names (e.g., `StockChart`)
-   - Use snake_case for Python class names (e.g., `StockChartComponent`)
+1. **Component ID Matching**: Ensure the component ID in the backend matches the one in the frontend.
 
-2. **Event Handling**
-   - Use descriptive event names (e.g., `get_stock_data`, `change_symbol`)
-   - Include all necessary data in event payloads
-   - Handle errors gracefully and provide meaningful error messages
+2. **Explicit Registration**: Always explicitly register the UI component with the agent in the agent registration function.
 
-3. **Data Flow**
-   - Always use agent tools for data retrieval
-   - Keep data transformations in the backend when possible
-   - Send only the necessary data to the frontend
-   - Use appropriate data structures for different types of visualizations
+3. **Error Handling**: Implement proper error handling in both backend and frontend components.
 
-4. **Component Organization**
-   - Group related components in directories
-   - Use index.ts files to export and register components
-   - Keep component implementations focused and single-purpose
+4. **WebSocket Connection**: Be aware of WebSocket connection timing issues and implement appropriate retry mechanisms.
+
+5. **Agent Runner Access**: Use the correct method to access the agent runner:
+   ```python
+   async def _get_agent_runner(self):
+       try:
+           from mosaic.backend.app.agent_runner import get_initialized_agents
+       except ImportError:
+           from backend.app.agent_runner import get_initialized_agents
+       
+       agents = get_initialized_agents()
+       return agents.get("your_agent_id")
+   ```
+
+6. **Event Handling**: Properly handle events in the frontend component by checking the component ID and action.
+
+7. **Client Directive**: Always include the "use client" directive at the top of frontend component files.
+
+## Debugging Tips
+
+1. **Check Backend Logs**: Look for registration messages and WebSocket connection issues.
+
+2. **Check Frontend Console**: Look for WebSocket connection issues and event handling errors.
+
+3. **Verify Component Registration**: Ensure the component is registered with the agent in the agent registration function.
+
+4. **Check WebSocket Connection**: Ensure the WebSocket connection is established before sending events.
+
+5. **Inspect Network Traffic**: Use browser developer tools to inspect WebSocket traffic.
+
+## Example: Chart Data Generator
+
+The chart data generator agent and its UI component provide a good example of a working implementation:
+
+### Backend Component
+
+```python
+# Register UI component for this agent
+agent_registry.register_ui_component("chart_data_generator", "chart-visualizer")
+```
+
+### Frontend Component
+
+```tsx
+// Register the component
+registerComponentImplementation('chart-visualizer', ChartVisualizer);
+```
+
+This ensures that the chart data generator agent has a UI component that can be displayed in the frontend.
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Component Not Appearing**
-   - Check that the component is registered in both backend and frontend
-   - Verify that the component ID matches in both places
-   - Check the browser console for errors
+1. **UI Button Not Showing**: Ensure the agent has a UI component registered and the hasUI property is set.
 
-2. **WebSocket Connection Issues**
-   - Verify that the WebSocket server is running
-   - Check for CORS issues if running in development
-   - Ensure the WebSocket URL is correct
+2. **WebSocket Connection Issues**: Check for WebSocket connection errors in the browser console.
 
-3. **Data Not Loading**
-   - Check that the agent is properly initialized
-   - Verify that the agent has the necessary tools
-   - Check for errors in the backend logs
+3. **Component Not Rendering**: Ensure the component is registered in the frontend and imported in the root layout.
 
-### Debugging Tips
+4. **Agent Not Found**: Ensure the agent is registered and initialized before accessing it.
 
-1. **Backend Debugging**
-   - Use logging to track event flow and data processing
-   - Check the terminal output for errors
-   - Use the Python debugger if necessary
+5. **Event Handling Issues**: Ensure the event listener is properly set up and the event data is correctly formatted.
 
-2. **Frontend Debugging**
-   - Use browser developer tools to inspect network requests
-   - Add console.log statements to track component lifecycle
-   - Use React DevTools to inspect component state
+### Solutions
 
-## Example: Financial Analysis UI
+1. **Explicitly Register UI Component**: Always explicitly register the UI component with the agent in the agent registration function.
 
-The Financial Analysis UI provides a good example of the Agent UI Framework in action:
+2. **Use Correct Agent Runner Access**: Use the correct method to access the agent runner.
 
-1. **Backend Components**
-   - `stock_chart.py`: Provides stock chart visualization using the financial_analysis agent's tools
+3. **Implement Retry Mechanisms**: Implement retry mechanisms for WebSocket connections and event handling.
 
-2. **Frontend Components**
-   - `stock-chart.tsx`: Renders stock charts using Recharts
+4. **Check Component ID Matching**: Ensure the component ID in the backend matches the one in the frontend.
 
-3. **Data Flow**
-   - The stock chart component uses the financial_analysis agent's `get_stock_history_tool` to fetch stock data
-   - The tool returns formatted stock history data
-   - The component parses the response and sends it to the frontend
-   - The frontend renders the data as an interactive chart
+5. **Debug with Logging**: Add logging statements to track the flow of events and identify issues.
 
-This example demonstrates how to create specialized UI components that use agent tools directly for data retrieval, providing a clean and efficient architecture for agent UIs.
+## Conclusion
+
+The MOSAIC Agent UI Framework provides a powerful way to create rich, interactive interfaces for agents. By following the implementation guide and best practices, you can create custom UI components that enhance the user experience and provide advanced functionality beyond simple text chat.

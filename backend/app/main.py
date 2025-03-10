@@ -1332,15 +1332,15 @@ async def startup_event():
     init_db()
     logger.info("Database initialized")
     
-    # Initialize the agents
-    logger.info("Initializing agents")
-    initialize_agents()
-    logger.info("Agents initialized")
-    
-    # Discover and register UI components
+    # Discover and register UI components first
     logger.info("Discovering and registering UI components")
     ui_components = discover_and_register_components()
     logger.info(f"Registered {len(ui_components)} UI components")
+    
+    # Initialize the agents after UI components are registered
+    logger.info("Initializing agents")
+    initialize_agents()
+    logger.info("Agents initialized")
     
     # Start the UI connection manager cleanup task
     logger.info("Starting UI connection manager cleanup task")

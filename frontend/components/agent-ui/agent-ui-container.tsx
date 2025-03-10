@@ -16,7 +16,7 @@ import { Loader2, MessageSquare, LayoutDashboard } from 'lucide-react';
 
 // Import UI component implementations
 import { StockChart as StockChartComponent } from './financial/stock-chart';
-// No other components needed for now
+import { ChartVisualizer } from './chart-data-generator/chart-visualizer';
 
 // Define the props for the AgentUIContainer component
 interface AgentUIContainerProps {
@@ -37,6 +37,7 @@ interface UIComponent {
 // Component registry mapping component IDs to their React implementations
 const componentRegistry: Record<string, React.ComponentType<any>> = {
   'stock-chart': StockChartComponent,
+  'chart-visualizer': ChartVisualizer
 };
 
 const AgentUIContainer: React.FC<AgentUIContainerProps> = ({

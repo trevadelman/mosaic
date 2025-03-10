@@ -29,10 +29,10 @@ export default function ChatPage() {
   
   // Set the current agent ID in context when it changes
   useEffect(() => {
-    if (selectedAgent) {
+    if (selectedAgent && selectedAgent.id !== searchParams.get('agentId')) {
       setCurrentAgentId(selectedAgent.id)
     }
-  }, [selectedAgent, setCurrentAgentId])
+  }, [selectedAgent, setCurrentAgentId, searchParams])
   
   // Handle agent ID from URL
   useEffect(() => {

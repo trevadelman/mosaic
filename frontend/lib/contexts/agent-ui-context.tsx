@@ -56,6 +56,11 @@ export const AgentUIProvider: React.FC<{ children: ReactNode }> = ({ children })
   
   // Connect to the UI WebSocket endpoint
   useEffect(() => {
+    // Only create a new connection if one doesn't exist
+    if (uiSocket !== null) {
+      return;
+    }
+    
     // Create a WebSocket connection to the UI endpoint
     const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000/ws';
     const agentId = UI_AGENT_ID;
@@ -129,6 +134,8 @@ export const AgentUIProvider: React.FC<{ children: ReactNode }> = ({ children })
     
     socket.onclose = () => {
       console.log('UI WebSocket disconnected');
+      // Reset the socket state when closed
+      setUiSocket(null);
     };
     
     socket.onerror = (error) => {
@@ -138,8 +145,9 @@ export const AgentUIProvider: React.FC<{ children: ReactNode }> = ({ children })
     // Clean up on unmount
     return () => {
       socket.close();
+      setUiSocket(null);
     };
-  }, []);
+  }, [uiSocket]);
 
   // Handle incoming messages from the WebSocket
   useEffect(() => {

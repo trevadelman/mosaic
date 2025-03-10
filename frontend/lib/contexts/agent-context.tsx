@@ -36,10 +36,10 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   
   // Update current agent ID when URL changes
   useEffect(() => {
-    if (agentIdFromUrl) {
+    if (agentIdFromUrl && agentIdFromUrl !== currentAgentId) {
       setCurrentAgentId(agentIdFromUrl);
     }
-  }, [agentIdFromUrl]);
+  }, [agentIdFromUrl, currentAgentId]);
   
   // Update conversation context for an agent
   const updateConversationContext = (agentId: string, messages: Message[]) => {

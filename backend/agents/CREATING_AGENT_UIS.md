@@ -654,6 +654,517 @@ useEffect(() => {
 3. **Not Handling WebSocket Errors**: Always handle WebSocket connection errors
 4. **Overcomplicating the UI**: Start simple and add complexity gradually
 
+## Troubleshooting Common Issues
+
+When creating custom UIs, you might encounter some issues. Here are some common problems and their solutions:
+
+### 1. Component Not Showing Up in the UI
+
+If your component is not showing up in the UI, check the following:
+
+- Make sure the component is registered in both the backend and frontend
+- Check that the component ID matches between backend and frontend
+- Verify that the agent has the UI component registered
+
+### 2. WebSocket Connection Issues
+
+WebSocket connection issues are common when working with agent UIs. Here's how to fix them:
+
+- Make sure the WebSocket URL is correct (check the `NEXT_PUBLIC_WS_URL` environment variable)
+- Add proper error handling for WebSocket connections
+- Consider implementing a fallback mechanism for when WebSockets fail
+
+### 3. React Hooks and Next.js Server Components
+
+When using React hooks in Next.js, you might encounter errors about hooks being used in server components. To fix this:
+
+- Add the `"use client"` directive at the top of any component file that uses React hooks:
+  ```tsx
+  "use client"
+  
+  import React, { useState, useEffect } from 'react';
+  ```
+- This is required for components that use hooks like `useState`, `useEffect`, etc.
+
+### 4. Component Registration in Frontend
+
+To properly register your frontend component, you need to:
+
+1. Create an `index.ts` file in your component directory:
+   ```typescript
+   import { registerComponentImplementation } from '../../../lib/agent-ui/component-registry';
+   import { YourComponent } from './your-component';
+   
+   // Register the component
+   registerComponentImplementation('your-component-id', YourComponent);
+   
+   // Export the component
+   export { YourComponent };
+   
+   // Export component ID
+   export const YOUR_AGENT_COMPONENTS = {
+     YOUR_COMPONENT: 'your-component-id'
+   };
+   
+   // Log that the module has been loaded
+   console.log('Your agent components module loaded');
+   ```
+
+2. Import this module in the root layout file (`mosaic/frontend/app/layout.tsx`):
+   ```typescript
+   // Import component registries
+   import '@/components/agent-ui/your-agent';
+   ```
+
+3. Add your component to the component registry in `agent-ui-container.tsx`:
+   ```typescript
+   // Import UI component implementations
+   import { YourComponent } from './your-agent/your-component';
+   
+   // Component registry mapping component IDs to their React implementations
+   const componentRegistry: Record<string, React.ComponentType<any>> = {
+     // ... existing components ...
+     'your-component-id': YourComponent,
+   };
+   ```
+
+### 5. Handling Backend Tool Execution
+
+When executing tools from your UI component, you might encounter issues with how tools are accessed. Here's a robust approach:
+
+```python
+async def _get_agent_runner(self):
+    """
+    Get the agent runner.
+    
+    Returns:
+        The agent runner
+    """
+    try:
+        # Try importing with the full package path (for local development)
+        from mosaic.backend.app.agent_runner import get_initialized_agents
+    except ImportError:
+        # Fall back to relative import (for Docker environment)
+        from backend.app.agent_runner import get_initialized_agents
+    
+    # Get the initialized agents
+    agents = get_initialized_agents()
+    
+    # Return the specific agent
+    return agents.get("your_agent_id")
+
+async def handle_tool_execution(self, websocket: Any, event: Dict[str, Any], agent_id: str, client_id: str) -> None:
+    try:
+        # Get parameters from the event data
+        params = event.get("data", {})
+        
+        # Get the agent
+        agent = await self._get_agent_runner()
+        
+        if not agent:
+            raise ValueError(f"Agent {agent_id} not found")
+        
+        # Find the tool
+        tool = None
+        for t in agent.tools:
+            if t.name == "your_tool_name":
+                tool = t
+                break
+        
+        if not tool:
+            raise ValueError("Tool not found")
+        
+        # Call the tool directly
+        result = tool.func(**params)
+        
+        # Send the data back to the client
+        await self._send_response(websocket, event, {
+            "success": True,
+            "data": result
+        })
+    
+    except Exception as e:
+        logger.error(f"Error handling tool execution: {str(e)}")
+        
+        # Send error response
+        await self._send_response(websocket, event, {
+            "success": False,
+            "error": f"Error executing tool: {str(e)}"
+        })
+```
+
+### 6. Fallback to Client-Side Data Generation
+
+If you're having persistent issues with WebSocket connections or backend tool execution, consider implementing a client-side fallback:
+
+```tsx
+// Generate random data on the client side
+const generateRandomData = () => {
+  // Generate random data based on parameters
+  // ...
+  return { /* your data structure */ };
+};
+
+// Try to fetch from backend, fall back to client-side generation
+useEffect(() => {
+  const fetchData = async () => {
+    setLoading(true);
+    
+    try {
+      // Try to request data from backend
+      sendUIEvent({
+        type: 'data_request',
+        component: componentId,
+        action: 'get_data',
+        data: params
+      });
+      
+      // Set a timeout for fallback
+      const timeoutId = setTimeout(() => {
+        if (loading) {
+          console.log('Backend request timed out, using client-side data generation');
+          setChartData(generateRandomData());
+          setLoading(false);
+        }
+      }, 5000); // 5 second timeout
+      
+      return () => clearTimeout(timeoutId);
+    } catch (err) {
+      console.error('Error requesting data from backend:', err);
+      setChartData(generateRandomData());
+      setLoading(false);
+    }
+  };
+  
+  fetchData();
+}, [params]);
+```
+
+## Advanced Debugging Techniques
+
+When developing agent UIs, you may encounter complex issues that require more advanced debugging techniques. Here are some strategies that can help:
+
+### 1. Comprehensive WebSocket Event Logging
+
+Add detailed logging for all WebSocket events to help diagnose communication issues:
+
+```tsx
+// Set up event listener for responses
+const handleUIEvent = (event: CustomEvent<any>) => {
+  const data = event.detail;
+  
+  // Log all UI events for debugging
+  console.log('UI event received:', data);
+  
+  // Check if this event is for our component
+  if (data.component === componentId && data.action === 'get_data') {
+    console.log('Received data response for our component:', data);
+    
+    if (data.success) {
+      console.log('Data received successfully:', data.data);
+      setData(data.data);
+    } else {
+      console.error('Error getting data:', data.error);
+      setError(data.error || 'Failed to get data');
+      // Fallback to client-side data generation
+      setData(generateRandomData());
+    }
+    
+    setLoading(false);
+  }
+};
+
+// Add event listener
+window.addEventListener('ui_event', handleUIEvent as EventListener);
+```
+
+### 2. Data Format Validation
+
+Always validate the format of data received from the backend before using it:
+
+```tsx
+// Render the appropriate visualization based on the data
+const renderVisualization = () => {
+  // Log the data for debugging
+  console.log('Rendering visualization with data:', data);
+  
+  try {
+    // Validate data format
+    if (!data || typeof data !== 'object') {
+      throw new Error('Invalid data format: data is not an object');
+    }
+    
+    if (data.type === 'bar') {
+      // Validate bar chart data
+      if (!Array.isArray(data.categories) || !Array.isArray(data.values) || !Array.isArray(data.colors)) {
+        throw new Error('Invalid bar chart data: missing required arrays');
+      }
+      
+      if (data.categories.length !== data.values.length || data.categories.length !== data.colors.length) {
+        throw new Error('Invalid bar chart data: arrays have different lengths');
+      }
+      
+      // Render bar chart
+      return (
+        <BarChart 
+          width={chartWidth} 
+          height={chartHeight} 
+          data={data.categories.map((cat, i) => ({
+            name: cat,
+            value: data.values[i],
+            color: data.colors[i]
+          }))} 
+        >
+          {/* Chart components */}
+        </BarChart>
+      );
+    } else {
+      throw new Error(`Unknown data type: ${data.type}`);
+    }
+  } catch (error) {
+    console.error('Error rendering visualization:', error);
+    return (
+      <div className="error-message">
+        Error rendering visualization. Check console for details.
+      </div>
+    );
+  }
+};
+```
+
+### 3. Debugging WebSocket Connection Issues
+
+If you're experiencing WebSocket connection issues, add these debugging steps:
+
+1. Check if the WebSocket connection is established:
+
+```tsx
+useEffect(() => {
+  // Log WebSocket connection status
+  console.log('WebSocket connection status:', websocket ? 'Connected' : 'Disconnected');
+  
+  if (!websocket) {
+    console.error('WebSocket connection not established');
+    setError('WebSocket connection not established');
+    return;
+  }
+  
+  // Rest of your code...
+}, [websocket]);
+```
+
+2. Add a ping/pong mechanism to test WebSocket connectivity:
+
+```tsx
+// Add a ping function to test WebSocket connectivity
+const pingWebSocket = () => {
+  console.log('Sending ping to WebSocket');
+  sendUIEvent({
+    type: 'ping',
+    component: componentId,
+    action: 'ping',
+    data: { timestamp: Date.now() }
+  });
+};
+
+// Add a button to test WebSocket connectivity
+<button onClick={pingWebSocket}>Test WebSocket Connection</button>
+```
+
+3. In your backend component, add a handler for ping events:
+
+```python
+async def handle_ping(self, websocket: Any, event: Dict[str, Any], agent_id: str, client_id: str) -> None:
+    """Handle ping events for testing WebSocket connectivity."""
+    logger.info(f"Received ping from client {client_id}")
+    
+    # Send pong response
+    await self._send_response(websocket, event, {
+        "success": True,
+        "message": "pong",
+        "timestamp": datetime.now().isoformat()
+    })
+```
+
+### 4. Handling Data Format Mismatches
+
+When the backend and frontend expect different data formats, implement a data transformation layer:
+
+```tsx
+// Transform backend data to frontend format
+const transformData = (backendData: any): ChartData => {
+  console.log('Transforming backend data:', backendData);
+  
+  try {
+    // Handle different backend data formats
+    if (backendData.type === 'bar') {
+      return {
+        type: 'bar',
+        categories: backendData.categories || [],
+        values: backendData.values || [],
+        colors: backendData.colors || []
+      };
+    } else if (Array.isArray(backendData)) {
+      // Handle array format (legacy or alternative format)
+      return {
+        type: 'bar',
+        categories: backendData.map(item => item.name || ''),
+        values: backendData.map(item => item.value || 0),
+        colors: backendData.map(item => item.color || '#000000')
+      };
+    } else {
+      throw new Error(`Unknown data format: ${JSON.stringify(backendData)}`);
+    }
+  } catch (error) {
+    console.error('Error transforming data:', error);
+    // Return default data
+    return generateDefaultData();
+  }
+};
+
+// Use the transformed data
+useEffect(() => {
+  if (data.success) {
+    const transformedData = transformData(data.chart_data);
+    setChartData(transformedData);
+  }
+}, [data]);
+```
+
+### 5. Implementing Robust Error Boundaries
+
+Use React Error Boundaries to prevent the entire UI from crashing when a component fails:
+
+```tsx
+// ErrorBoundary.tsx
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+
+interface Props {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+interface State {
+  hasError: boolean;
+  error?: Error;
+}
+
+class ErrorBoundary extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    console.error('Error caught by ErrorBoundary:', error, errorInfo);
+  }
+
+  render(): ReactNode {
+    if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+      
+      return (
+        <div className="error-boundary">
+          <h2>Something went wrong.</h2>
+          <details>
+            <summary>Error details</summary>
+            <pre>{this.state.error?.toString()}</pre>
+          </details>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+export default ErrorBoundary;
+```
+
+Then wrap your component with the ErrorBoundary:
+
+```tsx
+// In your parent component
+import ErrorBoundary from './ErrorBoundary';
+
+// ...
+
+return (
+  <ErrorBoundary>
+    <YourComponent />
+  </ErrorBoundary>
+);
+```
+
+### 6. Debugging Backend Tool Execution
+
+If your agent tools aren't executing correctly, add detailed logging in the backend:
+
+```python
+async def handle_get_data(self, websocket: Any, event: Dict[str, Any], agent_id: str, client_id: str) -> None:
+    """Handle a request to get data."""
+    try:
+        # Log the request
+        logger.info(f"Handling get_data request from client {client_id} for agent {agent_id}")
+        logger.info(f"Event data: {event}")
+        
+        # Get parameters from the event data
+        params = event.get("data", {})
+        logger.info(f"Request parameters: {params}")
+        
+        # Get the agent
+        agent = await self._get_agent_runner()
+        
+        if not agent:
+            logger.error(f"Agent {agent_id} not found")
+            raise ValueError(f"Agent {agent_id} not found")
+        
+        logger.info(f"Agent found: {agent.name}")
+        logger.info(f"Available tools: {[t.name for t in agent.tools]}")
+        
+        # Find the tool
+        tool = None
+        for t in agent.tools:
+            if t.name == "get_data_tool":
+                tool = t
+                break
+        
+        if not tool:
+            logger.error("get_data_tool not found in agent tools")
+            raise ValueError("get_data_tool not found")
+        
+        logger.info(f"Tool found: {tool.name}")
+        
+        # Call the tool directly
+        logger.info(f"Calling tool with parameters: {params}")
+        result = tool.func(**params)
+        logger.info(f"Tool result: {result}")
+        
+        # Send the data back to the client
+        await self._send_response(websocket, event, {
+            "success": True,
+            "data": result
+        })
+        logger.info("Response sent successfully")
+    
+    except Exception as e:
+        logger.error(f"Error handling get_data request: {str(e)}", exc_info=True)
+        
+        # Send error response
+        await self._send_response(websocket, event, {
+            "success": False,
+            "error": f"Error getting data: {str(e)}"
+        })
+```
+
+By implementing these advanced debugging techniques, you'll be better equipped to diagnose and fix issues in your agent UI components.
+
 ## Next Steps
 
 - Study the existing UI components in the `mosaic/backend/ui/components` directory

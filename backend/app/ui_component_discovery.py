@@ -99,8 +99,10 @@ class UIComponentDiscovery:
                 issubclass(obj, UIComponent) and 
                 obj != UIComponent):
                 
-                # Skip abstract classes (those with abstract methods)
-                if not any(inspect.isabstract(method) for _, method in inspect.getmembers(obj, predicate=inspect.isfunction)):
+                # Skip abstract classes
+                if inspect.isabstract(obj):
+                    logger.debug(f"Skipping abstract class: {name}")
+                else:
                     component_classes[name] = obj
                     logger.debug(f"Found UI component class: {name}")
         

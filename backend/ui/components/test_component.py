@@ -121,5 +121,6 @@ except ImportError:
     # Fall back to relative import (for Docker environment)
     from backend.agents.base import agent_registry
 
-# Register the component with the test agent
-agent_registry.register_ui_component("test_agent", test_component.component_id)
+# Register the component with the test agent only if it exists
+if "test_agent" in agent_registry.list_agents():
+    agent_registry.register_ui_component("test_agent", test_component.component_id)

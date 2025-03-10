@@ -156,7 +156,9 @@ class UIComponentRegistry:
             component: The component to register
         """
         if component.component_id in self.components:
-            self.logger.warning(f"Component '{component.component_id}' already registered. Overwriting.")
+            # Component already registered, don't overwrite
+            self.logger.debug(f"Component '{component.component_id}' already registered. Skipping.")
+            return
         
         self.components[component.component_id] = component
         self.logger.debug(f"Registered component '{component.component_id}'")

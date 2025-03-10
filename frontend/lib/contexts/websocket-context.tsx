@@ -425,7 +425,10 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   // Add event listener
   const addEventListener = useCallback(
     (callback: (event: WebSocketEvent) => void): (() => void) => {
-      eventListenersRef.current.push(callback)
+      // Check if callback already exists to prevent duplicates
+      if (!eventListenersRef.current.includes(callback)) {
+        eventListenersRef.current.push(callback)
+      }
       
       // Return unsubscribe function
       return () => {

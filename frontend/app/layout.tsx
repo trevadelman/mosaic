@@ -12,6 +12,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 
 // Import component registries
 import '@/components/agent-ui/financial'
+import '@/components/agent-ui/chart-data-generator'
 
 const inter = Inter({ subsets: ['latin'] })
 

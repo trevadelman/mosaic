@@ -44,9 +44,15 @@ export function useChat(agentId?: string) {
   // Update context when messages change
   useEffect(() => {
     if (agentId && messages.length > 0 && isInitialized) {
-      updateConversationContext(agentId, messages);
+      // Get current messages from context
+      const currentMessages = conversationContext[agentId]?.messages || [];
+      
+      // Only update if messages have actually changed
+      if (JSON.stringify(currentMessages) !== JSON.stringify(messages)) {
+        updateConversationContext(agentId, messages);
+      }
     }
-  }, [agentId, messages, updateConversationContext, isInitialized]);
+  }, [agentId, messages, updateConversationContext, isInitialized, conversationContext]);
 
   // Function to fetch messages from the API
   const fetchMessages = useCallback(async () => {

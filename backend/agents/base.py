@@ -230,6 +230,20 @@ class AgentRegistry:
             self.logger.warning(f"Agent '{agent_id}' not found in registry")
             return
         
+        # Import the UI component registry to check if the component exists
+        try:
+            # Try importing with the full package path (for local development)
+            from mosaic.backend.ui.base import ui_component_registry
+        except ImportError:
+            # Fall back to relative import (for Docker environment)
+            from backend.ui.base import ui_component_registry
+        
+        # Check if the component exists
+        component = ui_component_registry.get(component_id)
+        if not component:
+            self.logger.warning(f"Component '{component_id}' not found in registry")
+            return
+        
         # Initialize the component list for this agent if it doesn't exist
         if agent_id not in self.ui_components:
             self.ui_components[agent_id] = []
@@ -238,17 +252,9 @@ class AgentRegistry:
         if component_id not in self.ui_components[agent_id]:
             self.ui_components[agent_id].append(component_id)
             self.logger.info(f"Registered UI component '{component_id}' for agent '{agent_id}'")
-        
-        # Import the UI component registry to register the component for the agent there as well
-        try:
-            # Try importing with the full package path (for local development)
-            from mosaic.backend.ui.base import ui_component_registry
-        except ImportError:
-            # Fall back to relative import (for Docker environment)
-            from backend.ui.base import ui_component_registry
-        
-        # Register the component for the agent in the UI component registry
-        ui_component_registry.register_for_agent(agent_id, component_id)
+            
+            # Register the component for the agent in the UI component registry
+            ui_component_registry.register_for_agent(agent_id, component_id)
     
     def get_ui_components(self, agent_id: str) -> List[str]:
         """
