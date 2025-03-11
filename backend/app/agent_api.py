@@ -268,7 +268,11 @@ class AgentAPI:
                     capabilities.append(tool.name.replace("_", " ").title())
                 metadata["capabilities"] = capabilities
             
-            # UI-related code removed
+            # Add custom view properties if available
+            if hasattr(agent, "has_custom_view"):
+                metadata["hasCustomView"] = agent.has_custom_view
+                if hasattr(agent, "custom_view") and agent.custom_view:
+                    metadata["customView"] = agent.custom_view
         
         return metadata
     

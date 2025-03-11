@@ -633,6 +633,31 @@ def invoke(self, state: Dict[str, Any]) -> Dict[str, Any]:
 2. **Clear Instructions**: Provide detailed instructions in the agent prompt
 3. **Robust Tools**: Design tools that handle edge cases and invalid inputs
 4. **User-Friendly Responses**: Format responses to be clear and helpful
+5. **Temporal Context**: Consider the model's knowledge cutoff date:
+   - Language models have a training cutoff date (e.g., GPT-4's knowledge cutoff is September 2021)
+   - For time-sensitive tasks, provide tools that check current dates, times, or data
+   - Let the model decide when to use temporal tools through its prompt
+   - Example: A weather agent should check the current date/time before providing forecasts
+   ```python
+   @tool
+   def get_current_datetime() -> str:
+       """Get the current date and time information."""
+       now = datetime.now()
+       return f"Current time: {now.strftime('%I:%M %p')} on {now.strftime('%A, %B %d, %Y')}"
+   ```
+   - Add instructions in the prompt for when to use temporal tools:
+   ```python
+   "IMPORTANT: Always start each conversation by using get_current_datetime "
+   "to check the current date and time. This helps provide accurate temporal context."
+   ```
+
+6. **Tool Independence**: Follow LangChain's philosophy:
+   - Each tool should be independent and not call other tools directly
+   - Let the language model decide which tools to use and in what order
+   - If a tool needs information that would come from another tool, return a message indicating that the model should use that other tool first
+   - Example: Instead of having a weather tool call a location search tool internally, let the model:
+     1. Use the location search tool to get coordinates
+     2. Then use those coordinates with the weather tool
 
 ### Performance
 

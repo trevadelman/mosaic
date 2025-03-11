@@ -1,8 +1,10 @@
 "use client"
 
 import { Agent } from "@/lib/types"
-import { BrainCircuit } from "lucide-react"
+import { BrainCircuit, Layout } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import Link from "next/link"
 import {
   Accordion,
   AccordionContent,
@@ -99,7 +101,17 @@ export function AgentSelector({
                   <div className="flex-1 space-y-1">
                     <div className="flex justify-between items-center">
                       <p className="font-medium leading-none">{agent.name}</p>
-                      {/* UI button removed */}
+                      {agent.hasCustomView && (
+                        <Link href={`/agents/${agent.id}/view`} onClick={(e) => e.stopPropagation()}>
+                          <Badge 
+                            variant="outline" 
+                            className="ml-2 bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer"
+                          >
+                            <Layout className="h-3 w-3 mr-1" />
+                            UI
+                          </Badge>
+                        </Link>
+                      )}
                     </div>
                     <button
                       onClick={() => onSelect(agent)}

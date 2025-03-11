@@ -19,6 +19,12 @@ export interface Agent {
     supervisor?: string
     subAgents?: string[]
   }
+  hasCustomView?: boolean
+  customView?: {
+    name: string
+    layout: string
+    capabilities: string[]
+  }
 }
 
 // Attachment types

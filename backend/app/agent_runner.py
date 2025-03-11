@@ -10,6 +10,8 @@ import logging
 import time
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, Field
+from typing import Dict, Any, List, Optional, Union
 
 # Configure logging
 logging.basicConfig(
@@ -35,6 +37,12 @@ load_dotenv()
 # Global variable to store initialized agents
 initialized_agents = {}
 
+# Define a base structured output schema for all agents
+class StructuredResponse(BaseModel):
+    """Base structured response for all agents."""
+    content: str = Field(..., description="The formatted response content to display to the user")
+    raw_data: Optional[Dict[str, Any]] = Field(None, description="Raw structured data for the frontend to use")
+
 def initialize_agents():
     """Initialize all agents and make them available globally."""
     global initialized_agents
@@ -47,6 +55,9 @@ def initialize_agents():
     # Initialize the language model
     logger.info("Initializing language model")
     model = ChatOpenAI(model="gpt-4o-mini")
+    
+    # Create a structured output version of the model for the weather agent only
+    logger.info("Creating structured output model for weather agent")
     
     # Discover and register all agents and supervisors
     logger.info("Discovering and registering agents and supervisors")
