@@ -77,3 +77,72 @@
 
 /* Import markdown styles */
 @import './markdown.css';
+
+/* Resizable panel styles */
+.resizing,
+.resizing-vertical {
+  cursor: grabbing !important;
+}
+
+.resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+.resizing-vertical * {
+  cursor: row-resize !important;
+  user-select: none !important;
+}
+
+/* Divider styles */
+.resize-divider-horizontal {
+  width: 8px;
+  background-color: transparent;
+  position: relative;
+  cursor: col-resize;
+  z-index: 10;
+  transition: background-color 0.2s;
+}
+
+.resize-divider-horizontal:hover,
+.resize-divider-horizontal:active {
+  background-color: rgba(59, 130, 246, 0.3);
+}
+
+.resize-divider-horizontal::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 24px;
+  background-color: rgba(156, 163, 175, 0.7);
+  border-radius: 1px;
+}
+
+.resize-divider-vertical {
+  height: 8px;
+  background-color: transparent;
+  position: relative;
+  cursor: row-resize;
+  z-index: 10;
+  transition: background-color 0.2s;
+}
+
+.resize-divider-vertical:hover,
+.resize-divider-vertical:active {
+  background-color: rgba(59, 130, 246, 0.3);
+}
+
+.resize-divider-vertical::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 2px;
+  width: 24px;
+  background-color: rgba(156, 163, 175, 0.7);
+  border-radius: 1px;
+}

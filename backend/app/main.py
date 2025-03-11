@@ -26,12 +26,14 @@ try:
     from mosaic.backend.app.user_api import get_user_api_router
     from mosaic.backend.app.webhook_api import get_webhook_api_router
     from mosaic.backend.app.user_data_api import get_user_data_api_router
+    from mosaic.backend.app.file_operations_api import router as file_operations_router
 except ImportError:
     # Fall back to relative import (for Docker environment)
     from backend.app.agent_api import get_agent_api_router
     from backend.app.user_api import get_user_api_router
     from backend.app.webhook_api import get_webhook_api_router
     from backend.app.user_data_api import get_user_data_api_router
+    from backend.app.file_operations_api import router as file_operations_router
 
 # Configure logging
 logging.basicConfig(
@@ -53,6 +55,7 @@ app.include_router(get_agent_api_router())
 app.include_router(get_user_api_router())
 app.include_router(get_webhook_api_router())
 app.include_router(get_user_data_api_router())
+app.include_router(file_operations_router)
 
 # Import settings
 try:
