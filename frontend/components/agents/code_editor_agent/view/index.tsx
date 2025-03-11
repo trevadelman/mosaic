@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar';
 import MainContent from './components/MainContent';
 import GeneratedCodePreview from './components/GeneratedCodePreview';
 import CodeGenerationModal from './components/CodeGenerationModal';
+import CodeOperationModal from './components/CodeOperationModal';
 import LoadingOverlay from './components/LoadingOverlay';
 
 // Main Code Editor View Component
@@ -21,7 +22,10 @@ const CodeEditorViewComponent: React.FC<AgentViewProps> = ({ agent, tools, updat
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isPreviewVisible, setIsPreviewVisible] = useState<boolean>(false);
   const [isGenerationModalVisible, setIsGenerationModalVisible] = useState<boolean>(false);
+  const [isExplainModalVisible, setIsExplainModalVisible] = useState<boolean>(false);
+  const [isImproveModalVisible, setIsImproveModalVisible] = useState<boolean>(false);
   const [previewType, setPreviewType] = useState<'code' | 'explanation' | 'improvement'>('code');
+  const [userPrompt, setUserPrompt] = useState<string>('');
   
   // State for resizable panels
   const [sidebarWidth, setSidebarWidth] = useState<number>(33); // Percentage
@@ -291,18 +295,35 @@ const CodeEditorViewComponent: React.FC<AgentViewProps> = ({ agent, tools, updat
     }
   };
 
-  // Handle code explanation
-  const handleExplainCode = async () => {
+  // Handle opening the explain code modal
+  const handleExplainCode = () => {
     if (!currentFile || !fileContent) return;
+    setIsExplainModalVisible(true);
+  };
+  
+  // Handle explain code with user prompt
+  const handleExplainCodeWithPrompt = async (userPrompt: string): Promise<void> => {
+    if (!currentFile || !fileContent) return Promise.reject(new Error('No file selected'));
     
     try {
+      // Close the modal
+      setIsExplainModalVisible(false);
+      
       // Set the preview type to explanation before starting the loading process
       setPreviewType('explanation');
       setIsGenerating(true);
       
-      // Create a prompt that asks for code explanation
+      // Create a prompt that asks for code explanation, including the user's prompt if provided
       const fileExtension = currentFile.split('.').pop()?.toLowerCase() || '';
-      const prompt = `Please explain this ${fileExtension} code in detail. Return a JSON object with 'code' and 'explanation' properties. The 'code' should be the original code, and the 'explanation' should be a detailed explanation of how the code works:\n\n${fileContent}`;
+      let prompt = '';
+      
+      if (userPrompt.trim()) {
+        // Include the user's specific instructions
+        prompt = `Please explain this ${fileExtension} code in detail, focusing on: ${userPrompt}. Return a JSON object with 'code' and 'explanation' properties. The 'code' should be the original code, and the 'explanation' should be a detailed explanation of how the code works:\n\n${fileContent}`;
+      } else {
+        // Default prompt without specific instructions
+        prompt = `Please explain this ${fileExtension} code in detail. Return a JSON object with 'code' and 'explanation' properties. The 'code' should be the original code, and the 'explanation' should be a detailed explanation of how the code works:\n\n${fileContent}`;
+      }
       
       // Use the agent's explain_code_tool
       console.log("Explaining code with prompt:", prompt);
@@ -347,18 +368,35 @@ const CodeEditorViewComponent: React.FC<AgentViewProps> = ({ agent, tools, updat
     }
   };
   
-  // Handle code improvement
-  const handleImproveCode = async () => {
+  // Handle opening the improve code modal
+  const handleImproveCode = () => {
     if (!currentFile || !fileContent) return;
+    setIsImproveModalVisible(true);
+  };
+  
+  // Handle improve code with user prompt
+  const handleImproveCodeWithPrompt = async (userPrompt: string): Promise<void> => {
+    if (!currentFile || !fileContent) return Promise.reject(new Error('No file selected'));
     
     try {
+      // Close the modal
+      setIsImproveModalVisible(false);
+      
       // Set the preview type to improvement before starting the loading process
       setPreviewType('improvement');
       setIsGenerating(true);
       
-      // Create a prompt that asks for code improvement
+      // Create a prompt that asks for code improvement, including the user's prompt if provided
       const fileExtension = currentFile.split('.').pop()?.toLowerCase() || '';
-      const prompt = `Please improve this ${fileExtension} code. Optimize it, fix any bugs, and follow best practices. Return a JSON object with 'code' and 'explanation' properties. The 'code' should be the improved code, and the 'explanation' should explain what changes were made and why:\n\n${fileContent}`;
+      let prompt = '';
+      
+      if (userPrompt.trim()) {
+        // Include the user's specific instructions
+        prompt = `Please improve this ${fileExtension} code, focusing on: ${userPrompt}. Optimize it, fix any bugs, and follow best practices. Return a JSON object with 'code' and 'explanation' properties. The 'code' should be the improved code, and the 'explanation' should explain what changes were made and why:\n\n${fileContent}`;
+      } else {
+        // Default prompt without specific instructions
+        prompt = `Please improve this ${fileExtension} code. Optimize it, fix any bugs, and follow best practices. Return a JSON object with 'code' and 'explanation' properties. The 'code' should be the improved code, and the 'explanation' should explain what changes were made and why:\n\n${fileContent}`;
+      }
       
       // Use the agent's improve_code_tool
       console.log("Improving code with prompt:", prompt);
@@ -589,6 +627,28 @@ const CodeEditorViewComponent: React.FC<AgentViewProps> = ({ agent, tools, updat
         isGenerating={isGenerating}
         generatedCode={generatedCode}
         currentFile={currentFile}
+      />
+      
+      {/* Explain Code Modal */}
+      <CodeOperationModal
+        isVisible={isExplainModalVisible}
+        onClose={() => setIsExplainModalVisible(false)}
+        onSubmit={handleExplainCodeWithPrompt}
+        isLoading={isGenerating}
+        title="Explain Code"
+        description="Provide additional instructions for explaining this code (optional)"
+        submitLabel="Explain"
+      />
+      
+      {/* Improve Code Modal */}
+      <CodeOperationModal
+        isVisible={isImproveModalVisible}
+        onClose={() => setIsImproveModalVisible(false)}
+        onSubmit={handleImproveCodeWithPrompt}
+        isLoading={isGenerating}
+        title="Improve Code"
+        description="Provide specific improvements you'd like to make to this code (optional)"
+        submitLabel="Improve"
       />
     </div>
   );

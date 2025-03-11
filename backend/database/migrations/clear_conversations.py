@@ -19,13 +19,23 @@ logger = logging.getLogger("mosaic.database.migrations.clear_conversations")
 # Add the parent directory to the path so we can import from the parent package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-# Import the settings from the config
-try:
-    # Try importing with the full package path (for local development)
-    from mosaic.backend.app.config import settings
-except ImportError:
-    # Fall back to relative import (for Docker environment)
-    from backend.app.config import settings
+# Create a modified Settings class that ignores extra environment variables
+from pydantic_settings import BaseSettings
+
+class ModifiedSettings(BaseSettings):
+    # Database settings
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL", 
+        f"sqlite:///{os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'database', 'mosaic.db'))}"
+    )
+    
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+        extra = "ignore"  # Ignore extra environment variables
+
+# Create settings instance
+settings = ModifiedSettings()
 
 def get_db_path():
     """Get the absolute path to the database file."""
