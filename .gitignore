@@ -71,6 +71,9 @@ venv/
 logs/
 *.log
 
+# Audio files
+audio_output/
+
 # Temporary files
 tmp/
 temp/

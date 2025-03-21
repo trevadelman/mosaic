@@ -13,7 +13,7 @@ websocket-client
 jsonschema
 
 # LLM and agent packages
-openai
+openai>=1.68.2
 langchain
 langchain-openai
 langgraph
