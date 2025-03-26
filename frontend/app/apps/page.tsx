@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Database, Layout } from "lucide-react"
+import { Database, Layout, LineChart } from "lucide-react"
 
 const applications = [
   {
@@ -18,6 +18,13 @@ const applications = [
     description: "Interactive visualization of the database structure",
     icon: <Database className="w-8 h-8" />,
     color: "bg-purple-500"
+  },
+  {
+    id: "financial-analysis",
+    name: "Financial Analysis",
+    description: "Analyze stocks with technical and fundamental indicators",
+    icon: <LineChart className="w-8 h-8" />,
+    color: "bg-green-500"
   }
 ]
 

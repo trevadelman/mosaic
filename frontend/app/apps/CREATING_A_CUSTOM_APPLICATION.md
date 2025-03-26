@@ -7,7 +7,42 @@ This guide walks you through creating a simple Hello World application in Mosaic
 - Python 3.11 or higher
 - Working Mosaic installation
 
-## Step 1: Create the Frontend Route
+## Overview
+
+When creating a custom application in Mosaic, you have two main approaches:
+
+1. **Standalone Application**: Create a traditional web application that operates independently
+2. **Agent-Powered Application**: Leverage Mosaic's agent system for AI-powered functionality
+
+The choice between these approaches depends on your application's needs. Use agents when you need:
+- Natural language processing
+- Complex decision making
+- Integration with multiple tools or data sources
+- Dynamic, AI-driven responses
+
+For simpler applications that don't require AI capabilities, prefer the standalone approach for better performance and simplicity.
+
+## Step 1: Choose Your Approach
+
+### Standalone Application
+Best for:
+- CRUD operations
+- Data visualization
+- Simple user interfaces
+- Fixed business logic
+- Real-time updates
+
+### Agent-Powered Application
+Best for:
+- Natural language interactions
+- Complex data analysis
+- Dynamic content generation
+- Multi-step workflows
+- Integration with external services
+
+Example: Our Database Visualizer is a standalone application because it focuses on visualization and data presentation, while our Financial Analysis app uses an agent because it needs complex market analysis and natural language processing.
+
+## Step 2: Create the Frontend Route
 
 Create a new file at `frontend/app/apps/hello-world/page.tsx`:
 
@@ -239,6 +274,40 @@ The application uses environment variables to handle different deployment enviro
 
 This configuration ensures the application works consistently across different environments without hardcoding URLs.
 
+## Using Agents in Your Application
+
+If you decide to use an agent, you can integrate it using the `useChat` and `useAgents` hooks:
+
+```typescript
+import { useChat } from "@/lib/hooks/use-chat"
+import { useAgents } from "@/lib/hooks/use-agents"
+
+export default function YourApp() {
+  // Find the agent you want to use
+  const { agents } = useAgents()
+  const yourAgent = agents.find(a => a.id === "your_agent_id")
+  
+  // Set up chat functionality with the agent
+  const { messages, sendMessage, isProcessing } = useChat(yourAgent?.id)
+  
+  // Use the agent's capabilities
+  const handleAction = () => {
+    sendMessage("Your instruction to the agent")
+  }
+  
+  return (
+    // Your UI components
+  )
+}
+```
+
+Key considerations when using agents:
+1. Only use agents when their capabilities truly add value to your application
+2. Handle loading and error states appropriately
+3. Consider the response format and how to present it effectively
+4. Use proper typing for agent responses
+5. Consider rate limits and processing time
+
 ## Common Issues and Best Practices
 
 1. **API Endpoint Not Found**
@@ -273,11 +342,21 @@ This configuration ensures the application works consistently across different e
 
 ## Tips for Success
 
+### General Tips
+
 1. Follow the Mosaic coding standards
 2. Use TypeScript for type safety
 3. Implement proper error handling
 4. Add loading states for better UX
 5. Test thoroughly before deploying
+
+### Agent Integration Tips
+1. Check agent availability before using
+2. Handle agent not found scenarios gracefully
+3. Consider using a loading UI during agent processing
+4. Format agent responses appropriately for your UI
+5. Cache agent responses when possible
+6. Use error boundaries for agent-related errors
 
 ## Complex Application Structure
 

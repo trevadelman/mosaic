@@ -32,32 +32,34 @@ export default function DatabaseVisualizerPage() {
   }
   
   return (
-    <div className="container py-8 space-y-8">
-      {/* Header */}
-      <div className="space-y-2">
-        <Breadcrumb
-          items={[
-            { label: "Apps", href: "/apps" },
-            { label: "Database Visualizer" }
-          ]}
-        />
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Database className="h-8 w-8 text-primary" />
-              Database Visualizer
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Interactive visualization and exploration of your database structure
-            </p>
+    <div className="flex flex-col h-screen overflow-hidden">
+      <div className="flex-none px-8 py-6">
+        {/* Header */}
+        <div className="space-y-2">
+          <Breadcrumb
+            items={[
+              { label: "Apps", href: "/apps" },
+              { label: "Database Visualizer" }
+            ]}
+          />
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold flex items-center gap-2">
+                <Database className="h-8 w-8 text-primary" />
+                Database Visualizer
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Interactive visualization and exploration of your database structure
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="relative -mx-8">
-        <Card className="border-0 shadow-none rounded-none">
-          <CardContent className="p-0 min-h-[calc(100vh-12rem)]">
+      <div className="flex-1 relative overflow-hidden">
+        <Card className="border-0 shadow-none rounded-none h-full">
+          <CardContent className="p-0 h-full">
             {loading && (
               <div className="w-full h-[calc(100vh-12rem)] flex items-center justify-center">
                 <Skeleton className="w-full h-full" />
@@ -71,12 +73,12 @@ export default function DatabaseVisualizerPage() {
             )}
             
             {data && (
-              <div className="relative w-full h-[calc(100vh-12rem)]">
+              <div className="relative w-full h-full">
                 <ForceGraph
                   nodes={data.nodes}
                   links={data.links}
-                  width={width - 64}
-                  height={height - 192}
+                  width={width}
+                  height={height - 140}
                   onNodeClick={handleNodeClick}
                 />
                 
