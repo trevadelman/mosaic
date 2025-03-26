@@ -91,6 +91,7 @@ class Message(Base):
     status = Column(String(20), nullable=True)  # "sent", "error", etc.
     error = Column(Text, nullable=True)
     client_message_id = Column(String(36), nullable=True)  # For client-side message tracking
+    custom_data = Column(JSON, nullable=True, default={})  # For storing custom data like file references
     
     # Relationships
     conversation = relationship("Conversation", back_populates="messages")

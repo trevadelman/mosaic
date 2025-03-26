@@ -4,13 +4,12 @@ Welcome to MOSAIC! This guide will help you get up and running quickly, even if 
 
 ## What is MOSAIC?
 
-MOSAIC is a platform that lets you interact with intelligent agents through chat. These agents can help with tasks like:
+MOSAIC is a platform that lets you interact with intelligent agents through chat and build custom applications. You can:
 
-- Searching the web and processing information
-- Analyzing financial data and visualizing stock charts
-- Processing and analyzing files
-- Finding and exploring research papers
-- Writing and creative tasks
+- Chat with intelligent agents for various tasks
+- Build custom applications using our framework
+- Create new agents for specific use cases
+- Integrate with external services and APIs
 
 ## Getting Started
 
@@ -146,9 +145,25 @@ If the startup script doesn't work for you, you can start the services manually:
 Once MOSAIC is running, you can:
 
 1. **Chat with Agents**: Select an agent from the sidebar and start chatting
-2. **Upload Files**: You can upload files for agents to process
-3. **Search the Web**: Ask agents to search for information online
-4. **Analyze Data**: Use the financial analysis agent to explore stock data
+2. **Build Applications**: Create custom applications using our framework
+3. **Create Agents**: Develop new agents for specific use cases
+4. **Integrate Services**: Connect with external APIs and services
+
+## Development Guides
+
+MOSAIC provides comprehensive guides for development:
+
+1. **Custom Applications**
+   - Follow the [Custom Application Guide](frontend/app/apps/CREATING_A_CUSTOM_APPLICATION.md)
+   - Learn about the application framework
+   - See examples of complex applications
+   - Understand best practices
+
+2. **Agent Development**
+   - Check out the [Agent Creation Guide](backend/agents/CREATING_A_NEW_AGENT.md)
+   - Learn about agent capabilities
+   - Understand the agent lifecycle
+   - Implement custom tools
 
 ## Troubleshooting
 
@@ -175,5 +190,7 @@ Once you're comfortable with the basics:
 - Explore different agents and their capabilities
 - Check out the [documentation](README.md) for more detailed information
 - Learn how to [create your own agents](backend/agents/CREATING_A_NEW_AGENT.md)
+- Learn how to [create custom applications](frontend/app/apps/CREATING_A_CUSTOM_APPLICATION.md)
+- Explore the [example applications](frontend/app/apps) in the codebase
 
 Happy exploring!

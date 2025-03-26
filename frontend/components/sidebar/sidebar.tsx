@@ -11,7 +11,7 @@ import {
   MessageSquare,
   Settings,
   User,
-  Users,
+  Layout,
 } from "lucide-react"
 import { ThemeToggle } from "../theme-toggle"
 import { SignInButton, SignOutButton, useAuth, useUser } from "@clerk/nextjs"
@@ -41,9 +41,9 @@ const items = [
     icon: BrainCircuit,
   },
   {
-    name: "Community",
-    href: "/community",
-    icon: Users,
+    name: "Applications",
+    href: "/apps",
+    icon: Layout,
   },
   {
     name: "Settings",

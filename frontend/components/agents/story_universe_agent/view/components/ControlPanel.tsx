@@ -6,6 +6,8 @@ interface ControlPanelProps {
   onGenerateUniverse?: (genre: string, numCharacters: number, numLocations: number, numEvents: number) => Promise<void>;
   onGenerateFromText?: (text: string) => Promise<void>;
   onClear?: () => Promise<void>;
+  onSaveUniverse?: (universeId?: string) => Promise<void>;
+  onLoadUniverse?: (universeId: string) => Promise<void>;
   elements: Record<string, any>;
   isLoading?: boolean;
 }
@@ -25,6 +27,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onGenerateUniverse,
   onGenerateFromText,
   onClear,
+  onSaveUniverse,
+  onLoadUniverse,
   elements,
   isLoading = false
 }) => {
@@ -50,6 +54,10 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   // State for text upload
   const [storyText, setStoryText] = useState<string>("");
   const [showTextForm, setShowTextForm] = useState<boolean>(false);
+  
+  // State for universe management
+  const [universeId, setUniverseId] = useState<string>("");
+  const [showUniverseManagement, setShowUniverseManagement] = useState<boolean>(false);
   
   // Handle element generation
   const handleGenerateElement = async (e: React.FormEvent) => {
@@ -132,7 +140,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   return (
     <div className="border rounded-lg p-4 h-full overflow-y-auto">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Controls</h3>
+        <h3 className="text-2xl font-bold">Controls</h3>
         <button
           onClick={handleClearUniverse}
           disabled={isLoading}
@@ -145,7 +153,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       {/* Element Generation */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
-          <h4 className="text-md font-medium">Generate Element</h4>
+          <h4 className="text-lg font-semibold">Generate Element</h4>
           <button
             className="text-sm px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
             onClick={() => setShowElementForm(!showElementForm)}
@@ -198,7 +206,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       {/* Relationship Creation */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
-          <h4 className="text-md font-medium">Create Relationship</h4>
+          <h4 className="text-lg font-semibold">Create Relationship</h4>
           <button
             className="text-sm px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
             onClick={() => setShowRelationshipForm(!showRelationshipForm)}
@@ -291,7 +299,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       {/* Text Upload */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
-          <h4 className="text-md font-medium">Upload Story Text</h4>
+          <h4 className="text-lg font-semibold">Upload Story Text</h4>
           <button
             className="text-sm px-2 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 disabled:opacity-50"
             onClick={() => setShowTextForm(!showTextForm)}
@@ -336,10 +344,72 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         )}
       </div>
       
+      {/* Universe Management */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-2">
+          <h4 className="text-lg font-semibold">Universe Management</h4>
+          <button
+            className="text-sm px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:opacity-50"
+            onClick={() => setShowUniverseManagement(!showUniverseManagement)}
+            disabled={isLoading}
+          >
+            {showUniverseManagement ? "Cancel" : "Manage"}
+          </button>
+        </div>
+        
+        {showUniverseManagement && (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">Universe ID</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={universeId}
+                  onChange={(e) => setUniverseId(e.target.value)}
+                  placeholder="Enter universe ID to save/load"
+                  className="flex-1 p-2 border rounded text-sm"
+                  disabled={isLoading}
+                />
+                <button
+                  onClick={() => onSaveUniverse?.(universeId)}
+                  disabled={isLoading}
+                  className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:opacity-50"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+            
+            <div>
+              <button
+                onClick={() => onSaveUniverse?.()}
+                disabled={isLoading}
+                className="w-full py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:opacity-50"
+              >
+                Quick Save
+              </button>
+              <p className="text-xs text-gray-500 mt-1">
+                Save with auto-generated ID based on timestamp
+              </p>
+            </div>
+            
+            <div>
+              <button
+                onClick={() => onLoadUniverse?.(universeId)}
+                disabled={isLoading || !universeId.trim()}
+                className="w-full py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:opacity-50"
+              >
+                Load Universe
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+      
       {/* Universe Generation */}
       <div>
         <div className="flex justify-between items-center mb-2">
-          <h4 className="text-md font-medium">Generate Story Universe</h4>
+          <h4 className="text-lg font-semibold">Generate Story Universe</h4>
           <button
             className="text-sm px-2 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50"
             onClick={() => setShowUniverseForm(!showUniverseForm)}

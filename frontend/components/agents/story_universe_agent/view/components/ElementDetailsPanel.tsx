@@ -52,7 +52,7 @@ const ElementDetailsPanel: React.FC<ElementDetailsPanelProps> = ({
   if (!element) {
     return (
       <div className="border rounded-lg p-4 h-full">
-        <h3 className="text-lg font-semibold mb-2">Element Details</h3>
+        <h3 className="text-2xl font-bold mb-2">Element Details</h3>
         <p className="text-gray-500 dark:text-gray-400">
           Select an element in the graph to view its details.
         </p>
@@ -84,7 +84,7 @@ const ElementDetailsPanel: React.FC<ElementDetailsPanelProps> = ({
     <div className="border rounded-lg p-4 h-full overflow-y-auto">
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-semibold">{element.name || 'Unnamed Element'}</h3>
+          <h3 className="text-2xl font-bold">{element.name || 'Unnamed Element'}</h3>
           <span className={`px-2 py-1 text-xs rounded-full ${typeBadgeColor}`}>
             {element.type}
           </span>
@@ -113,7 +113,7 @@ const ElementDetailsPanel: React.FC<ElementDetailsPanelProps> = ({
       {/* Analysis Results */}
       {analysisResult && (
         <div className="mb-4">
-          <h4 className="text-md font-medium mb-2">Analysis Results</h4>
+          <h4 className="text-lg font-semibold mb-2">Analysis Results</h4>
           <div className="bg-purple-50 dark:bg-purple-900/20 rounded p-3">
             <div className="mb-2">
               <span className="font-medium text-sm">Centrality: </span>
@@ -134,7 +134,7 @@ const ElementDetailsPanel: React.FC<ElementDetailsPanelProps> = ({
       {/* Attributes section */}
       {element.attributes && Object.keys(element.attributes).length > 0 && (
         <div className="mb-4">
-          <h4 className="text-md font-medium mb-2">Attributes</h4>
+          <h4 className="text-lg font-semibold mb-2">Attributes</h4>
           <div className="bg-gray-50 dark:bg-gray-800 rounded p-2">
             {Object.entries(element.attributes).map(([key, value]) => (
               <div key={key} className="mb-1">
@@ -148,7 +148,7 @@ const ElementDetailsPanel: React.FC<ElementDetailsPanelProps> = ({
       
       {/* Relationships section */}
       <div>
-        <h4 className="text-md font-medium mb-2">Relationships ({relatedElements.length})</h4>
+        <h4 className="text-lg font-semibold mb-2">Relationships ({relatedElements.length})</h4>
         {relatedElements.length === 0 ? (
           <p className="text-sm text-gray-500">No relationships found.</p>
         ) : (

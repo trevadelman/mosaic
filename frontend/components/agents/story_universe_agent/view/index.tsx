@@ -50,21 +50,26 @@ const StoryUniverseViewComponent: React.FC<AgentViewProps & { updates?: UpdateSy
       // Call the get_story_universe tool
       const result = await tools.get_story_universe();
       
-      // Parse the result
-      let universeData;
-      try {
-        // First try to parse the content property if it exists
-        const parsed = typeof result === 'string' ? JSON.parse(result) : result;
-        universeData = parsed.content ? JSON.parse(parsed.content) : parsed;
-      } catch (parseErr) {
-        // If that fails, try to parse the result directly
-        universeData = typeof result === 'string' ? JSON.parse(result) : result;
-      }
+      // Sanitize and parse the result
+      const sanitizedResult = typeof result === 'string' 
+        ? result.replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":')  // Ensure property names are quoted
+        : JSON.stringify(result);
+      
+      // Parse the sanitized result
+      const universeData = JSON.parse(sanitizedResult);
       
       // Debug logging
       console.log("Fetched universe data:", universeData);
       
-      setUniverse(universeData);
+      // Validate and set universe data
+      if (universeData && typeof universeData === 'object') {
+        setUniverse({
+          elements: universeData.elements || {},
+          relationships: Array.isArray(universeData.relationships) ? universeData.relationships : []
+        });
+      } else {
+        throw new Error('Invalid universe data structure');
+      }
     } catch (err) {
       console.error('Error fetching story universe:', err);
       setError('Failed to load story universe data');
@@ -73,19 +78,35 @@ const StoryUniverseViewComponent: React.FC<AgentViewProps & { updates?: UpdateSy
     }
   };
   
-  // Fetch initial data and handle chat updates
+  // Clear state on mount and handle updates
   useEffect(() => {
+    const init = async () => {
+      setUniverse(null);
+      setSelectedElementId(null);
+      setIsLoading(false);
+      setError(null);
+      setAnalysisResult(null);
+      await tools.reset_story_universe();
+      await fetchUniverse();
+    };
+
     if (updates?.type === 'clear') {
-      // Reset the story universe when chat is cleared
-      tools.reset_story_universe().then(() => {
-        fetchUniverse();
-      }).catch(err => {
-        console.error('Error resetting story universe:', err);
-      });
+      init();
     } else {
       fetchUniverse();
     }
   }, [updates]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      setUniverse(null);
+      setSelectedElementId(null);
+      setIsLoading(false);
+      setError(null);
+      setAnalysisResult(null);
+    };
+  }, []);
   
   // Get selected element and its relationships
   const selectedElement = selectedElementId && universe?.elements[selectedElementId] || null;
@@ -111,39 +132,26 @@ const StoryUniverseViewComponent: React.FC<AgentViewProps & { updates?: UpdateSy
       // Call the generate_story_element tool
       const result = await tools.generate_story_element(elementType, description);
       
-      // Parse the result
-      const elementData = typeof result === 'string' ? JSON.parse(result) : result;
+      // Sanitize and parse the result
+      let elementData;
+      if (typeof result === 'string') {
+        const cleanResult = result
+          .replace(/\n/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        elementData = JSON.parse(cleanResult);
+      } else {
+        elementData = result;
+      }
       console.log("Generated element data:", elementData);
       
-      if (elementData.error) {
-        setError(`Error generating element: ${elementData.error}`);
+      if (!elementData || elementData.error) {
+        setError(`Error generating element: ${elementData?.error || 'Invalid response'}`);
         return;
       }
       
-      // Update the element with name and description from the LLM
-      if (elementData.id) {
-        // Extract name from description if not provided
-        const name = description.split(',')[0].trim();
-        
-        // Create updates object
-        const updates = {
-          name: name,
-          description: description
-        };
-        
-        console.log(`Updating element ${elementData.id} with:`, updates);
-        
-        // Update the element with the extracted information
-        try {
-          const updateResult = await tools.update_element(elementData.id, JSON.stringify(updates));
-          console.log("Update result:", updateResult);
-        } catch (updateErr) {
-          console.error('Error updating element:', updateErr);
-        }
-        
-        // Fetch the updated universe data
-        await fetchUniverse();
-      }
+      // Fetch the updated universe data
+      await fetchUniverse();
     } catch (err) {
       console.error('Error generating element:', err);
       setError('Failed to generate element');
@@ -163,106 +171,90 @@ const StoryUniverseViewComponent: React.FC<AgentViewProps & { updates?: UpdateSy
       // Call the generate_story_universe tool
       const result = await tools.generate_story_universe(genre, numCharacters, numLocations, numEvents);
       
-      // Parse the result
-      const universeData = typeof result === 'string' ? JSON.parse(result) : result;
-      console.log("Generated universe data:", universeData);
-      
-      if (universeData.error) {
-        setError(`Error generating universe: ${universeData.error}`);
-        return;
-      }
-      
-      // Update the universe elements with LLM-generated content
-      const elementIds = Object.keys(universeData.elements || {});
-      
-      for (const elementId of elementIds) {
-        const element = universeData.elements[elementId];
-        
-        // Generate a prompt for the LLM based on the element type and genre
-        let prompt = "";
-        if (element.type === "character") {
-          prompt = `Create a detailed ${genre} character with a unique name, background, personality, and appearance.`;
-        } else if (element.type === "location") {
-          prompt = `Create a detailed ${genre} location with a unique name, description, atmosphere, and significance to the story.`;
-        } else if (element.type === "event") {
-          prompt = `Create a detailed ${genre} event with a unique name, description, participants, and consequences.`;
-        }
-        
-        // Generate the element using the LLM
-        try {
-          console.log(`Generating detailed ${element.type} for ${genre} universe...`);
-          const generatedResult = await tools.generate_story_element(element.type, prompt);
-          const generatedData = typeof generatedResult === 'string' ? JSON.parse(generatedResult) : generatedResult;
+      try {
+        // First try to parse the result
+        let universeData;
+        if (typeof result === 'string') {
+          // Clean up any potential formatting issues
+          const cleanResult = result
+            .replace(/\n/g, '') // Remove newlines
+            .replace(/\s+/g, ' ') // Normalize spaces
+            .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":') // Ensure property names are quoted
+            .trim(); // Remove leading/trailing whitespace
           
-          if (generatedData.error) {
-            console.error(`Error generating ${element.type}:`, generatedData.error);
-            continue;
-          }
-          
-          // Update the original element with the generated content
-          const updates = {
-            name: `${element.type.charAt(0).toUpperCase() + element.type.slice(1)} ${elementId.substring(0, 4)}`,
-            description: prompt
-          };
-          
-          await tools.update_element(elementId, JSON.stringify(updates));
-          
-          // Now generate a more detailed update using the LLM
-          const detailPrompt = `Create a detailed ${genre} ${element.type} named ${updates.name}. Include rich description, background, and characteristics.`;
-          const detailedResult = await tools.generate_story_element(element.type, detailPrompt);
-          
-          // Extract the name from the first line or sentence of the description
-          const detailedData = typeof detailedResult === 'string' ? JSON.parse(detailedResult) : detailedResult;
-          if (!detailedData.error && detailedData.id) {
-            // Get the detailed element
-            const detailElement = await tools.get_element_details(detailedData.id);
-            const detailData = typeof detailElement === 'string' ? JSON.parse(detailElement) : detailElement;
+          try {
+            universeData = JSON.parse(cleanResult);
+          } catch (parseError) {
+            console.error('Initial parse failed, attempting to fix JSON:', parseError);
+            // If initial parse fails, try more aggressive cleanup
+            const sanitizedResult = cleanResult
+              .replace(/'/g, '"') // Replace single quotes with double quotes
+              .replace(/\\/g, '\\\\') // Escape backslashes
+              .replace(/\u0000/g, '\\u0000') // Handle null bytes
+              .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
+              .replace(/,\s*([}\]])/g, '$1') // Remove trailing commas
+              .replace(/([{,])\s*([a-zA-Z0-9_]+?)\s*:/g, '$1"$2":') // Ensure property names are quoted
+              .replace(/:\s*'([^']*?)'\s*(,|})/g, ':"$1"$2') // Convert single quoted values to double quotes
+              .replace(/([^\\])"([^"]*?)"/g, '$1\\"$2\\"') // Escape unescaped double quotes
+              .replace(/\}\s*\{/g, '},{') // Fix object array syntax
+              .replace(/\}\s*,\s*\]/g, '}]') // Fix trailing comma in arrays
+              .replace(/\}\s*,\s*\}/g, '}}'); // Fix trailing comma in objects
             
-            if (!detailData.error && detailData.element) {
-              // Use the detailed description to update the original element
-              const detailedUpdates = {
-                name: detailData.element.name || updates.name,
-                description: detailData.element.description || updates.description,
-                attributes: detailData.element.attributes || {}
-              };
-              
-              await tools.update_element(elementId, JSON.stringify(detailedUpdates));
-              
-              // Delete the temporary element
-              console.log(`Deleting temporary element ${detailedData.id}`);
-              delete universeData.elements[detailedData.id];
+            try {
+              universeData = JSON.parse(sanitizedResult);
+            } catch (finalError) {
+              const error = finalError as Error;
+              console.error('Failed to parse JSON even after sanitization:', error);
+              throw new Error('Invalid JSON structure: ' + error.message);
             }
           }
-        } catch (genErr) {
-          console.error(`Error generating detailed content for ${element.type}:`, genErr);
+        } else {
+          universeData = result;
         }
-      }
-      
-      // Update relationships with LLM-generated descriptions
-      for (const relationship of universeData.relationships) {
-        try {
-          const sourceElement = universeData.elements[relationship.source];
-          const targetElement = universeData.elements[relationship.target];
-          
-          if (sourceElement && targetElement) {
-            const sourceName = sourceElement.name || `${sourceElement.type} ${relationship.source.substring(0, 4)}`;
-            const targetName = targetElement.name || `${targetElement.type} ${relationship.target.substring(0, 4)}`;
-            
-            const relationshipPrompt = `Describe a ${relationship.type} relationship between ${sourceName} (a ${sourceElement.type}) and ${targetName} (a ${targetElement.type}) in a ${genre} story.`;
-            
-            // Generate a detailed relationship description
-            console.log(`Generating relationship description for ${sourceName} ${relationship.type} ${targetName}...`);
-            
-            // Update the relationship with a basic description
-            relationship.description = relationshipPrompt;
+        
+        console.log("Generated universe data:", universeData);
+        
+        if (!universeData || typeof universeData !== 'object') {
+          throw new Error('Invalid universe data structure');
+        }
+        
+        if (universeData.error) {
+          setError(`Error generating universe: ${universeData.error}`);
+          return;
+        }
+        
+        // Ensure elements and relationships are properly structured
+        const elements = universeData.elements && typeof universeData.elements === 'object' ? universeData.elements : {};
+        const relationships = Array.isArray(universeData.relationships) ? universeData.relationships : [];
+        
+        // Validate element structure
+        for (const [id, element] of Object.entries(elements)) {
+          const typedElement = element as Partial<StoryElement>;
+          if (!typedElement || !typedElement.id || !typedElement.type) {
+            console.warn(`Invalid element structure for ID ${id}:`, element);
+            delete elements[id];
           }
-        } catch (relErr) {
-          console.error('Error updating relationship:', relErr);
         }
+        
+        // Validate relationship structure
+        const validRelationships = relationships.filter((rel: unknown) => {
+          const typedRel = rel as Partial<Relationship>;
+          const isValid = typedRel && typedRel.source && typedRel.target && typedRel.type;
+          if (!isValid) {
+            console.warn('Invalid relationship structure:', rel);
+          }
+          return isValid;
+        }) as Relationship[];
+        
+        // Update the universe state with validated data
+        setUniverse({
+          elements,
+          relationships: validRelationships
+        });
+      } catch (err) {
+        console.error('Error parsing universe data:', err);
+        setError(`Error parsing universe data: ${err instanceof Error ? err.message : 'Unknown error'}`);
       }
-      
-      // Fetch the updated universe data
-      await fetchUniverse();
     } catch (err) {
       console.error('Error generating universe:', err);
       setError('Failed to generate universe');
@@ -285,19 +277,112 @@ const StoryUniverseViewComponent: React.FC<AgentViewProps & { updates?: UpdateSy
       // Call the create_relationship tool
       const result = await tools.create_relationship(sourceId, targetId, relationshipType, description);
       
-      // Parse the result
-      const relationshipData = typeof result === 'string' ? JSON.parse(result) : result;
-      
-      if (relationshipData.error) {
-        setError(`Error creating relationship: ${relationshipData.error}`);
-        return;
+      try {
+        // Sanitize and parse the result
+        let relationshipData;
+        if (typeof result === 'string') {
+          const cleanResult = result
+            .replace(/\n/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+          relationshipData = JSON.parse(cleanResult);
+        } else {
+          relationshipData = result;
+        }
+        
+        console.log("Created relationship data:", relationshipData);
+        
+        if (!relationshipData || relationshipData.error) {
+          setError(`Error creating relationship: ${relationshipData?.error || 'Invalid response'}`);
+          return;
+        }
+        
+        // Fetch the updated universe data
+        await fetchUniverse();
+      } catch (err) {
+        console.error('Error parsing relationship data:', err);
+        setError(`Error creating relationship: ${err instanceof Error ? err.message : 'Unknown error'}`);
       }
-      
-      // Fetch the updated universe data
-      await fetchUniverse();
     } catch (err) {
       console.error('Error creating relationship:', err);
       setError('Failed to create relationship');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Handle save universe
+  const handleSaveUniverse = async (universeId?: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Call the save_universe tool
+      const result = await tools.save_universe(universeId);
+      
+      // Parse and handle the save result
+      let saveData;
+      if (typeof result === 'string') {
+        const cleanResult = result
+          .replace(/\n/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        saveData = JSON.parse(cleanResult);
+      } else {
+        saveData = result;
+      }
+      console.log("Save result:", saveData);
+      
+      if (!saveData || !saveData.success) {
+        setError(saveData?.error || 'Failed to save universe');
+        return;
+      }
+      
+      // Show success message
+      setError(saveData.message);
+    } catch (err) {
+      console.error('Error saving universe:', err);
+      setError('Failed to save universe');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Handle load universe
+  const handleLoadUniverse = async (universeId: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Call the load_universe tool
+      const result = await tools.load_universe(universeId);
+      
+      // Parse and handle the load result
+      let loadData;
+      if (typeof result === 'string') {
+        const cleanResult = result
+          .replace(/\n/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        loadData = JSON.parse(cleanResult);
+      } else {
+        loadData = result;
+      }
+      console.log("Load result:", loadData);
+      
+      if (!loadData || !loadData.success) {
+        setError(loadData?.error || 'Failed to load universe');
+        return;
+      }
+      
+      // Update the universe state
+      setUniverse(loadData.universe);
+      
+      // Show success message
+      setError(loadData.message);
+    } catch (err) {
+      console.error('Error loading universe:', err);
+      setError('Failed to load universe');
     } finally {
       setIsLoading(false);
     }
@@ -315,17 +400,32 @@ const StoryUniverseViewComponent: React.FC<AgentViewProps & { updates?: UpdateSy
       // Call the analyze_relationships tool
       const result = await tools.analyze_relationships(elementId);
       
-      // Parse the result
-      const analysisData = typeof result === 'string' ? JSON.parse(result) : result;
-      console.log("Analysis result:", analysisData);
-      
-      if (analysisData.error) {
-        setError(`Error analyzing relationships: ${analysisData.error}`);
-        return;
+      try {
+        // Sanitize and parse the result
+        let analysisData;
+        if (typeof result === 'string') {
+          const cleanResult = result
+            .replace(/\n/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+          analysisData = JSON.parse(cleanResult);
+        } else {
+          analysisData = result;
+        }
+        
+        console.log("Analysis result:", analysisData);
+        
+        if (!analysisData || analysisData.error) {
+          setError(`Error analyzing relationships: ${analysisData?.error || 'Invalid response'}`);
+          return;
+        }
+        
+        // Set the analysis result
+        setAnalysisResult(analysisData);
+      } catch (err) {
+        console.error('Error parsing analysis data:', err);
+        setError(`Error analyzing relationships: ${err instanceof Error ? err.message : 'Unknown error'}`);
       }
-      
-      // Set the analysis result
-      setAnalysisResult(analysisData);
       
     } catch (err) {
       console.error('Error analyzing relationships:', err);
@@ -383,6 +483,8 @@ const StoryUniverseViewComponent: React.FC<AgentViewProps & { updates?: UpdateSy
             }}
             elements={universe?.elements || {}}
             isLoading={isLoading}
+            onSaveUniverse={handleSaveUniverse}
+            onLoadUniverse={handleLoadUniverse}
           />
         </div>
         
@@ -425,7 +527,9 @@ const StoryUniverseView: AgentView = {
     'generate_story_universe',
     'analyze_relationships',
     'reset_story_universe',
-    'generate_universe_from_text'
+    'generate_universe_from_text',
+    'save_universe',
+    'load_universe'
   ]
 };
 

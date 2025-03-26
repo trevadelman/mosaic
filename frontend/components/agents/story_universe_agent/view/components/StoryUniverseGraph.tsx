@@ -84,13 +84,18 @@ const StoryUniverseGraph: React.FC<StoryUniverseGraphProps> = ({
       size: typeSizes[element.type as keyof typeof typeSizes] || typeSizes.default
     }));
     
-    // Create links from relationships
-    const links = data.relationships.map(rel => ({
-      source: rel.source,
-      target: rel.target,
-      type: rel.type,
-      description: rel.description
-    }));
+    // Create links from relationships with proper node references
+    const links = data.relationships.map(rel => {
+      const sourceNode = nodes.find(node => node.id === rel.source);
+      const targetNode = nodes.find(node => node.id === rel.target);
+      if (!sourceNode || !targetNode) return null;
+      return {
+        source: sourceNode,
+        target: targetNode,
+        type: rel.type,
+        description: rel.description
+      };
+    }).filter(Boolean);
     
     setGraphData({ nodes, links });
   }, [data]);

@@ -33,11 +33,11 @@ except ImportError:
 # Import the agent modules
 try:
     # Try importing with the full package path (for local development)
-    from mosaic.backend.agents.regular import calculator, web_search, browser_interaction, data_processing, literature
+    from mosaic.backend.agents.regular import calculator, web_search, browser_interaction, literature
     from mosaic.backend.agents.supervisors import research_assistant
 except ImportError:
     # Fall back to relative import (for Docker environment)
-    from backend.agents.regular import calculator, web_search, browser_interaction, data_processing, literature
+    from backend.agents.regular import calculator, web_search, browser_interaction, literature
     from backend.agents.supervisors import research_assistant
 
 # Import the agent runner module to get initialized agents

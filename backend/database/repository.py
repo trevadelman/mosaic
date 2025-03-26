@@ -291,7 +291,8 @@ class MessageRepository:
         error: Optional[str] = None,
         client_message_id: Optional[str] = None,
         message_id: Optional[str] = None,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
+        custom_data: Optional[Dict[str, Any]] = None
     ) -> Message:
         """
         Create a new message.
@@ -326,7 +327,8 @@ class MessageRepository:
                 status=status,
                 error=error,
                 client_message_id=client_message_id,
-                user_id=user_id
+                user_id=user_id,
+                custom_data=custom_data
             )
             session.add(message)
             session.commit()
@@ -1247,6 +1249,9 @@ def message_to_dict(message: Message) -> Dict[str, Any]:
     
     if message.client_message_id:
         result["clientMessageId"] = message.client_message_id
+        
+    if message.custom_data:
+        result["customData"] = message.custom_data
     
     # Add logs if available
     logs = MessageRepository.get_logs_for_message(message.id)

@@ -9,10 +9,23 @@ creating, exploring, and visualizing a story universe.
 import logging
 import json
 import uuid
+import os
+import datetime
 from typing import List, Dict, Any, Optional, Union, Tuple
-
+from json import JSONEncoder
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.tools import BaseTool, tool
+
+class StoryUniverseEncoder(JSONEncoder):
+    """Custom JSON encoder for Story Universe data structures."""
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
+        return JSONEncoder.default(self, obj)
+
+def json_dumps(obj: Any) -> str:
+    """Helper function to consistently encode JSON with our custom encoder."""
+    return json.dumps(obj, cls=StoryUniverseEncoder, ensure_ascii=False)
 
 try:
     # Try importing with the full package path (for local development)
@@ -23,6 +36,18 @@ except ImportError:
 
 # Configure logging
 logger = logging.getLogger("mosaic.agents.story_universe_agent")
+
+# Get absolute paths to output directories
+try:
+    # Get backend directory (go up two levels: regular -> agents -> backend)
+    BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    STORY_UNIVERSES_DIR = os.path.join(BACKEND_DIR, "story_universes")
+    
+    # Create directories if they don't exist
+    os.makedirs(STORY_UNIVERSES_DIR, exist_ok=True)
+except Exception as e:
+    logger.error(f"Error setting up directories: {str(e)}")
+    raise
 
 # Define story element types
 ELEMENT_TYPES = ["character", "location", "event"]
@@ -41,6 +66,26 @@ story_universe = {
     "elements": {},  # Dictionary of elements by ID
     "relationships": []  # List of relationships
 }
+
+def _format_universe_state() -> str:
+    """Format the current universe state as a structured message."""
+    return json.dumps({
+        "type": "universe_update",
+        "state": {
+            "elements": story_universe["elements"],
+            "relationships": story_universe["relationships"]
+        }
+    }, cls=StoryUniverseEncoder)
+
+def _format_tool_response(result: Any, include_state: bool = True) -> str:
+    """Format a tool response with optional universe state."""
+    response = {
+        "type": "tool_response",
+        "result": result
+    }
+    if include_state:
+        response["universe_state"] = story_universe
+    return json.dumps(response, cls=StoryUniverseEncoder)
 
 def _generate_id() -> str:
     """Generate a unique ID for a story element."""
@@ -64,6 +109,89 @@ def _get_relationships_for_element(element_id: str) -> List[Dict[str, Any]]:
         if rel["source"] == element_id or rel["target"] == element_id
     ]
 
+def _validate_universe_state() -> bool:
+    """Validate the current universe state."""
+    try:
+        # Check basic structure
+        if not isinstance(story_universe, dict):
+            return False
+        if "elements" not in story_universe or "relationships" not in story_universe:
+            return False
+        
+        # Validate elements
+        if not isinstance(story_universe["elements"], dict):
+            return False
+        
+        # Validate relationships
+        if not isinstance(story_universe["relationships"], list):
+            return False
+        
+        # Validate element references in relationships
+        element_ids = set(story_universe["elements"].keys())
+        for rel in story_universe["relationships"]:
+            if rel["source"] not in element_ids or rel["target"] not in element_ids:
+                return False
+        
+        return True
+    except Exception:
+        return False
+
+def _save_universe_to_file(universe_id: str = None) -> dict:
+    """Save the current story universe to a file."""
+    try:
+        # Generate a filename using timestamp if no ID provided
+        if not universe_id:
+            universe_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Create the filename
+        filename = f"universe_{universe_id}.json"
+        filepath = os.path.join(STORY_UNIVERSES_DIR, filename)
+        
+        # Save the universe data
+        with open(filepath, 'w') as f:
+            json.dump(story_universe, f, indent=2, cls=StoryUniverseEncoder, ensure_ascii=False)
+        
+        return {
+            "success": True,
+            "universe_id": universe_id,
+            "message": f"Universe saved successfully with ID: {universe_id}"
+        }
+    except Exception as e:
+        logger.error(f"Error saving universe to file: {str(e)}")
+        return None
+
+def _load_universe_from_file(universe_id: str) -> dict:
+    """Load a story universe from a file."""
+    try:
+        # Create the filename
+        filename = f"universe_{universe_id}.json"
+        filepath = os.path.join(STORY_UNIVERSES_DIR, filename)
+        
+        # Check if file exists
+        if not os.path.exists(filepath):
+            logger.error(f"Universe file not found: {filepath}")
+            return {
+                "success": False,
+                "error": f"Universe {universe_id} not found"
+            }
+        
+        # Load the universe data
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+            
+        # Update the story universe
+        story_universe["elements"] = data["elements"]
+        story_universe["relationships"] = data["relationships"]
+        
+        return {
+            "success": True,
+            "message": f"Universe {universe_id} loaded successfully",
+            "universe": story_universe
+        }
+    except Exception as e:
+        logger.error(f"Error loading universe from file: {str(e)}")
+        return False
+
 @tool
 def generate_story_element(element_type: str, description: str) -> str:
     """
@@ -74,16 +202,22 @@ def generate_story_element(element_type: str, description: str) -> str:
         description: A brief description or requirements for the element
         
     Returns:
-        A JSON string containing the generated element
+        A JSON string containing the generated element and universe state
     """
     logger.info(f"Generating {element_type} with description: {description}")
     
     if element_type not in ELEMENT_TYPES:
         error_msg = f"Invalid element type: {element_type}. Must be one of {ELEMENT_TYPES}"
         logger.error(error_msg)
-        return json.dumps({"error": error_msg})
+        return _format_tool_response({"error": error_msg}, include_state=False)
     
     try:
+        # Validate current state
+        if not _validate_universe_state():
+            logger.warning("Invalid universe state detected, resetting to empty state")
+            story_universe["elements"] = {}
+            story_universe["relationships"] = []
+        
         # Generate a unique ID for the element
         element_id = _generate_id()
         
@@ -100,14 +234,12 @@ def generate_story_element(element_type: str, description: str) -> str:
         # Add the element to the story universe
         story_universe["elements"][element_id] = element
         
-        # Return the element as a JSON string
-        # Note: The actual element generation (name, description, attributes)
-        # will be handled by the LLM through the agent
-        return json.dumps(element)
+        # Return the element and complete universe state
+        return _format_tool_response(element)
     
     except Exception as e:
         logger.error(f"Error generating story element: {str(e)}")
-        return json.dumps({"error": str(e)})
+        return _format_tool_response({"error": str(e)}, include_state=False)
 
 @tool
 def create_relationship(source_id: str, target_id: str, relationship_type: str, description: str) -> str:
@@ -158,8 +290,8 @@ def create_relationship(source_id: str, target_id: str, relationship_type: str, 
         # Add the relationship to the story universe
         story_universe["relationships"].append(relationship)
         
-        # Return the relationship as a JSON string
-        return json.dumps(relationship)
+        # Return the relationship as a JSON string using custom encoder
+        return json.dumps(relationship, cls=StoryUniverseEncoder, ensure_ascii=False)
     
     except Exception as e:
         logger.error(f"Error creating relationship: {str(e)}")
@@ -182,11 +314,11 @@ def get_story_universe() -> str:
             story_universe["elements"] = {}
             story_universe["relationships"] = []
         
-        # Return the story universe as a JSON string
+        # Return the story universe as a JSON string using custom encoder
         return json.dumps({
             "elements": story_universe["elements"],
             "relationships": story_universe["relationships"]
-        })
+        }, cls=StoryUniverseEncoder, ensure_ascii=False)
     
     except Exception as e:
         logger.error(f"Error getting story universe: {str(e)}")
@@ -207,15 +339,65 @@ def reset_story_universe() -> str:
         story_universe["elements"] = {}
         story_universe["relationships"] = []
         
-        # Return the empty story universe
+        # Return the empty story universe using custom encoder
         return json.dumps({
             "elements": {},
             "relationships": []
-        })
+        }, cls=StoryUniverseEncoder, ensure_ascii=False)
     
     except Exception as e:
         logger.error(f"Error resetting story universe: {str(e)}")
         return json.dumps({"error": str(e)})
+
+@tool
+def save_universe(universe_id: str = None) -> str:
+    """
+    Save the current story universe to a file.
+    
+    Args:
+        universe_id: Optional ID for the universe. If not provided, a timestamp will be used.
+        
+    Returns:
+        A JSON string containing the save result
+    """
+    logger.info(f"Saving universe{' with ID ' + universe_id if universe_id else ''}")
+    
+    try:
+        # Save the universe and return the result
+        result = _save_universe_to_file(universe_id)
+        return json.dumps(result)
+    
+    except Exception as e:
+        logger.error(f"Error saving universe: {str(e)}")
+        return json.dumps({
+            "success": False,
+            "error": str(e)
+        })
+
+@tool
+def load_universe(universe_id: str) -> str:
+    """
+    Load a story universe from a file.
+    
+    Args:
+        universe_id: The ID of the universe to load
+        
+    Returns:
+        A JSON string containing the load result
+    """
+    logger.info(f"Loading universe with ID {universe_id}")
+    
+    try:
+        # Load the universe and return the result
+        result = _load_universe_from_file(universe_id)
+        return json.dumps(result)
+    
+    except Exception as e:
+        logger.error(f"Error loading universe: {str(e)}")
+        return json.dumps({
+            "success": False,
+            "error": str(e)
+        })
 
 @tool
 def generate_universe_from_text(text: str) -> str:
@@ -284,8 +466,8 @@ def get_element_details(element_id: str) -> str:
             "relationships": relationships
         }
         
-        # Return the result as a JSON string
-        return json.dumps(result)
+        # Return the result as a JSON string using custom encoder
+        return json.dumps(result, cls=StoryUniverseEncoder, ensure_ascii=False)
     
     except Exception as e:
         logger.error(f"Error getting element details: {str(e)}")
@@ -364,7 +546,7 @@ def analyze_relationships(element_id: str = None) -> str:
                 }
             }
             
-            return json.dumps(analysis)
+            return json.dumps(analysis, cls=StoryUniverseEncoder, ensure_ascii=False)
         else:
             # Analyze the entire story universe
             elements = story_universe["elements"]
@@ -490,111 +672,144 @@ def generate_story_universe(genre: str, num_characters: int = 3, num_locations: 
         story_universe["elements"] = {}
         story_universe["relationships"] = []
         
+        # Generate elements
+        element_ids = {
+            "character": [],
+            "location": [],
+            "event": []
+        }
+        
         # Generate characters
-        character_ids = []
         for i in range(num_characters):
-            character_id = _generate_id()
-            character = {
-                "id": character_id,
+            element_id = _generate_id()
+            story_universe["elements"][element_id] = {
+                "id": element_id,
                 "type": "character",
-                "name": f"Character {i+1}",  # Will be filled by the LLM
-                "description": f"A character in a {genre} story",  # Will be filled by the LLM
-                "attributes": {},  # Will be filled by the LLM
-                "created_from": f"Generated as part of a {genre} story universe"
+                "name": f"{genre.title()} Character {i+1}",
+                "description": f"A unique character in this {genre} story.",
+                "attributes": {
+                    "genre": genre,
+                    "index": i+1,
+                    "created": datetime.datetime.now().isoformat()
+                }
             }
-            story_universe["elements"][character_id] = character
-            character_ids.append(character_id)
+            element_ids["character"].append(element_id)
         
         # Generate locations
-        location_ids = []
         for i in range(num_locations):
-            location_id = _generate_id()
-            location = {
-                "id": location_id,
+            element_id = _generate_id()
+            story_universe["elements"][element_id] = {
+                "id": element_id,
                 "type": "location",
-                "name": f"Location {i+1}",  # Will be filled by the LLM
-                "description": f"A location in a {genre} story",  # Will be filled by the LLM
-                "attributes": {},  # Will be filled by the LLM
-                "created_from": f"Generated as part of a {genre} story universe"
+                "name": f"{genre.title()} Location {i+1}",
+                "description": f"A significant location in this {genre} story.",
+                "attributes": {
+                    "genre": genre,
+                    "index": i+1,
+                    "created": datetime.datetime.now().isoformat()
+                }
             }
-            story_universe["elements"][location_id] = location
-            location_ids.append(location_id)
+            element_ids["location"].append(element_id)
         
         # Generate events
-        event_ids = []
         for i in range(num_events):
-            event_id = _generate_id()
-            event = {
-                "id": event_id,
+            element_id = _generate_id()
+            story_universe["elements"][element_id] = {
+                "id": element_id,
                 "type": "event",
-                "name": f"Event {i+1}",  # Will be filled by the LLM
-                "description": f"An event in a {genre} story",  # Will be filled by the LLM
-                "attributes": {},  # Will be filled by the LLM
-                "created_from": f"Generated as part of a {genre} story universe"
-            }
-            story_universe["elements"][event_id] = event
-            event_ids.append(event_id)
-        
-        # Generate relationships between characters
-        for i in range(len(character_ids)):
-            for j in range(i+1, len(character_ids)):
-                relationship_type = RELATIONSHIP_TYPES[i % len(RELATIONSHIP_TYPES)]
-                relationship = {
-                    "id": _generate_id(),
-                    "source": character_ids[i],
-                    "target": character_ids[j],
-                    "type": relationship_type,
-                    "description": f"A {relationship_type} relationship"  # Will be filled by the LLM
+                "name": f"{genre.title()} Event {i+1}",
+                "description": f"A key event in this {genre} story.",
+                "attributes": {
+                    "genre": genre,
+                    "index": i+1,
+                    "created": datetime.datetime.now().isoformat()
                 }
-                story_universe["relationships"].append(relationship)
+            }
+            element_ids["event"].append(element_id)
         
-        # Generate relationships between characters and locations
-        for i in range(len(character_ids)):
-            for j in range(len(location_ids)):
-                if i % 2 == j % 2:  # Just a simple way to not create too many relationships
-                    relationship_type = "lives_in" if i % 2 == 0 else "visited"
-                    relationship = {
-                        "id": _generate_id(),
-                        "source": character_ids[i],
-                        "target": location_ids[j],
-                        "type": relationship_type,
-                        "description": f"A {relationship_type} relationship"  # Will be filled by the LLM
-                    }
-                    story_universe["relationships"].append(relationship)
+        # Generate relationships with controlled complexity
+        relationships = []
+        timestamp = datetime.datetime.now().isoformat()
         
-        # Generate relationships between characters and events
-        for i in range(len(character_ids)):
-            for j in range(len(event_ids)):
-                if i % 2 == j % 2:  # Just a simple way to not create too many relationships
-                    relationship_type = "participated_in"
-                    relationship = {
-                        "id": _generate_id(),
-                        "source": character_ids[i],
-                        "target": event_ids[j],
-                        "type": relationship_type,
-                        "description": f"A {relationship_type} relationship"  # Will be filled by the LLM
-                    }
-                    story_universe["relationships"].append(relationship)
+        def add_relationship(source: str, target: str, rel_type: str, desc: str) -> None:
+            """Helper to add a relationship with consistent structure"""
+            relationships.append({
+                "id": _generate_id(),
+                "source": source,
+                "target": target,
+                "type": rel_type,
+                "description": desc,
+                "created": timestamp
+            })
         
-        # Generate relationships between events and locations
-        for i in range(len(event_ids)):
-            for j in range(len(location_ids)):
-                if i % 2 == j % 2:  # Just a simple way to not create too many relationships
-                    relationship_type = "happened_at"
-                    relationship = {
-                        "id": _generate_id(),
-                        "source": event_ids[i],
-                        "target": location_ids[j],
-                        "type": relationship_type,
-                        "description": f"A {relationship_type} relationship"  # Will be filled by the LLM
-                    }
-                    story_universe["relationships"].append(relationship)
+        # Build relationships in a controlled order
+        try:
+            # Character relationships
+            for i in range(len(element_ids["character"]) - 1):
+                add_relationship(
+                    element_ids["character"][i],
+                    element_ids["character"][i + 1],
+                    "knows",
+                    f"These characters know each other in this {genre} story."
+                )
+            
+            # Location relationships
+            if element_ids["location"]:
+                loc_id = element_ids["location"][0]
+                for char_id in element_ids["character"]:
+                    add_relationship(
+                        char_id,
+                        loc_id,
+                        "lives_in",
+                        f"This character's primary location in the {genre} story."
+                    )
+            
+            # Event relationships
+            if element_ids["event"]:
+                event_id = element_ids["event"][0]
+                for char_id in element_ids["character"]:
+                    add_relationship(
+                        char_id,
+                        event_id,
+                        "participated_in",
+                        f"This character was involved in this {genre} event."
+                    )
+            
+            # Event-Location relationships
+            if element_ids["event"] and element_ids["location"]:
+                add_relationship(
+                    element_ids["event"][0],
+                    element_ids["location"][0],
+                    "happened_at",
+                    f"This {genre} event took place at this location."
+                )
+        except Exception as e:
+            logger.error(f"Error generating relationships: {str(e)}")
+            relationships = []  # Reset to empty list if any error occurs
         
-        # Return the generated story universe
-        return json.dumps({
-            "elements": story_universe["elements"],
-            "relationships": story_universe["relationships"]
-        })
+        # Add all relationships to the universe
+        story_universe["relationships"] = relationships
+        
+        # Validate the data structure before serializing
+        elements = story_universe["elements"]
+        relationships = story_universe["relationships"]
+        
+        # Ensure elements is a dictionary
+        if not isinstance(elements, dict):
+            elements = {}
+        
+        # Ensure relationships is a list
+        if not isinstance(relationships, list):
+            relationships = []
+        
+        # Create a clean data structure
+        universe_data = {
+            "elements": elements,
+            "relationships": relationships
+        }
+        
+        # Return the generated story universe using custom encoder
+        return json.dumps(universe_data, cls=StoryUniverseEncoder, ensure_ascii=False, indent=None)
     
     except Exception as e:
         logger.error(f"Error generating story universe: {str(e)}")
@@ -642,7 +857,9 @@ class StoryUniverseAgent(BaseAgent):
             generate_story_universe,
             analyze_relationships,
             reset_story_universe,
-            generate_universe_from_text
+            generate_universe_from_text,
+            save_universe,
+            load_universe
         ]
         
         # Combine with any additional tools
@@ -691,13 +908,105 @@ class StoryUniverseAgent(BaseAgent):
             "Your primary goal is to help users create rich, coherent story universes that can be "
             "explored and visualized interactively."
             "\n\n"
-            "You have tools for generating story elements, creating relationships between elements, "
-            "and exploring the story universe. When asked to generate a story element, create a "
-            "detailed and interesting character, location, or event that fits the user's requirements. "
-            "When creating relationships, ensure they make sense in the context of the story universe."
+            "CRITICAL: You must ALWAYS return valid JSON with the EXACT structure shown in these examples:"
             "\n\n"
-            "IMPORTANT: When you use any of the following tools, you MUST return the JSON response directly "
-            "without any additional text or explanation:"
+            "CRITICAL JSON STRUCTURE RULES:"
+            "\n\n"
+            "1. Elements MUST be a dictionary with element IDs as keys:"
+            "\n"
+            "CORRECT:"
+            '{'
+            '  "elements": {'
+            '    "abc123": {'
+            '      "id": "abc123",'
+            '      "type": "character",'
+            '      "name": "Fantasy Character 1",'
+            '      "description": "A brave character in this fantasy story.",'
+            '      "attributes": {'
+            '        "genre": "fantasy",'
+            '        "index": 1,'
+            '        "created": "2025-03-21T16:16:07.602055"'
+            '      }'
+            '    }'
+            '  }'
+            '}'
+            "\n"
+            "INCORRECT:"
+            '{'
+            '  "elements": {'
+            '    "abc123": {...},'
+            '    {"id": "def456", ...}  // WRONG: Extra braces'
+            '  }'
+            '}'
+            "\n\n"
+            "2. Relationships MUST be an array of objects:"
+            "\n"
+            "CORRECT:"
+            '{'
+            '  "relationships": ['
+            '    {'
+            '      "id": "xyz789",'
+            '      "source": "abc123",'
+            '      "target": "def456",'
+            '      "type": "lives_in",'
+            '      "description": "This character lives in this location.",'
+            '      "created": "2025-03-21T16:16:07.602096"'
+            '    }'
+            '  ]'
+            '}'
+            "\n"
+            "INCORRECT:"
+            '{'
+            '  "relationships": {  // WRONG: Object instead of array'
+            '    "xyz789": {...}'
+            '  }'
+            '}'
+            "\n\n"
+            "3. Element structure must be exactly:"
+            '{'
+            '  "id": string (8 chars),'
+            '  "type": "character"|"location"|"event",'
+            '  "name": string (format: "[Genre] [Type] [Number]"),'
+            '  "description": string (format: "A [adjective] [type] in this [genre] story."),'
+            '  "attributes": {'
+            '    "genre": string (lowercase),'
+            '    "index": number,'
+            '    "created": timestamp'
+            '  }'
+            '}'
+            "\n\n"
+            "4. Relationship structure must be exactly:"
+            '{'
+            '  "id": string (8 chars),'
+            '  "source": string (element id),'
+            '  "target": string (element id),'
+            '  "type": string (from RELATIONSHIP_TYPES),'
+            '  "description": string (format: "[standard description for relationship type]"),'
+            '  "created": timestamp'
+            '}'
+            "\n\n"
+            "IMPORTANT RULES:"
+            "\n"
+            "1. Always use double quotes for property names and string values"
+            "\n"
+            "2. Never use single quotes in JSON"
+            "\n"
+            "3. Never add extra braces or brackets"
+            "\n"
+            "4. Never add extra fields or nested structures"
+            "\n\n"
+            "IMPORTANT: When using tools, follow these rules:"
+            "\n"
+            "1. Return ONLY the JSON response, no additional text"
+            "\n"
+            "2. Never deviate from the standard formats:"
+            "   - Names: '[Genre] [Type] [Number]'"
+            "   - Descriptions: 'A [adjective] [type] in this [genre] story.'"
+            "   - Relationships: Use standard descriptions for each type"
+            "\n"
+            "3. Never add creative details or variations"
+            "\n"
+            "4. Always use lowercase for genres and relationship types"
             "\n"
             "- generate_story_element"
             "\n"

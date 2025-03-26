@@ -71,8 +71,9 @@ venv/
 logs/
 *.log
 
-# Audio files
+# Generated files
 audio_output/
+story_universes/
 
 # Temporary files
 tmp/

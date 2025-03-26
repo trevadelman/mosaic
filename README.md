@@ -1,6 +1,6 @@
 # MOSAIC: Multi-agent Orchestration System for Adaptive Intelligent Collaboration
 
-MOSAIC is a production-ready system for creating, managing, and interacting with intelligent agents. It builds upon the proof-of-concept multi-agent orchestration system to create a robust, extensible platform for agent-based applications.
+MOSAIC is a production-ready system for creating, managing, and interacting with intelligent agents, as well as building custom applications. It provides a robust, extensible platform that combines agent-based interactions with a powerful application framework, allowing you to create both agent-powered and standalone applications.
 
 ## Quick Start
 
@@ -8,6 +8,7 @@ MOSAIC is a production-ready system for creating, managing, and interacting with
 
 - [**QUICKSTART.md**](QUICKSTART.md): Simple step-by-step instructions to get MOSAIC up and running
 - [**Creating Agents**](backend/agents/CREATING_A_NEW_AGENT.md): Learn how to create your own custom agents
+- [**Creating Applications**](frontend/app/apps/CREATING_A_CUSTOM_APPLICATION.md): Learn how to build custom applications
 
 These guides are designed to be accessible even if you're new to programming or AI systems.
 
@@ -24,9 +25,9 @@ These guides are designed to be accessible even if you're new to programming or 
 │  │  (Port 3000)     │   REST    │  (Port 8000)             │                │
 │  │                  │    +      │                          │                │
 │  │  -               │  WebSocket│  - API Endpoints         │                │
-│  │  - Chat Interface│           │  - WebSocket Server      │    ┌─────────┐ │
-│  │                  │           │  - Agent Discovery       │◄──►│ SQLite  │ │
-│  │                  │           │  - Database Access       │    │ Database│ │
+│  │  - Chat UI       │           │  - WebSocket Server      │    ┌─────────┐ │
+│  │  - Custom Apps   │           │  - Agent Discovery       │◄──►│ SQLite  │ │
+│  │  - Agent UI      │           │  - Database Access       │    │ Database│ │
 │  │                  │           │                          │    └─────────┘ │
 │  │                  │           │                          │                │
 │  └──────────────────┘           └──────────────────────────┘                │
@@ -34,12 +35,12 @@ These guides are designed to be accessible even if you're new to programming or 
 │                                          ▼                                  │
 │                              ┌──────────────────────────┐                   │
 │                              │                          │                   │
-│                              │  Agent System            │                   │
+│                              │  Core Systems            │                   │
 │                              │                          │                   │
-│                              │  - Base Agent Framework  │                   │
-│                              │  - Specialized Agents    │                   │
+│                              │  - Agent Framework       │                   │
+│                              │  - Application Framework │                   │
 │                              │  - Supervisor System     │                   │
-│                              │  - Agent Tools           │                   │
+│                              │  - Tools & Services      │                   │
 │                              │                          │                   │
 │                              └──────────────────────────┘                   │
 │                                                                             │
@@ -51,8 +52,15 @@ These guides are designed to be accessible even if you're new to programming or 
 - **Next.js Frontend**: Modern, responsive UI with shadcn components
 - **User Authentication**: Secure authentication with Clerk
 - **FastAPI Backend**: High-performance Python API with WebSocket support
+- **Application Framework**: Build custom applications with or without agent integration
 - **Agent Framework**: Flexible, extensible agent system built on LangChain and LangGraph
-- **Regular Agents**:
+
+### Applications
+- **Database Visualizer**: Interactive database structure visualization
+- **Hello World**: Simple example application
+- More examples in the [apps directory](frontend/app/apps)
+
+### Agents
   - **Calculator Agent**: Performs mathematical operations
   - **Web Search Agent**: Searches the web and retrieves webpage content
   - **Browser Interaction Agent**: Handles JavaScript-heavy websites

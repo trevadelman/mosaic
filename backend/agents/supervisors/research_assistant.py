@@ -45,13 +45,11 @@ def create_research_supervisor(
         # Try importing with the full package path (for local development)
         from mosaic.backend.agents.regular.web_search import register_web_search_agent
         from mosaic.backend.agents.regular.browser_interaction import register_browser_interaction_agent
-        from mosaic.backend.agents.regular.data_processing import register_data_processing_agent
         from mosaic.backend.agents.regular.literature import register_literature_agent
     except ImportError:
         # Fall back to relative import (for Docker environment)
         from backend.agents.regular.web_search import register_web_search_agent
         from backend.agents.regular.browser_interaction import register_browser_interaction_agent
-        from backend.agents.regular.data_processing import register_data_processing_agent
         from backend.agents.regular.literature import register_literature_agent
     
     # Register agents if they don't exist
@@ -65,10 +63,7 @@ def create_research_supervisor(
         logger.info("Browser interaction agent not found in registry, registering it now")
         browser_interaction = register_browser_interaction_agent(model)
     
-    data_processing = agent_registry.get("data_processing")
-    if data_processing is None:
-        logger.info("Data processing agent not found in registry, registering it now")
-        data_processing = register_data_processing_agent(model)
+
     
     literature = agent_registry.get("literature")
     if literature is None:
