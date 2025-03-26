@@ -35,8 +35,8 @@ export function TableDataView({ data, loading, error, onPageChange }: TableDataV
   }
 
   return (
-    <div className="space-y-4">
-      <div className="border rounded-lg overflow-x-auto">
+    <div className="space-y-4 overflow-hidden">
+      <div className="border rounded-lg overflow-x-auto max-h-[50vh]">
         <table className="w-full">
           <thead>
             <tr className="border-b bg-muted/50">
@@ -64,7 +64,7 @@ export function TableDataView({ data, loading, error, onPageChange }: TableDataV
       </div>
 
       {/* Pagination and Row Count */}
-      <div className="flex items-center justify-between mt-4">
+      <div className="flex items-center justify-between mt-4 px-1">
         <div className="text-sm text-muted-foreground">
           {data.total} total rows
           {data.total_pages > 1 && ` • Page ${data.page} of ${data.total_pages}`}
