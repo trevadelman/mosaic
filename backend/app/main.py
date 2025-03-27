@@ -30,6 +30,7 @@ try:
     from mosaic.backend.app.audio_api import router as audio_router
     from mosaic.backend.app.apps_api import router as apps_router
     from mosaic.backend.app.apps.db_visualizer.api import router as db_visualizer_router
+    from mosaic.backend.app.apps.pdf_ingestion.api import router as pdf_ingestion_router
 except ImportError:
     # Fall back to relative import (for Docker environment)
     from backend.app.agent_api import get_agent_api_router
@@ -40,6 +41,7 @@ except ImportError:
     from backend.app.audio_api import router as audio_router
     from backend.app.apps_api import router as apps_router
     from backend.app.apps.db_visualizer.api import router as db_visualizer_router
+    from backend.app.apps.pdf_ingestion.api import router as pdf_ingestion_router
 
 # Configure logging
 logging.basicConfig(
@@ -65,6 +67,7 @@ app.include_router(file_operations_router)
 app.include_router(audio_router)
 app.include_router(apps_router)
 app.include_router(db_visualizer_router)
+app.include_router(pdf_ingestion_router)
 
 # Import settings
 try:

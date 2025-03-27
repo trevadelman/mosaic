@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Database, Layout, LineChart } from "lucide-react"
+import { Database, Layout, LineChart, FileUp } from "lucide-react"
 
 const applications = [
   {
@@ -25,6 +25,13 @@ const applications = [
     description: "Analyze stocks with technical and fundamental indicators",
     icon: <LineChart className="w-8 h-8" />,
     color: "bg-green-500"
+  },
+  {
+    id: "pdf-ingestion",
+    name: "HVAC PDF Ingestion",
+    description: "Extract device properties, BACnet objects, and Modbus registers from HVAC documentation",
+    icon: <FileUp className="w-8 h-8" />,
+    color: "bg-orange-500"
   }
 ]
 
