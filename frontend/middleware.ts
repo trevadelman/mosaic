@@ -5,6 +5,7 @@ const isProtectedRoute = createRouteMatcher([
   "/agents(.*)",
   "/chat(.*)",
   "/settings(.*)",
+  "/apps(.*)",
 ]);
 
 // Define public routes that don't require authentication
