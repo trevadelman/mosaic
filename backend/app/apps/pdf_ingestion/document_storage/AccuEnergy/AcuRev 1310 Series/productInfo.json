@@ -1,0 +1,2659 @@
+{
+  "device": {
+    "manufacturer": "Accuenergy",
+    "model": "AcuRev 1310 Series",
+    "type": "DIN-Rail Power Meter",
+    "dimensions": {
+      "width": "108.0",
+      "height": "90.0",
+      "depth": "69.5",
+      "units": "mm"
+    },
+    "power": {
+      "voltage": "100-415Vac, 100-300Vdc",
+      "frequency": "50/60Hz",
+      "power_consumption": "<2W or <10VA"
+    },
+    "operating_conditions": {
+      "temp_min": "-25",
+      "temp_max": "70",
+      "humidity_range": "5% to 95% non-condensing"
+    },
+    "communication_protocols": [
+      "Modbus-RTU",
+      "BACnet MS/TP",
+      "Infrared"
+    ],
+    "firmware_version": null,
+    "certifications": [
+      "CE"
+    ]
+  },
+  "bacnet": {
+    "ai": [
+      {
+        "dis": "Frequency",
+        "bacnetAddr": "AI1",
+        "units": "Hertz",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Voltage",
+        "bacnetAddr": "AI2",
+        "units": "Volts",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Voltage",
+        "bacnetAddr": "AI3",
+        "units": "Volts",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Voltage",
+        "bacnetAddr": "AI4",
+        "units": "Volts",
+        "description": ""
+      },
+      {
+        "dis": "Average Phase Voltage",
+        "bacnetAddr": "AI5",
+        "units": "Volts",
+        "description": ""
+      },
+      {
+        "dis": "Line Voltage AB",
+        "bacnetAddr": "AI6",
+        "units": "Volts",
+        "description": ""
+      },
+      {
+        "dis": "Line Voltage BC",
+        "bacnetAddr": "AI7",
+        "units": "Volts",
+        "description": ""
+      },
+      {
+        "dis": "Line Voltage CA",
+        "bacnetAddr": "AI8",
+        "units": "Volts",
+        "description": ""
+      },
+      {
+        "dis": "Average Line Voltage",
+        "bacnetAddr": "AI9",
+        "units": "Volts",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Current",
+        "bacnetAddr": "AI10",
+        "units": "Amperes",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Current",
+        "bacnetAddr": "AI11",
+        "units": "Amperes",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Current",
+        "bacnetAddr": "AI12",
+        "units": "Amperes",
+        "description": ""
+      },
+      {
+        "dis": "Total Current",
+        "bacnetAddr": "AI13",
+        "units": "Amperes",
+        "description": ""
+      },
+      {
+        "dis": "Neutral Current",
+        "bacnetAddr": "AI14",
+        "units": "Amperes",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Active Power",
+        "bacnetAddr": "AI15",
+        "units": "kW",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Active Power",
+        "bacnetAddr": "AI16",
+        "units": "kW",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Active Power",
+        "bacnetAddr": "AI17",
+        "units": "kW",
+        "description": ""
+      },
+      {
+        "dis": "Total Active Power",
+        "bacnetAddr": "AI18",
+        "units": "kW",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Reactive Power",
+        "bacnetAddr": "AI19",
+        "units": "kVAR",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Reactive Power",
+        "bacnetAddr": "AI20",
+        "units": "kVAR",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Reactive Power",
+        "bacnetAddr": "AI21",
+        "units": "kVAR",
+        "description": ""
+      },
+      {
+        "dis": "Total Reactive Power",
+        "bacnetAddr": "AI22",
+        "units": "kVAR",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Apparent Power",
+        "bacnetAddr": "AI23",
+        "units": "kVA",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Apparent Power",
+        "bacnetAddr": "AI24",
+        "units": "kVA",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Apparent Power",
+        "bacnetAddr": "AI25",
+        "units": "kVA",
+        "description": ""
+      },
+      {
+        "dis": "Total Apparent Power",
+        "bacnetAddr": "AI26",
+        "units": "kVA",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Power Factor",
+        "bacnetAddr": "AI27",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Power Factor",
+        "bacnetAddr": "AI28",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Power Factor",
+        "bacnetAddr": "AI29",
+        "description": ""
+      },
+      {
+        "dis": "Total Power Factor",
+        "bacnetAddr": "AI30",
+        "description": ""
+      },
+      {
+        "dis": "Load Type",
+        "bacnetAddr": "AI31",
+        "description": ""
+      },
+      {
+        "dis": "Active Power Demand",
+        "bacnetAddr": "AI32",
+        "units": "kW",
+        "description": ""
+      },
+      {
+        "dis": "Reactive Power Demand",
+        "bacnetAddr": "AI33",
+        "units": "kVAR",
+        "description": ""
+      },
+      {
+        "dis": "Apparent Power Demand",
+        "bacnetAddr": "AI34",
+        "units": "kVA",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Current Demand",
+        "bacnetAddr": "AI35",
+        "units": "Amperes",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Current Demand",
+        "bacnetAddr": "AI36",
+        "units": "Amperes",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Current Demand",
+        "bacnetAddr": "AI37",
+        "units": "Amperes",
+        "description": ""
+      },
+      {
+        "dis": "System Active Power Demand Prediction",
+        "bacnetAddr": "AI38",
+        "units": "kW",
+        "description": ""
+      },
+      {
+        "dis": "System Reactive Power Demand Prediction",
+        "bacnetAddr": "AI39",
+        "units": "kVAR",
+        "description": ""
+      },
+      {
+        "dis": "System Apparent Power Demand Prediction",
+        "bacnetAddr": "AI40",
+        "units": "kVA",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Current Demand Prediction",
+        "bacnetAddr": "AI41",
+        "units": "Amperes",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Current Demand Prediction",
+        "bacnetAddr": "AI42",
+        "units": "Amperes",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Current Demand Prediction",
+        "bacnetAddr": "AI43",
+        "units": "Amperes",
+        "description": ""
+      },
+      {
+        "dis": "Temperature of chips",
+        "bacnetAddr": "AI44",
+        "units": "Degrees Celsius",
+        "description": ""
+      },
+      {
+        "dis": "Import Active Energy",
+        "bacnetAddr": "AI45",
+        "units": "kWh",
+        "description": ""
+      },
+      {
+        "dis": "Export Active Energy",
+        "bacnetAddr": "AI46",
+        "units": "kWh",
+        "description": ""
+      },
+      {
+        "dis": "Import Reactive Energy",
+        "bacnetAddr": "AI47",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Export Reactive Energy",
+        "bacnetAddr": "AI48",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Import Apparent Power",
+        "bacnetAddr": "AI49",
+        "units": "kVAh",
+        "description": ""
+      },
+      {
+        "dis": "Export Apparent Power",
+        "bacnetAddr": "AI50",
+        "units": "kVAh",
+        "description": ""
+      },
+      {
+        "dis": "Active Energy Total",
+        "bacnetAddr": "AI51",
+        "units": "kWh",
+        "description": ""
+      },
+      {
+        "dis": "Active Energy Net",
+        "bacnetAddr": "AI52",
+        "units": "kWh",
+        "description": ""
+      },
+      {
+        "dis": "Reactive Energy Total",
+        "bacnetAddr": "AI53",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Import Active Energy",
+        "bacnetAddr": "AI54",
+        "units": "kWh",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Import Active Energy",
+        "bacnetAddr": "AI55",
+        "units": "kWh",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Export Active Energy",
+        "bacnetAddr": "AI56",
+        "units": "kWh",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Export Active Energy",
+        "bacnetAddr": "AI57",
+        "units": "kWh",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Export Active Energy",
+        "bacnetAddr": "AI58",
+        "units": "kWh",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Import Active Energy",
+        "bacnetAddr": "AI59",
+        "units": "kWh",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Export Active Energy",
+        "bacnetAddr": "AI60",
+        "units": "kWh",
+        "description": ""
+      },
+      {
+        "dis": "Reactive Imported Q1",
+        "bacnetAddr": "AI61",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Reactive Imported Q2",
+        "bacnetAddr": "AI62",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Reactive Imported Q3",
+        "bacnetAddr": "AI63",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Reactive Imported Q4",
+        "bacnetAddr": "AI64",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Reactive Imported Q1",
+        "bacnetAddr": "AI65",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Reactive Imported Q2",
+        "bacnetAddr": "AI66",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Reactive Imported Q3",
+        "bacnetAddr": "AI67",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Reactive Imported Q4",
+        "bacnetAddr": "AI68",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Reactive Imported Q1",
+        "bacnetAddr": "AI69",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Reactive Imported Q2",
+        "bacnetAddr": "AI70",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Reactive Imported Q3",
+        "bacnetAddr": "AI71",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Reactive Imported Q4",
+        "bacnetAddr": "AI72",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Reactive Imported Q1",
+        "bacnetAddr": "AI73",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Reactive Imported Q2",
+        "bacnetAddr": "AI74",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Reactive Imported Q3",
+        "bacnetAddr": "AI75",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Reactive Imported Q4",
+        "bacnetAddr": "AI76",
+        "units": "kVARh",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Import Apparent Energy",
+        "bacnetAddr": "AI77",
+        "units": "kVAh",
+        "description": ""
+      },
+      {
+        "dis": "Phase A Import Apparent Energy",
+        "bacnetAddr": "AI78",
+        "units": "kVAh",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Import Apparent Energy",
+        "bacnetAddr": "AI79",
+        "units": "kVAh",
+        "description": ""
+      },
+      {
+        "dis": "Phase B Import Apparent Energy",
+        "bacnetAddr": "AI80",
+        "units": "kVAh",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Import Apparent Energy",
+        "bacnetAddr": "AI81",
+        "units": "kVAh",
+        "description": ""
+      },
+      {
+        "dis": "Phase C Import Apparent Energy",
+        "bacnetAddr": "AI82",
+        "units": "kVAh",
+        "description": ""
+      },
+      {
+        "dis": "Current Imported Active Power Demand Peak and Happening Time",
+        "bacnetAddr": "AI83",
+        "units": "kW",
+        "description": ""
+      },
+      {
+        "dis": "Current Exported Active Power Demand Peak and Happening Time",
+        "bacnetAddr": "AI84",
+        "units": "kW",
+        "description": ""
+      },
+      {
+        "dis": "Last Month Imported Active Power Demand Peak and Happening Time",
+        "bacnetAddr": "AI85",
+        "units": "kW",
+        "description": ""
+      },
+      {
+        "dis": "Last Month Exported Active Power Demand Peak and Happening Time",
+        "bacnetAddr": "AI86",
+        "units": "kW",
+        "description": ""
+      },
+      {
+        "dis": "Total Times of Demand Reset",
+        "bacnetAddr": "AI87",
+        "description": ""
+      },
+      {
+        "dis": "Last Demand Reset Happening Time",
+        "bacnetAddr": "AI88",
+        "description": ""
+      },
+      {
+        "dis": "2nd Last Demand Reset Happening Time",
+        "bacnetAddr": "AI89",
+        "description": ""
+      },
+      {
+        "dis": "3rd Last Demand Reset Happening Time",
+        "bacnetAddr": "AI90",
+        "description": ""
+      }
+    ],
+    "ao": [],
+    "av": [],
+    "bi": [],
+    "bo": [],
+    "bv": [],
+    "msi": [],
+    "mso": [],
+    "msv": []
+  },
+  "modbus_registers": [
+    {
+      "register_address": "100H",
+      "register_type": "Read Only Holding Register",
+      "description": "The Result of Wiring Check",
+      "units": null
+    },
+    {
+      "register_address": "101H",
+      "register_type": "Read Only Holding Register",
+      "description": "Seals Status",
+      "units": null
+    },
+    {
+      "register_address": "200H",
+      "register_type": "Holding Register",
+      "description": "Meter Address",
+      "units": null
+    },
+    {
+      "register_address": "201H",
+      "register_type": "Holding Register",
+      "description": "Baud Rate",
+      "units": null
+    },
+    {
+      "register_address": "202H",
+      "register_type": "Holding Register",
+      "description": "Parity Bit Setting",
+      "units": null
+    },
+    {
+      "register_address": "203H",
+      "register_type": "Holding Register",
+      "description": "Energy Pulse Output Type",
+      "units": null
+    },
+    {
+      "register_address": "204H",
+      "register_type": "Holding Register",
+      "description": "Demand Calculation Method",
+      "units": null
+    },
+    {
+      "register_address": "205H",
+      "register_type": "Holding Register",
+      "description": "Demand Calculation Period",
+      "units": "minutes"
+    },
+    {
+      "register_address": "206H",
+      "register_type": "Holding Register",
+      "description": "Demand Calculation Slipping Time",
+      "units": "minutes"
+    },
+    {
+      "register_address": "207H",
+      "register_type": "Holding Register",
+      "description": "Reactive Power Calculation Method",
+      "units": null
+    },
+    {
+      "register_address": "208H",
+      "register_type": "Holding Register",
+      "description": "VAR/PF",
+      "units": null
+    },
+    {
+      "register_address": "209H",
+      "register_type": "Holding Register",
+      "description": "Sealed Parameters Selection",
+      "units": null
+    },
+    {
+      "register_address": "20AH",
+      "register_type": "Holding Register",
+      "description": "Communication Revise Operation Authority",
+      "units": null
+    },
+    {
+      "register_address": "20BH",
+      "register_type": "Holding Register",
+      "description": "Password",
+      "units": null
+    },
+    {
+      "register_address": "20CH",
+      "register_type": "Holding Register",
+      "description": "New Password",
+      "units": null
+    },
+    {
+      "register_address": "20DH",
+      "register_type": "Holding Register",
+      "description": "Meter Data Reset",
+      "units": null
+    },
+    {
+      "register_address": "20EH",
+      "register_type": "Holding Register",
+      "description": "Optional Display Symbol 1",
+      "units": null
+    },
+    {
+      "register_address": "20FH",
+      "register_type": "Holding Register",
+      "description": "Optional Display Symbol 2",
+      "units": null
+    },
+    {
+      "register_address": "210H",
+      "register_type": "Holding Register",
+      "description": "Parameter Measurement Side",
+      "units": null
+    },
+    {
+      "register_address": "211H",
+      "register_type": "Holding Register",
+      "description": "Wiring Mode",
+      "units": null
+    },
+    {
+      "register_address": "212H",
+      "register_type": "Holding Register",
+      "description": "CT2 Value",
+      "units": null
+    },
+    {
+      "register_address": "213H",
+      "register_type": "Holding Register",
+      "description": "CT1 Value",
+      "units": null
+    },
+    {
+      "register_address": "214H",
+      "register_type": "Holding Register",
+      "description": "CTN Value",
+      "units": null
+    },
+    {
+      "register_address": "215H",
+      "register_type": "Holding Register",
+      "description": "PT2 Value",
+      "units": null
+    },
+    {
+      "register_address": "216H-217H",
+      "register_type": "Holding Register",
+      "description": "PT1 Value",
+      "units": null
+    },
+    {
+      "register_address": "218H",
+      "register_type": "Holding Register",
+      "description": "Energy Pulse Constant",
+      "units": null
+    },
+    {
+      "register_address": "219H",
+      "register_type": "Holding Register",
+      "description": "Energy Pulse Width",
+      "units": "ms"
+    },
+    {
+      "register_address": "21AH",
+      "register_type": "Holding Register",
+      "description": "Energy Display Decimal",
+      "units": null
+    },
+    {
+      "register_address": "21BH",
+      "register_type": "Holding Register",
+      "description": "Relay Operating Mode",
+      "units": null
+    },
+    {
+      "register_address": "21CH",
+      "register_type": "Holding Register",
+      "description": "Connection Detection Enable",
+      "units": null
+    },
+    {
+      "register_address": "2000H-2001H",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Current",
+      "units": null
+    },
+    {
+      "register_address": "2002H-2003H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase A Current",
+      "units": null
+    },
+    {
+      "register_address": "2004H-2005H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase B Current",
+      "units": null
+    },
+    {
+      "register_address": "2006H-2007H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase C Current",
+      "units": null
+    },
+    {
+      "register_address": "2008H-2009H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase Average Voltage",
+      "units": null
+    },
+    {
+      "register_address": "200AH-200BH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase A Voltage",
+      "units": null
+    },
+    {
+      "register_address": "200CH-200DH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase B Voltage",
+      "units": null
+    },
+    {
+      "register_address": "200EH-200FH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase C Voltage",
+      "units": null
+    },
+    {
+      "register_address": "2001H-2011H",
+      "register_type": "Read Only Holding Register",
+      "description": "Line Average Voltage",
+      "units": null
+    },
+    {
+      "register_address": "2012H-2013H",
+      "register_type": "Read Only Holding Register",
+      "description": "Line AB Voltage",
+      "units": null
+    },
+    {
+      "register_address": "2014H-2015H",
+      "register_type": "Read Only Holding Register",
+      "description": "Line BC Voltage",
+      "units": null
+    },
+    {
+      "register_address": "2016H-2017H",
+      "register_type": "Read Only Holding Register",
+      "description": "Line CA Voltage",
+      "units": null
+    },
+    {
+      "register_address": "2018H-2019H",
+      "register_type": "Read Only Holding Register",
+      "description": "Frequency",
+      "units": null
+    },
+    {
+      "register_address": "201AH-201BH",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Active Power",
+      "units": null
+    },
+    {
+      "register_address": "201CH-201DH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase A Active Power",
+      "units": null
+    },
+    {
+      "register_address": "201EH-201FH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase B Active Power",
+      "units": null
+    },
+    {
+      "register_address": "2020H-2021H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase C Active Power",
+      "units": null
+    },
+    {
+      "register_address": "2022H-2023H",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Apparent Power",
+      "units": null
+    },
+    {
+      "register_address": "2024H-2025H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase A Apparent Power",
+      "units": null
+    },
+    {
+      "register_address": "2026H-2027H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase B Apparent Power",
+      "units": null
+    },
+    {
+      "register_address": "2028H-2029H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase C Apparent Power",
+      "units": null
+    },
+    {
+      "register_address": "202AH-202BH",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Reactive Power",
+      "units": null
+    },
+    {
+      "register_address": "202CH-202DH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase A Reactive Power",
+      "units": null
+    },
+    {
+      "register_address": "202EH-202FH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase B Reactive Power",
+      "units": null
+    },
+    {
+      "register_address": "2030H-2031H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase C Reactive Power",
+      "units": null
+    },
+    {
+      "register_address": "2032H-2033H",
+      "register_type": "Read Only Holding Register",
+      "description": "Power Factor",
+      "units": null
+    },
+    {
+      "register_address": "2034H-2035H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase A PF",
+      "units": null
+    },
+    {
+      "register_address": "2036H-2037H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase B PF",
+      "units": null
+    },
+    {
+      "register_address": "2038H-2039H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase C PF",
+      "units": null
+    },
+    {
+      "register_address": "203AH-203BH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase Angle V1/V1",
+      "units": null
+    },
+    {
+      "register_address": "203CH-203DH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase Angle of V2 to V1 V1/V2 Phase Angle of V23 to V12 V12/V23",
+      "units": null
+    },
+    {
+      "register_address": "203EH-203FH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase Angle of V3 to V1 V1/V3 Phase Angle of V31 to V12 V12/V31",
+      "units": null
+    },
+    {
+      "register_address": "2040H-2041H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase Angle of I1 to V1 V1/I1 Phase Angle of I1 to V12 V12/I1",
+      "units": null
+    },
+    {
+      "register_address": "2042H-2043H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase Angle of I2 to V1 V1/I2 Phase Angle of I2 to V12 V12/I2",
+      "units": null
+    },
+    {
+      "register_address": "2044H-2045H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase Angle of I3 to V1 V1/I3 Phase Angle of I3 to V12",
+      "units": null
+    },
+    {
+      "register_address": "1208H-1209H",
+      "register_type": "Read Only Holding Register",
+      "description": "System Active Power Demand",
+      "units": null
+    },
+    {
+      "register_address": "120AH-120BH",
+      "register_type": "Read Only Holding Register",
+      "description": "System Reactive Power Demand",
+      "units": null
+    },
+    {
+      "register_address": "120CH-120DH",
+      "register_type": "Read Only Holding Register",
+      "description": "System Apparent Power Demand",
+      "units": null
+    },
+    {
+      "register_address": "120EH-120FH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase A Current Demand",
+      "units": null
+    },
+    {
+      "register_address": "1210H-1211H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase B Current Demand",
+      "units": null
+    },
+    {
+      "register_address": "1212H-1213H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase C Current Demand",
+      "units": null
+    },
+    {
+      "register_address": "2046H-2047H",
+      "register_type": "Holding Register",
+      "description": "Total Active Energy Exported",
+      "units": "kWh"
+    },
+    {
+      "register_address": "2048H-2049H",
+      "register_type": "Holding Register",
+      "description": "Total Active Energy Exported Phase A",
+      "units": "kWh"
+    },
+    {
+      "register_address": "204AH-204BH",
+      "register_type": "Holding Register",
+      "description": "Total Active Energy Exported Phase B",
+      "units": "kWh"
+    },
+    {
+      "register_address": "204CH-204DH",
+      "register_type": "Holding Register",
+      "description": "Total Active Energy Exported Phase C",
+      "units": "kWh"
+    },
+    {
+      "register_address": "204EH-204FH",
+      "register_type": "Holding Register",
+      "description": "Total Active Energy Imported",
+      "units": "kWh"
+    },
+    {
+      "register_address": "2050H-2051H",
+      "register_type": "Holding Register",
+      "description": "Total Active Energy Imported Phase A",
+      "units": "kWh"
+    },
+    {
+      "register_address": "2052H-2053H",
+      "register_type": "Holding Register",
+      "description": "Total Active Energy Imported Phase B",
+      "units": "kWh"
+    },
+    {
+      "register_address": "2054H-2055H",
+      "register_type": "Holding Register",
+      "description": "Total Active Energy Imported Phase C",
+      "units": "kWh"
+    },
+    {
+      "register_address": "2056H-2057H",
+      "register_type": "Holding Register",
+      "description": "Total Apparent Power Exported",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "2058H-2059H",
+      "register_type": "Holding Register",
+      "description": "Total Apparent Power Exported Phase A",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "205AH-205BH",
+      "register_type": "Holding Register",
+      "description": "Total Apparent Power Exported Phase B",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "205CH-205DH",
+      "register_type": "Holding Register",
+      "description": "Total Apparent Power Exported Phase C",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "205EH-205FH",
+      "register_type": "Holding Register",
+      "description": "Total Apparent Power Imported",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "2060H-2061H",
+      "register_type": "Holding Register",
+      "description": "Total Apparent Power Imported Phase A",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "2062H-2063H",
+      "register_type": "Holding Register",
+      "description": "Total Apparent Power Imported Phase B",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "2064H-2065H",
+      "register_type": "Holding Register",
+      "description": "Total Apparent Power Imported Phase C",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "2066H-2067H",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q1",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "2068H-2069H",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q1 Phase A",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "206AH-206BH",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q1 Phase B",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "206CH-206DH",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q1 Phase C",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "206EH-206FH",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q2",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "2070H-2071H",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q2 Phase A",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "2072H-2073H",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q2 Phase B",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "2074H-2075H",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q2 Phase C",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "2076H-2077H",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q3",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "2078H-2079H",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q3 Phase A",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "207AH-207BH",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q3 Phase B",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "207CH-207DH",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q3 Phase C",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "207EH-207FH",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q4",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "2080H-2081H",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q4 Phase A",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "2082H-2083H",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q4 Phase B",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "2084H-2085H",
+      "register_type": "Holding Register",
+      "description": "Total Reactive Imported Q4 Phase C",
+      "units": "kVARh"
+    },
+    {
+      "register_address": "300H",
+      "register_type": "Holding Register",
+      "description": "Clock: Year",
+      "units": null
+    },
+    {
+      "register_address": "301H",
+      "register_type": "Holding Register",
+      "description": "Clock: Month",
+      "units": null
+    },
+    {
+      "register_address": "302H",
+      "register_type": "Holding Register",
+      "description": "Clock: Date",
+      "units": null
+    },
+    {
+      "register_address": "303H",
+      "register_type": "Holding Register",
+      "description": "Clock: Hour",
+      "units": null
+    },
+    {
+      "register_address": "304H",
+      "register_type": "Holding Register",
+      "description": "Clock: Minute",
+      "units": null
+    },
+    {
+      "register_address": "305H",
+      "register_type": "Holding Register",
+      "description": "Clock: Second",
+      "units": null
+    },
+    {
+      "register_address": "310H-311H",
+      "register_type": "Holding Register",
+      "description": "Run_time",
+      "units": null
+    },
+    {
+      "register_address": "312H-313H",
+      "register_type": "Holding Register",
+      "description": "Load_time",
+      "units": null
+    },
+    {
+      "register_address": "350H",
+      "register_type": "Holding Register",
+      "description": "DST enable",
+      "units": null
+    },
+    {
+      "register_address": "351H",
+      "register_type": "Holding Register",
+      "description": "DST format",
+      "units": null
+    },
+    {
+      "register_address": "352H",
+      "register_type": "Holding Register",
+      "description": "DST Start Month",
+      "units": null
+    },
+    {
+      "register_address": "353H",
+      "register_type": "Holding Register",
+      "description": "DST Start Day",
+      "units": null
+    },
+    {
+      "register_address": "354H",
+      "register_type": "Holding Register",
+      "description": "DST Start Hour",
+      "units": null
+    },
+    {
+      "register_address": "355H",
+      "register_type": "Holding Register",
+      "description": "DST Start Min",
+      "units": null
+    },
+    {
+      "register_address": "356H",
+      "register_type": "Holding Register",
+      "description": "DST Start Adjust Time",
+      "units": "Minute"
+    },
+    {
+      "register_address": "357H",
+      "register_type": "Holding Register",
+      "description": "DST Ending Month",
+      "units": null
+    },
+    {
+      "register_address": "358H",
+      "register_type": "Holding Register",
+      "description": "DST Ending Date",
+      "units": null
+    },
+    {
+      "register_address": "359H",
+      "register_type": "Holding Register",
+      "description": "DST Ending Hour",
+      "units": null
+    },
+    {
+      "register_address": "35AH",
+      "register_type": "Holding Register",
+      "description": "DST Ending Minute",
+      "units": null
+    },
+    {
+      "register_address": "35BH",
+      "register_type": "Holding Register",
+      "description": "DST Adjust time",
+      "units": "Minute"
+    },
+    {
+      "register_address": "35CH",
+      "register_type": "Holding Register",
+      "description": "DST Start Month",
+      "units": null
+    },
+    {
+      "register_address": "35DH",
+      "register_type": "Holding Register",
+      "description": "DST Start Day",
+      "units": null
+    },
+    {
+      "register_address": "35EH",
+      "register_type": "Holding Register",
+      "description": "DST Start Week",
+      "units": null
+    },
+    {
+      "register_address": "35FH",
+      "register_type": "Holding Register",
+      "description": "DST Start Hour",
+      "units": null
+    },
+    {
+      "register_address": "360H",
+      "register_type": "Holding Register",
+      "description": "DST Start Minute",
+      "units": null
+    },
+    {
+      "register_address": "361H",
+      "register_type": "Holding Register",
+      "description": "DST Start Adjust Time",
+      "units": "Minute"
+    },
+    {
+      "register_address": "362H",
+      "register_type": "Holding Register",
+      "description": "DST Ending Month",
+      "units": null
+    },
+    {
+      "register_address": "363H",
+      "register_type": "Holding Register",
+      "description": "DST Ending Day",
+      "units": null
+    },
+    {
+      "register_address": "364H",
+      "register_type": "Holding Register",
+      "description": "DST Ending Week",
+      "units": null
+    },
+    {
+      "register_address": "365H",
+      "register_type": "Holding Register",
+      "description": "DST Ending Hour",
+      "units": null
+    },
+    {
+      "register_address": "366H",
+      "register_type": "Holding Register",
+      "description": "DST Ending Minute",
+      "units": null
+    },
+    {
+      "register_address": "367H",
+      "register_type": "Holding Register",
+      "description": "DST Ending Adjust time",
+      "units": "minute"
+    },
+    {
+      "register_address": "400H",
+      "register_type": "Holding Register",
+      "description": "Wrong Parameter Setting 1",
+      "units": null
+    },
+    {
+      "register_address": "401H",
+      "register_type": "Holding Register",
+      "description": "Wrong Parameter Setting 2",
+      "units": null
+    },
+    {
+      "register_address": "402H",
+      "register_type": "Holding Register",
+      "description": "Time Zone Selecting",
+      "units": null
+    },
+    {
+      "register_address": "403H",
+      "register_type": "Holding Register",
+      "description": "Schedule Setting: number of schedules to configure",
+      "units": null
+    },
+    {
+      "register_address": "404H",
+      "register_type": "Holding Register",
+      "description": "Segment Setting: number of time segments per schedule",
+      "units": null
+    },
+    {
+      "register_address": "405H",
+      "register_type": "Holding Register",
+      "description": "Tariff: number of tariffs to configure",
+      "units": null
+    },
+    {
+      "register_address": "406H",
+      "register_type": "Holding Register",
+      "description": "Weekend Setting",
+      "units": null
+    },
+    {
+      "register_address": "407H",
+      "register_type": "Holding Register",
+      "description": "Weekend Schedule",
+      "units": null
+    },
+    {
+      "register_address": "408H",
+      "register_type": "Holding Register",
+      "description": "Number of Holidays",
+      "units": null
+    },
+    {
+      "register_address": "409H",
+      "register_type": "Holding Register",
+      "description": "TOU auto reset fixed date: day",
+      "units": null
+    },
+    {
+      "register_address": "40AH",
+      "register_type": "Holding Register",
+      "description": "TOU auto reset fixed date: hour",
+      "units": null
+    },
+    {
+      "register_address": "40BH",
+      "register_type": "Holding Register",
+      "description": "TOU Enable",
+      "units": null
+    },
+    {
+      "register_address": "40CH",
+      "register_type": "Holding Register",
+      "description": "TOU Settings Number",
+      "units": null
+    },
+    {
+      "register_address": "40DH",
+      "register_type": "Holding Register",
+      "description": "Current number of tariffs to configure",
+      "units": null
+    },
+    {
+      "register_address": "40EH",
+      "register_type": "Holding Register",
+      "description": "TOU Settings \u2013 reset to factory default",
+      "units": null
+    },
+    {
+      "register_address": "420H-443H",
+      "register_type": "Holding Register",
+      "description": "Time Zone 1-12: starting Month, Day, Schedule Table number",
+      "units": null
+    },
+    {
+      "register_address": "444H-449H",
+      "register_type": "Holding Register",
+      "description": "Time Zone 13-14: starting Month, Day, Schedule Table Number",
+      "units": null
+    },
+    {
+      "register_address": "44AH-473H",
+      "register_type": "Holding Register",
+      "description": "Schedule Table 1, 1st-14th segment (Hour, Minute, Tariff Number)",
+      "units": null
+    },
+    {
+      "register_address": "474H-599H",
+      "register_type": "Holding Register",
+      "description": "Schedule Table 2-8, 1st-14th segment (Hour, Minute, Tariff Number)",
+      "units": null
+    },
+    {
+      "register_address": "59AH-5F3H",
+      "register_type": "Holding Register",
+      "description": "The 1st-30th special day (Month, Day, Schedule Table Number)",
+      "units": null
+    },
+    {
+      "register_address": "1800H-1801H",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Imported Active Power Demand Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "1802H-1804H",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Imported Active Power Demand Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "1805H-1806H",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Active Power Demand 1 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "1807H-1809H",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Active Power Demand 1 Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "180AH-180BH",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Active Power Demand 2 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "180CH-180EH",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Active Power Demand 2 Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "180FH-1810H",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Active Power Demand 3 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "1811H-1813H",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Active Power Demand 3 Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "1814H-1815H",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Active Power Demand 4 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "1816H-1818H",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Active Power Demand 4 Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "1819H-181AH",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Exported Active Power Demand Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "181BH-181DH",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Exported Active Power Demand Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "181EH-181FH",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Active Power Demand 1 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "1820H-1822H",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Active Power Demand 1 Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "1823H-1824H",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Active Power Demand 2 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "1825H-1827H",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Active Power Demand 2 Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "1828H-1829H",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Active Power Demand 3 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "182AH-182CH",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Active Power Demand 3 Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "182DH-182EH",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Active Power Demand 4 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "182FH-1831H",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Active Power Demand 4 Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "1832H-1833H",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Imported Reactive Power Demand Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "1834H-1836H",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Imported Reactive Power Demand Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "1837H-1838H",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Reactive Power Demand 1 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "1839H-183BH",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Reactive Power Demand 1 Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "183CH-183DH",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Reactive Power Demand 2 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "183EH-1840H",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Reactive Power Demand 2 Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "1841H-1842H",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Reactive Power Demand 3 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "1843H-1845H",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Reactive Power Demand 3 Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "1846H-1847H",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Reactive Power Demand 4 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "1848H-184AH",
+      "register_type": "Read Only Holding Register",
+      "description": "Imported Reactive Power Demand 4 Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "184BH-184CH",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Exported Reactive Power Demand Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "184DH-184FH",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Exported Reactive Power Demand Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "1850H-1851H",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Reactive Power Demand 1 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "1852H-1854H",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Reactive Power Demand 1 Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "1855H-1856H",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Reactive Power Demand 2 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "1857H-1859H",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Reactive Power Demand 2 Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "185AH-185BH",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Reactive Power Demand 3 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "185CH-185EH",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Reactive Power Demand 3 Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "185FH-1860H",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Reactive Power Demand 4 Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "1861H-1863H",
+      "register_type": "Read Only Holding Register",
+      "description": "Exported Reactive Power Demand 4 Peak H Time",
+      "units": null
+    },
+    {
+      "register_address": "1864H-1865H",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Apparent Power Demand Peak",
+      "units": "kw"
+    },
+    {
+      "register_address": "1866H-1868H",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Apparent Power Demand Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "1869H-186AH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase A Current Demand Peak",
+      "units": "A"
+    },
+    {
+      "register_address": "186BH-186DH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase A Current Demand Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "186EH-186FH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase B Current Demand Peak",
+      "units": "A"
+    },
+    {
+      "register_address": "1870H-1872H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase B Current Demand Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "1873H-1874H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase C Current Demand Peak",
+      "units": "A"
+    },
+    {
+      "register_address": "1875H-1877H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase C Current Demand Peak Time",
+      "units": null
+    },
+    {
+      "register_address": "700H",
+      "register_type": "Holding Register",
+      "description": "Alarm Switch",
+      "units": null
+    },
+    {
+      "register_address": "701H",
+      "register_type": "Holding Register",
+      "description": "Alarm Channel",
+      "units": null
+    },
+    {
+      "register_address": "702",
+      "register_type": "Holding Register",
+      "description": "Alarm Channel Output",
+      "units": null
+    },
+    {
+      "register_address": "703",
+      "register_type": "Holding Register",
+      "description": "Alarm Output Mode",
+      "units": null
+    },
+    {
+      "register_address": "704H",
+      "register_type": "Holding Register",
+      "description": "Pulse Output Time",
+      "units": "ms"
+    },
+    {
+      "register_address": "705H",
+      "register_type": "Holding Register",
+      "description": "Parameter Number (Alarm 1)",
+      "units": null
+    },
+    {
+      "register_address": "706H",
+      "register_type": "Holding Register",
+      "description": "Comparing Method (Alarm 1)",
+      "units": null
+    },
+    {
+      "register_address": "707H",
+      "register_type": "Holding Register",
+      "description": "Setpoint Value (Alarm 1)",
+      "units": null
+    },
+    {
+      "register_address": "708H",
+      "register_type": "Holding Register",
+      "description": "Delay Time (Alarm 1)",
+      "units": "x10ms"
+    },
+    {
+      "register_address": "709H-703BH",
+      "register_type": "Holding Register",
+      "description": "Alarm Parameter Setting for the 2nd-12th group",
+      "units": null
+    },
+    {
+      "register_address": "1000H-1001H",
+      "register_type": "Read Only Holding Register",
+      "description": "SunSpec_ID",
+      "units": null
+    },
+    {
+      "register_address": "1002H",
+      "register_type": "Read Only Holding Register",
+      "description": "ID",
+      "units": null
+    },
+    {
+      "register_address": "1003H",
+      "register_type": "Read Only Holding Register",
+      "description": "Length",
+      "units": null
+    },
+    {
+      "register_address": "1004H-1013H",
+      "register_type": "Read Only Holding Register",
+      "description": "Manufacturer",
+      "units": null
+    },
+    {
+      "register_address": "1014H-1023H",
+      "register_type": "Read Only Holding Register",
+      "description": "Model",
+      "units": null
+    },
+    {
+      "register_address": "1024H-102BH",
+      "register_type": "Read Only Holding Register",
+      "description": "Options",
+      "units": null
+    },
+    {
+      "register_address": "102CH-1033H",
+      "register_type": "Read Only Holding Register",
+      "description": "Version",
+      "units": null
+    },
+    {
+      "register_address": "1034H-1043H",
+      "register_type": "Read Only Holding Register",
+      "description": "Serial Number",
+      "units": null
+    },
+    {
+      "register_address": "1044H",
+      "register_type": "Holding Register",
+      "description": "Device Address",
+      "units": null
+    },
+    {
+      "register_address": "1045H",
+      "register_type": "Read Only Holding Register",
+      "description": "ID (Meter Type)",
+      "units": null
+    },
+    {
+      "register_address": "1046H",
+      "register_type": "Read Only Holding Register",
+      "description": "Length",
+      "units": null
+    },
+    {
+      "register_address": "1047H",
+      "register_type": "Read Only Holding Register",
+      "description": "Amps (total): SunSpec; Total Current AcuRev 1310",
+      "units": "A"
+    },
+    {
+      "register_address": "1048H",
+      "register_type": "Read Only Holding Register",
+      "description": "Amps Phase A: SunSpec; Phase A Current AcuRev 1310",
+      "units": "A"
+    },
+    {
+      "register_address": "1049H",
+      "register_type": "Read Only Holding Register",
+      "description": "Amps Phase B: SunSpec; Phase B Current: AcuRev 1310",
+      "units": "A"
+    },
+    {
+      "register_address": "104AH",
+      "register_type": "Read Only Holding Register",
+      "description": "Amps Phase C:SunSpec; Phase C Current AcuRev 1310",
+      "units": "A"
+    },
+    {
+      "register_address": "104BH",
+      "register_type": "Read Only Holding Register",
+      "description": "Current scale factor: SunSpec; CT Ratio: AcuRev 1310",
+      "units": null
+    },
+    {
+      "register_address": "104CH",
+      "register_type": "Read Only Holding Register",
+      "description": "Voltage LN (average): SunSpec; CT Ratio: AcuRev 1310",
+      "units": "V"
+    },
+    {
+      "register_address": "104DH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase Voltage AN: SunSpec; Phase Average Voltage: AcuRev 1310",
+      "units": "V"
+    },
+    {
+      "register_address": "104EH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase Voltage BN: SunSpec; Phase B Voltage: AcuRev 1310",
+      "units": "V"
+    },
+    {
+      "register_address": "104FH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase Voltage CN: SunSpec; Phase C Voltage: AcuRev 1310",
+      "units": "V"
+    },
+    {
+      "register_address": "1050H",
+      "register_type": "Read Only Holding Register",
+      "description": "Voltage LL (average): SunSpec; Line Average Voltage: AcuRev 1310",
+      "units": "V"
+    },
+    {
+      "register_address": "1051H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase Voltage AB: SunSpec; Line AB Voltage: AcuRev1310",
+      "units": "V"
+    },
+    {
+      "register_address": "1052H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase Voltage BC: SunSpec; Line BC Voltage AcuRev 1310",
+      "units": "V"
+    },
+    {
+      "register_address": "1053H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase Voltage CA: SunSpec; Line CA Voltage: AcuRev 1310",
+      "units": "V"
+    },
+    {
+      "register_address": "1054H",
+      "register_type": "Read Only Holding Register",
+      "description": "Voltage scale factor: SunSpec",
+      "units": null
+    },
+    {
+      "register_address": "1055H",
+      "register_type": "Read Only Holding Register",
+      "description": "Frequency",
+      "units": "Hz"
+    },
+    {
+      "register_address": "1056H",
+      "register_type": "Read Only Holding Register",
+      "description": "Frequency scale factor",
+      "units": null
+    },
+    {
+      "register_address": "1057H",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Real Power SunSpec; Total Active Power: AcuRev 1310",
+      "units": "W"
+    },
+    {
+      "register_address": "1058H",
+      "register_type": "Read Only Holding Register",
+      "description": "Watts Phase A: SunSpec; Total Active Power: AcuRev 1310",
+      "units": "W"
+    },
+    {
+      "register_address": "1059H",
+      "register_type": "Read Only Holding Register",
+      "description": "Watts Phase A: SunSpec; Phase A Active Power: AcuRev 1310",
+      "units": "W"
+    },
+    {
+      "register_address": "105AH",
+      "register_type": "Read Only Holding Register",
+      "description": "Watts Phase C: SunSpec; Phase C Active Power: AcuRev 1310",
+      "units": "W"
+    },
+    {
+      "register_address": "105BH",
+      "register_type": "Read Only Holding Register",
+      "description": "Real Power scale factor: SunSpec;",
+      "units": null
+    },
+    {
+      "register_address": "105CH",
+      "register_type": "Read Only Holding Register",
+      "description": "AC Apparent Power VA: SunSpec; Total Apparent Power: AcuRev 1310",
+      "units": "VA"
+    },
+    {
+      "register_address": "105DH",
+      "register_type": "Read Only Holding Register",
+      "description": "VA Phase A: SunSpec; Phase A Apparent Power: AcuRev 1310",
+      "units": "VA"
+    },
+    {
+      "register_address": "105EH",
+      "register_type": "Read Only Holding Register",
+      "description": "VA Phase B: SunSpec; Phase B Apparent Power: AcuRev 1310",
+      "units": "VA"
+    },
+    {
+      "register_address": "105FH",
+      "register_type": "Read Only Holding Register",
+      "description": "VA Phase C: SunSpec; Phase C Apparent Power: AcuRev 1310",
+      "units": "VA"
+    },
+    {
+      "register_address": "1060H",
+      "register_type": "Read Only Holding Register",
+      "description": "Apparent Power scale factor: SunSpec;",
+      "units": null
+    },
+    {
+      "register_address": "1061H",
+      "register_type": "Read Only Holding Register",
+      "description": "Reactive Power VAR: SunSpec; Total Reactive Power: AcuRev 1310",
+      "units": "VAR"
+    },
+    {
+      "register_address": "1062H",
+      "register_type": "Read Only Holding Register",
+      "description": "VAR Phase A: SunSpec; Phase A Reactive Power: AcuRev 1310",
+      "units": "VAR"
+    },
+    {
+      "register_address": "1063H",
+      "register_type": "Read Only Holding Register",
+      "description": "VAR Phase B: SunSpec; Phase B Reactive Power: AcuRev 1310",
+      "units": "VAR"
+    },
+    {
+      "register_address": "1064H",
+      "register_type": "Read Only Holding Register",
+      "description": "VAR Phase C: SunSpec; Phase C Reactive Power: AcuRev 1310",
+      "units": "VAR"
+    },
+    {
+      "register_address": "1065H",
+      "register_type": "Read Only Holding Register",
+      "description": "Reactive Power scale factor",
+      "units": null
+    },
+    {
+      "register_address": "1066H",
+      "register_type": "Read Only Holding Register",
+      "description": "Power Factor",
+      "units": null
+    },
+    {
+      "register_address": "1067H",
+      "register_type": "Read Only Holding Register",
+      "description": "PF Phase A",
+      "units": null
+    },
+    {
+      "register_address": "1068H",
+      "register_type": "Read Only Holding Register",
+      "description": "PF Phase B",
+      "units": null
+    },
+    {
+      "register_address": "1069H",
+      "register_type": "Read Only Holding Register",
+      "description": "PF Phase C",
+      "units": null
+    },
+    {
+      "register_address": "106AH",
+      "register_type": "Read Only Holding Register",
+      "description": "Power Factor scale factor",
+      "units": null
+    },
+    {
+      "register_address": "106BH-106CH",
+      "register_type": "Holding Register",
+      "description": "Total Real Energy Exported: SunSpec Total Active Energy Exported: AcuRev 1310",
+      "units": "kWh"
+    },
+    {
+      "register_address": "106DH-106EH",
+      "register_type": "Holding Register",
+      "description": "Total Watt-hours Exported in phase A: SunSpec; Total Active Energy Exported in Phase A: AcuRev 1310",
+      "units": "kWh"
+    },
+    {
+      "register_address": "106FH-1070H",
+      "register_type": "Holding Register",
+      "description": "Total Watt-hours Exported in phase B: SunSpec; Total Active Energy Exported in Phase B: AcuRev 1300",
+      "units": "kWh"
+    },
+    {
+      "register_address": "1071H-1072H",
+      "register_type": "Holding Register",
+      "description": "Total Watt-hours Exported in Phase C: SunSpec; Total Active Energy Exported in Phase C: AcuRev 1310",
+      "units": "kWh"
+    },
+    {
+      "register_address": "1073H-1074H",
+      "register_type": "Holding Register",
+      "description": "Total Real Energy Imported: SunSpec; Total Active Energy Imported: AcuRev 1310",
+      "units": "kWh"
+    },
+    {
+      "register_address": "1075H-1076H",
+      "register_type": "Holding Register",
+      "description": "Total Watt-hours Imported Phase A: SunSpec; Total Active Energy Imported in Phase A: AcuRev 1310",
+      "units": "kWh"
+    },
+    {
+      "register_address": "1077H-1078H",
+      "register_type": "Holding Register",
+      "description": "Total Watt-hours Imported Phase B: SunSpec; Total Active Energy Imported in Phase B: AcuRev 1310",
+      "units": "kWh"
+    },
+    {
+      "register_address": "1079H-107AH",
+      "register_type": "Holding Register",
+      "description": "Total Watt-hours Imported Phase C: SunSpec; Total Active Energy Imported in Phase C: AcuRev 1310",
+      "units": "kWh"
+    },
+    {
+      "register_address": "107B",
+      "register_type": "Read Only Holding Register",
+      "description": "TotWh_SF: SunSpec; CT ratio X PT ratio: AcuRev 1310",
+      "units": null
+    },
+    {
+      "register_address": "107CH-107DH",
+      "register_type": "Holding Register",
+      "description": "Total VA-hours Exported: SunSpec; Total Apparent Power Exported: AcuRev 1310",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "107EH-17FH",
+      "register_type": "Holding Register",
+      "description": "Total VA-hours Exported Phase A: SunSpec; Total Apparent Power Exported in Phase A: AcuRev 1310",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "1080H-1081H",
+      "register_type": "Holding Register",
+      "description": "Total VA-hours Exported Phase B: SunSpec; Total Apparent Power Exported in Phase A:AcuRev 1310",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "1082H-1083H",
+      "register_type": "Holding Register",
+      "description": "Total VA-hours Exported phase C: SunSpec; Total Apparent Power Exported in Phase C: AcuRev 1310",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "1084H-1085H",
+      "register_type": "Holding Register",
+      "description": "Total VA-hours Imported: SunSpec; Total Apparent Power Imported: AcuRev 1310",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "1086H-1087H",
+      "register_type": "Holding Register",
+      "description": "Total VA-hours Imported phase A: SunSpec; Total Apparent Power Imported in Phase A: AcuRev 1310",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "1088H-1089H",
+      "register_type": "Holding Register",
+      "description": "Total VA-hours Imported Phase B: SunSpec; Total Apparent Power Imported in Phase B: AcuRev 1310",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "108AH-108BH",
+      "register_type": "Holding Register",
+      "description": "Total VA-hours Imported Phase C: SunSpec; Total Apparent Power Imported in Phase C: AcuRev 1310",
+      "units": "kVAh"
+    },
+    {
+      "register_address": "108CH",
+      "register_type": "Read Only Holding Register",
+      "description": "Total VAh_SF: SunSpec; CT ratio X PT ratio: AcuRev 1310",
+      "units": null
+    },
+    {
+      "register_address": "108DH-108EH",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hours Imported Q1:SunSpec;",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "108FH-1090H",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hours Imported Q1 Phase 1A",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "1091H-1092H",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hours Imported Q1 Phase B",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "1093H-1094H",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hors Imported Q1 Phase C",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "1095H-1096H",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hours Imported Q2 Phase A",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "1097H-1098H",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hours Imported Q2 Phase A",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "1099H-109AH",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hours Imported Q2 Phase B",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "109BH-109CH",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hours Imported Q2 Phase C",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "109DH-109EH",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hours Exported Q3",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "109FH-10AH",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hours Exported Q3 Phase A",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "10A1H-10A2H",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hours Exported Q3 Phase B",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "10A3H-10A4H",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hours Exported Q3 Phase C",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "10A5H-10A6H",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hours Exported Q4",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "10A7H-10A8H",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hours Exported Q4 Phase A",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "10A9H-10AAH",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hours Exported Q4 Phase B",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "10ABH-10ACH",
+      "register_type": "Holding Register",
+      "description": "Total VAR-hours Exported Q4 Phase C",
+      "units": "kvarh"
+    },
+    {
+      "register_address": "10ADH",
+      "register_type": "Read Only Holding Register",
+      "description": "Total VARh_SF: SunSpec; CT ratio X PT ratio: AcuRev 1310",
+      "units": null
+    },
+    {
+      "register_address": "10AEH-10AFH",
+      "register_type": "Read Only Holding Register",
+      "description": "Meter Evenet Flags",
+      "units": null
+    },
+    {
+      "register_address": "10B0H",
+      "register_type": "Read Only Holding Register",
+      "description": "SunSpec_end_ ID: SunSPec;",
+      "units": null
+    },
+    {
+      "register_address": "10B1H",
+      "register_type": "Read Only Holding Register",
+      "description": "SunSpec_end_ length: SunSpec",
+      "units": null
+    },
+    {
+      "register_address": "1600H-1604H",
+      "register_type": "Read Only Holding Register",
+      "description": "Input active power total max demand and occur time",
+      "units": "kW"
+    },
+    {
+      "register_address": "1605H-1609H",
+      "register_type": "Read Only Holding Register",
+      "description": "Input active power max demand 1 and occur time",
+      "units": "kW"
+    },
+    {
+      "register_address": "160AH-160EH",
+      "register_type": "Read Only Holding Register",
+      "description": "Input active power max demand 2 and occur time",
+      "units": "kW"
+    },
+    {
+      "register_address": "160FH-1613H",
+      "register_type": "Read Only Holding Register",
+      "description": "Input active power max demand 3 and occur time",
+      "units": "kW"
+    },
+    {
+      "register_address": "1614H-1618H",
+      "register_type": "Read Only Holding Register",
+      "description": "Input active power max demand 4 and occur time",
+      "units": "kW"
+    },
+    {
+      "register_address": "1619H-161DH",
+      "register_type": "Read Only Holding Register",
+      "description": "Output active powers total max demand and occur time",
+      "units": "kW"
+    },
+    {
+      "register_address": "161EH-1622H",
+      "register_type": "Read Only Holding Register",
+      "description": "Output active power max demand 1 and occur time",
+      "units": "kW"
+    },
+    {
+      "register_address": "1623H-1627H",
+      "register_type": "Read Only Holding Register",
+      "description": "Output active power max demand 2 and occur time",
+      "units": "kW"
+    },
+    {
+      "register_address": "1628H-162C",
+      "register_type": "Read Only Holding Register",
+      "description": "Output active power max demand 3 and occur time",
+      "units": "kW"
+    },
+    {
+      "register_address": "162DH-1631H",
+      "register_type": "Read Only Holding Register",
+      "description": "Output active power max demand 4 and occur time",
+      "units": "kW"
+    },
+    {
+      "register_address": "1632H-1636H",
+      "register_type": "Read Only Holding Register",
+      "description": "Input reactive power max demand 1 and occur time",
+      "units": "kvar"
+    },
+    {
+      "register_address": "1637H-163BH",
+      "register_type": "Read Only Holding Register",
+      "description": "Input reactive power max demand 1 and occur time",
+      "units": "kvar"
+    },
+    {
+      "register_address": "163CH-1640H",
+      "register_type": "Read Only Holding Register",
+      "description": "Input reactive power max demand 2 and occur time",
+      "units": "kvar"
+    },
+    {
+      "register_address": "1641H-1645H",
+      "register_type": "Read Only Holding Register",
+      "description": "Input reactive power max demand 3 and occur time",
+      "units": "kvar"
+    },
+    {
+      "register_address": "1646H-164AH",
+      "register_type": "Read Only Holding Register",
+      "description": "Input reactive power max demand 4 and occur time",
+      "units": "kvar"
+    },
+    {
+      "register_address": "164BH-164FH",
+      "register_type": "Read Only Holding Register",
+      "description": "Output reactive powers total max demand and occur",
+      "units": "kvar"
+    },
+    {
+      "register_address": "1650H-1654H",
+      "register_type": "Read Only Holding Register",
+      "description": "Output reactive power max demand 1 and occur time",
+      "units": "kvar"
+    },
+    {
+      "register_address": "1655H-1659H",
+      "register_type": "Read Only Holding Register",
+      "description": "Output reactive power max demand 2 and occur time",
+      "units": "kvar"
+    },
+    {
+      "register_address": "165AH-165EH",
+      "register_type": "Read Only Holding Register",
+      "description": "Output reactive power max demand 3 and occur time",
+      "units": "kvar"
+    },
+    {
+      "register_address": "165FH-1663H",
+      "register_type": "Read Only Holding Register",
+      "description": "Output reactive power max demand 4 and occur time",
+      "units": "kvar"
+    },
+    {
+      "register_address": "1664H-1668H",
+      "register_type": "Read Only Holding Register",
+      "description": "Apparent power total max demand and occur time",
+      "units": "kVA"
+    },
+    {
+      "register_address": "1669H-166DH",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase A current max demand and occur time",
+      "units": "A"
+    },
+    {
+      "register_address": "166EH-1672H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase B current max demand and occur time",
+      "units": "A"
+    },
+    {
+      "register_address": "1673H-1677H",
+      "register_type": "Read Only Holding Register",
+      "description": "Phase C current max demand and occur time",
+      "units": "A"
+    },
+    {
+      "register_address": "1678H-1690H",
+      "register_type": "Read Only Holding Register",
+      "description": "Reserved",
+      "units": null
+    },
+    {
+      "register_address": "1D00H-1D01H",
+      "register_type": "Read Only Holding Register",
+      "description": "Total times of Event Reset",
+      "units": null
+    },
+    {
+      "register_address": "1D02H-1D04H",
+      "register_type": "Read Only Holding Register",
+      "description": "Event Reset Happening Time",
+      "units": null
+    },
+    {
+      "register_address": "1D05H",
+      "register_type": "Read Only Holding Register",
+      "description": "Event Reset Marking Code",
+      "units": null
+    },
+    {
+      "register_address": "1D06H-1D09H",
+      "register_type": "Read Only Holding Register",
+      "description": "Last 2nd Event Reset Record",
+      "units": null
+    },
+    {
+      "register_address": "1D0AH-1D0DH",
+      "register_type": "Read Only Holding Register",
+      "description": "Last 3rd Event Reset Record",
+      "units": null
+    },
+    {
+      "register_address": "1A00H-1A01H",
+      "register_type": "Read Only Holding Register",
+      "description": "Total programming time",
+      "units": null
+    },
+    {
+      "register_address": "1A02H-1A04H",
+      "register_type": "Read Only Holding Register",
+      "description": "Last Event Reset Record Occur time",
+      "units": null
+    },
+    {
+      "register_address": "1A06H-1A0DH",
+      "register_type": "Read Only Holding Register",
+      "description": "Last 2nd Event Reset Record",
+      "units": null
+    },
+    {
+      "register_address": "1B00H-1B01H",
+      "register_type": "Read Only Holding Register",
+      "description": "Total Times of Demand Reset",
+      "units": null
+    },
+    {
+      "register_address": "1B02H-1B04H",
+      "register_type": "Read Only Holding Register",
+      "description": "Last time open cover record Occur time",
+      "units": null
+    },
+    {
+      "register_address": "1B05H-1B0AH",
+      "register_type": "Read Only Holding Register",
+      "description": "Last 2nd \u2013 3rd time",
+      "units": null
+    },
+    {
+      "register_address": "1C00H-1C01H",
+      "register_type": "Read Only Holding Register",
+      "description": "Total open cover time",
+      "units": null
+    },
+    {
+      "register_address": "1C02H-1C04H",
+      "register_type": "Read Only Holding Register",
+      "description": "Last time open cover record Occur time",
+      "units": null
+    },
+    {
+      "register_address": "1C05H-1C07H",
+      "register_type": "Read Only Holding Register",
+      "description": "Last time open cover record End time",
+      "units": null
+    },
+    {
+      "register_address": "1C08H-1C13H",
+      "register_type": "Read Only Holding Register",
+      "description": "Last 2nd \u2013 3rd time",
+      "units": null
+    },
+    {
+      "register_address": "1D00H-1D01H",
+      "register_type": "Read Only Holding Register",
+      "description": "Total event clearance time",
+      "units": null
+    },
+    {
+      "register_address": "1D02H-1D04H",
+      "register_type": "Read Only Holding Register",
+      "description": "Last time open cover record Occur Time",
+      "units": null
+    },
+    {
+      "register_address": "1D05H",
+      "register_type": "Read Only Holding Register",
+      "description": "Event clearance data flag",
+      "units": null
+    },
+    {
+      "register_address": "1D06H-1D0DH",
+      "register_type": "Read Only Holding Register",
+      "description": "Last 2nd \u2013 3rd time",
+      "units": null
+    },
+    {
+      "register_address": "1E00H-1E01H",
+      "register_type": "Read Only Holding Register",
+      "description": "Total meter clearance time",
+      "units": null
+    },
+    {
+      "register_address": "1E02H-1E04H",
+      "register_type": "Read Only Holding Register",
+      "description": "Last time meter cleared record Occur time",
+      "units": null
+    },
+    {
+      "register_address": "1E05H-1E0AH",
+      "register_type": "Read Only Holding Register",
+      "description": "Last 2nd \u2013 3rd time",
+      "units": null
+    },
+    {
+      "register_address": "0000H",
+      "register_type": "RO Status",
+      "description": "RO state",
+      "units": null
+    },
+    {
+      "register_address": "0000H",
+      "register_type": "RO Control",
+      "description": "RO control",
+      "units": null
+    }
+  ]
+}

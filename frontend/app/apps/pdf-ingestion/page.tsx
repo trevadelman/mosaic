@@ -1,140 +1,211 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { TreeView } from "@/components/ui/tree-view"
 import { JsonViewer } from "@/components/ui/json-viewer"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Progress } from "@/components/ui/progress"
-import { FileUp, AlertCircle, Upload, FileJson, X, Clock } from "lucide-react"
+import { PdfViewer } from "@/components/ui/pdf-viewer"
+import { FileUp, Plus, Upload } from "lucide-react"
+import { UploadModal } from "./components/upload-modal"
+import { AddManufacturerModal } from "./components/add-manufacturer-modal"
+
+interface TreeItem {
+  id: string
+  name: string
+  children?: TreeItem[]
+  type: 'folder' | 'file' | 'directory'
+  manufacturer?: string
+  path?: string
+}
+
+interface DeviceInfo {
+  name: string
+  manufacturer: string
+  type: 'file' | 'directory'
+  path: string
+}
+
+interface DeviceFile {
+  name: string
+  type: 'file' | 'directory'
+  path: string
+}
 
 export default function PdfIngestionPage() {
-  const [file, setFile] = useState<File | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [result, setResult] = useState<string>("")
+  const [treeItems, setTreeItems] = useState<TreeItem[]>([])
   const [error, setError] = useState<string>("")
+  const [addingManufacturer, setAddingManufacturer] = useState(false)
+  const [uploadModalOpen, setUploadModalOpen] = useState(false)
+  const [selectedDevice, setSelectedDevice] = useState<{ manufacturer: string; name: string } | null>(null)
+  const [deviceJson, setDeviceJson] = useState<string>("")
+  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string>("")
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0]
-    if (selectedFile && selectedFile.type === "application/pdf") {
-      setFile(selectedFile)
-      setError("")
-    } else {
-      setFile(null)
-      setError("Please select a valid PDF file")
+  // Load manufacturers and devices
+  const loadTreeData = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/apps/pdf-ingestion/manufacturers`)
+      const manufacturers = await response.json()
+
+      const items: TreeItem[] = []
+      
+      for (const manufacturer of manufacturers) {
+        const devicesResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/apps/pdf-ingestion/manufacturers/${manufacturer}/devices`
+        )
+        const { devices } = await devicesResponse.json()
+
+        const children: TreeItem[] = []
+        
+        for (const device of devices) {
+          // Add device directory
+          const deviceNode: TreeItem = {
+            id: `${device.manufacturer}-${device.name}`,
+            name: device.name,
+            type: 'directory',
+            manufacturer: device.manufacturer,
+            path: device.path,
+            children: []
+          }
+
+          // Add device files
+          if (device.type === 'directory') {
+            // Add productInfo.json if it exists
+            const jsonFile = devices.find((f: DeviceInfo) => 
+              f.type === 'file' && 
+              f.path === `${device.name}/productInfo.json`
+            )
+            if (jsonFile) {
+              deviceNode.children?.push({
+                id: `${device.manufacturer}-${device.name}-json`,
+                name: 'productInfo.json',
+                type: 'file',
+                manufacturer: device.manufacturer,
+                path: jsonFile.path
+              })
+            }
+
+            // Add raw_docs directory if it exists
+            const rawDocsDir = devices.find((f: DeviceInfo) =>
+              f.type === 'directory' &&
+              f.path === `${device.name}/raw_docs`
+            )
+            if (rawDocsDir) {
+              // Add PDF files
+              const pdfFiles = devices.filter((f: DeviceInfo) =>
+                f.type === 'file' &&
+                f.path.startsWith(`${device.name}/raw_docs/`) &&
+                f.path.endsWith('.pdf')
+              )
+
+              if (pdfFiles.length > 0) {
+                const rawDocsNode: TreeItem = {
+                  id: `${device.manufacturer}-${device.name}-raw_docs`,
+                  name: 'raw_docs',
+                  type: 'directory',
+                  manufacturer: device.manufacturer,
+                  path: rawDocsDir.path,
+                  children: pdfFiles.map((pdf: DeviceInfo) => ({
+                    id: `${device.manufacturer}-${pdf.path}`,
+                    name: pdf.name,
+                    type: 'file',
+                    manufacturer: device.manufacturer,
+                    path: pdf.path
+                  }))
+                }
+                deviceNode.children?.push(rawDocsNode)
+              }
+            }
+          }
+
+          if (deviceNode.children?.length) {
+            children.push(deviceNode)
+          }
+        }
+
+        items.push({
+          id: manufacturer,
+          name: manufacturer,
+          type: 'folder',
+          children
+        })
+      }
+
+      setTreeItems(items)
+    } catch (err) {
+      console.error("Error loading tree data:", err)
     }
   }
 
-  const handleUpload = async () => {
-    if (!file) return
+  useEffect(() => {
+    loadTreeData()
+  }, [])
 
-    setLoading(true)
-    setError("")
-    setResult("")
-    setProgress(0)
-
-    const formData = new FormData()
-    formData.append("file", file)
-
+  const loadDeviceInfo = async (manufacturer: string, path: string) => {
     try {
-      // Start progress simulation
-      const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 95) {
-            clearInterval(progressInterval)
-            return prev
-          }
-          return prev + 1
-        })
-      }, 1000)
+      setDeviceJson("")
+      setSelectedPdfUrl("")
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/apps/pdf-ingestion/process`, {
-        method: "POST",
-        body: formData,
-      })
+      if (path.endsWith('.pdf')) {
+        setSelectedPdfUrl(`${process.env.NEXT_PUBLIC_API_URL}/apps/pdf-ingestion/manufacturers/${manufacturer}/${path}`)
+        return
+      }
 
-      clearInterval(progressInterval)
-      setProgress(100)
+      if (!path.endsWith('productInfo.json')) {
+        return
+      }
 
+      // Extract device name from path (it's the parent directory of productInfo.json)
+      const device = path.split('/')[0]
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/apps/pdf-ingestion/manufacturers/${manufacturer}/devices/${device}/info`
+      )
+      
       if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`)
+        throw new Error("Failed to load device information")
       }
 
       const data = await response.json()
-      
-      if (data.success) {
-        // Try to format the JSON response
-        try {
-          const parsedJson = JSON.parse(data.response)
-          setResult(JSON.stringify(parsedJson, null, 2))
-        } catch {
-          // If parsing fails, show the raw response
-          setResult(data.response)
-        }
-      } else {
-        throw new Error(data.error || "Failed to process PDF")
-      }
+      setDeviceJson(JSON.stringify(data, null, 2))
+      setError("")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
-    } finally {
-      setLoading(false)
+      setError(err instanceof Error ? err.message : "Failed to load device information")
+      setDeviceJson("")
     }
   }
 
-  const renderFileInfo = () => {
-    if (!file) return null
+  const handleSaveJson = async (manufacturer: string, jsonData: string) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/apps/pdf-ingestion/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          manufacturer,
+          data: jsonData
+        })
+      })
 
-    return (
-      <div className="flex items-center gap-4">
-        <FileJson className="h-8 w-8 text-primary" />
-        <div>
-          <p className="font-medium">{file.name}</p>
-          <p className="text-sm text-muted-foreground">
-            {(file.size / 1024 / 1024).toFixed(2)} MB
-          </p>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="ml-4"
-          onClick={(e) => {
-            e.stopPropagation()
-            setFile(null)
-            setResult("")
-          }}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-    )
-  }
+      if (!response.ok) {
+        throw new Error("Failed to save file")
+      }
 
-  const renderLoadingState = () => {
-    if (!file) return null
-
-    return (
-      <div className="w-full space-y-4">
-        <div className="flex items-center gap-4">
-          <Clock className="h-8 w-8 text-primary animate-pulse" />
-          <div className="flex-1">
-            <p className="font-medium">Processing {file.name}</p>
-            <Progress value={progress} className="mt-2" />
-          </div>
-        </div>
-        <p className="text-sm text-center text-muted-foreground">
-          This may take a few minutes depending on the side of the file. Please don't close this page.
-        </p>
-      </div>
-    )
+      // Reload the tree to show the new file
+      loadTreeData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save file")
+      throw err
+    }
   }
 
   return (
-    <div className="container py-8 space-y-8">
+    <div className="container py-6 flex flex-col h-screen">
       {/* Header */}
-      <div className="space-y-2">
+      <div className="space-y-2 mb-6">
         <Breadcrumb
           items={[
             { label: "Apps", href: "/apps" },
@@ -151,106 +222,82 @@ export default function PdfIngestionPage() {
               Extract device properties, BACnet objects, and Modbus registers from HVAC documentation
             </p>
           </div>
+          <Button onClick={() => setUploadModalOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Upload Document
+          </Button>
         </div>
       </div>
 
-      {/* Upload Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Upload PDF</CardTitle>
-          <CardDescription>
-            Upload your HVAC documentation PDF to extract structured information.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {/* File Drop Zone */}
-            <div 
-              className={`
-                border-2 border-dashed rounded-lg p-8
-                flex flex-col items-center justify-center gap-4
-                transition-colors
-                ${file ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}
-                ${!loading && 'hover:border-primary hover:bg-primary/5 cursor-pointer'}
-              `}
-              onClick={() => !loading && document.getElementById('file-input')?.click()}
-            >
-              {!file && (
-                <>
-                  <Upload className="h-12 w-12 text-muted-foreground" />
-                  <div className="text-center">
-                    <p className="text-lg font-medium">Drop your PDF here or click to browse</p>
-                    <p className="text-sm text-muted-foreground mt-1">Only PDF files are supported</p>
-                  </div>
-                </>
-              )}
-              {file && !loading && renderFileInfo()}
-              {loading && renderLoadingState()}
-              <input
-                id="file-input"
-                type="file"
-                accept=".pdf"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-4">
+      <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
+        {/* Tree View */}
+        <div className="col-span-3">
+          <Card className="h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Manufacturers</CardTitle>
               <Button
-                variant="outline"
-                onClick={() => {
-                  setFile(null)
-                  setResult("")
+                variant="ghost"
+                size="icon"
+                onClick={() => setAddingManufacturer(true)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <TreeView
+                items={treeItems}
+                onSelect={(item) => {
+                  if (item.type === 'file' && item.manufacturer && item.path) {
+                    setSelectedDevice({ manufacturer: item.manufacturer, name: item.name })
+                    loadDeviceInfo(item.manufacturer, item.path)
+                  }
                 }}
-                disabled={!file || loading}
-              >
-                Clear
-              </Button>
-              <Button
-                onClick={handleUpload}
-                disabled={!file || loading}
-              >
-                {loading ? "Processing..." : "Process PDF"}
-              </Button>
-            </div>
+              />
+            </CardContent>
+          </Card>
+        </div>
 
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        {/* Main Content */}
+        <div className="col-span-9 flex flex-col space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <Card className="flex-1">
+            <CardContent className="p-0 h-full">
+              {deviceJson && (
+                <div className="h-[calc(100vh-180px)]">
+                  <JsonViewer content={deviceJson} />
+                </div>
+              )}
+              {selectedPdfUrl && (
+                <div className="h-[calc(100vh-180px)]">
+                  <PdfViewer url={selectedPdfUrl} height="100%" />
+                </div>
+              )}
+              {!deviceJson && !selectedPdfUrl && (
+                <div className="h-[calc(100vh-180px)] flex items-center justify-center text-muted-foreground">
+                  Select a file from the tree to view its contents
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-      {/* Results Dialog */}
-      {result && (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Card className="hover:bg-accent/50 cursor-pointer transition-colors">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileJson className="h-6 w-6 text-primary" />
-                  View Extracted Information
-                </CardTitle>
-                <CardDescription>
-                  Click to view the structured data extracted from your PDF
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl h-[80vh]">
-            <DialogHeader>
-              <DialogTitle>Extracted Information</DialogTitle>
-            </DialogHeader>
-            <div className="flex-1 min-h-0">
-              <JsonViewer content={result} height="calc(80vh - 4rem)" />
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+      {/* Modals */}
+      <UploadModal
+        open={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        manufacturers={treeItems.map(item => ({ id: item.id, name: item.name }))}
+        onSave={handleSaveJson}
+      />
+      <AddManufacturerModal
+        open={addingManufacturer}
+        onClose={() => setAddingManufacturer(false)}
+        onAdd={loadTreeData}
+      />
     </div>
   )
 }

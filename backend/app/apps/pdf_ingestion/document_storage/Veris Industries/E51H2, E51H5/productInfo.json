@@ -1,0 +1,674 @@
+{
+  "device": {
+    "manufacturer": "Veris Industries",
+    "model": "E51H2, E51H5",
+    "type": "Bi-Directional Compact Power and Energy Meter",
+    "dimensions": {
+      "width": null,
+      "height": null,
+      "depth": null,
+      "units": null
+    },
+    "power": {
+      "voltage": "AC: 90V min; UL Max: 600 VLL (347 VL-N); CE Max: 300 VL-N, DC: 125 to 300 Vdc",
+      "frequency": "45 to 65 Hz",
+      "power_consumption": "AC: 5 VA max.; DC: 3 W max."
+    },
+    "operating_conditions": {
+      "temp_min": "-30\u00b0C",
+      "temp_max": "70\u00b0C",
+      "humidity_range": "<95% RH non-condensing"
+    },
+    "communication_protocols": [
+      "BACnet MS/TP"
+    ],
+    "firmware_version": "<Current Revision #>",
+    "certifications": [
+      "cULus Listed",
+      "CE",
+      "BTL (E51H5 only)",
+      "FCC part 15 Class B",
+      "EN 55011/EN 61000 Class B",
+      "EN 61000 Class A",
+      "UL 508",
+      "CSA 22.2 No. 14-05",
+      "IEC/EN 61010-1"
+    ]
+  },
+  "bacnet": {
+    "ai": [
+      {
+        "dis": "KWh_Net",
+        "bacnetAddr": "AI1",
+        "units": "kWh",
+        "description": "Accumulated Real Energy: Net (Import - Export)"
+      },
+      {
+        "dis": "KWh_Import",
+        "bacnetAddr": "AI2",
+        "units": "kWh",
+        "description": "Real Energy Import"
+      },
+      {
+        "dis": "KWh_Export",
+        "bacnetAddr": "AI3",
+        "units": "kWh",
+        "description": "Real Energy Export"
+      },
+      {
+        "dis": "KVARh_Q1",
+        "bacnetAddr": "AI4",
+        "units": "kVARh",
+        "description": "Reactive Energy Quadrant 1"
+      },
+      {
+        "dis": "KVARh_Q2",
+        "bacnetAddr": "AI5",
+        "units": "kVARh",
+        "description": "Reactive Energy Quadrant 2"
+      },
+      {
+        "dis": "KVARh_Q3",
+        "bacnetAddr": "AI6",
+        "units": "kVARh",
+        "description": "Reactive Energy Quadrant 3"
+      },
+      {
+        "dis": "KVARh_Q4",
+        "bacnetAddr": "AI7",
+        "units": "kVARh",
+        "description": "Reactive Energy Quadrant 4"
+      },
+      {
+        "dis": "Net_KVAh",
+        "bacnetAddr": "AI8",
+        "units": "kVAh",
+        "description": "Apparent Energy: Net (Import - Export)"
+      },
+      {
+        "dis": "KVAh_Import",
+        "bacnetAddr": "AI9",
+        "units": "kVAh",
+        "description": "Apparent Energy Import"
+      },
+      {
+        "dis": "KVAh_Export",
+        "bacnetAddr": "AI10",
+        "units": "kVAh",
+        "description": "Apparent Energy Export"
+      },
+      {
+        "dis": "KW_Total",
+        "bacnetAddr": "AI11",
+        "units": "kW",
+        "description": "Total Instantaneous Real Power"
+      },
+      {
+        "dis": "KVAR_Total",
+        "bacnetAddr": "AI12",
+        "units": "kVAR",
+        "description": "Total Instantaneous Reactive Power"
+      },
+      {
+        "dis": "KVA_Total",
+        "bacnetAddr": "AI13",
+        "units": "kVA",
+        "description": "Total Instantaneous Apparent Power"
+      },
+      {
+        "dis": "PF_Total",
+        "bacnetAddr": "AI14",
+        "description": "Total Power Factor"
+      },
+      {
+        "dis": "Volts_LL_Avg",
+        "bacnetAddr": "AI15",
+        "units": "Volts",
+        "description": "Voltage, L-L, Average of Active Phases"
+      },
+      {
+        "dis": "Volts_LN_Avg",
+        "bacnetAddr": "AI16",
+        "units": "Volts",
+        "description": "Voltage, L-N, Average of Active Phases"
+      },
+      {
+        "dis": "Current_Average",
+        "bacnetAddr": "AI17",
+        "units": "Amps",
+        "description": "Current, Average of Active Phases"
+      },
+      {
+        "dis": "Frequency",
+        "bacnetAddr": "AI18",
+        "units": "Hz",
+        "description": "Frequency"
+      },
+      {
+        "dis": "KW_Present_Demand",
+        "bacnetAddr": "AI19",
+        "units": "kW",
+        "description": "Total Real Power Present Demand"
+      },
+      {
+        "dis": "KVAR_Present_Demand",
+        "bacnetAddr": "AI20",
+        "units": "kVAR",
+        "description": "Total Reactive Power Present Demand"
+      },
+      {
+        "dis": "KVA_Present_Demand",
+        "bacnetAddr": "AI21",
+        "units": "kVA",
+        "description": "Total Apparent Power Present Demand"
+      },
+      {
+        "dis": "KW_Max_Demand_Import",
+        "bacnetAddr": "AI22",
+        "units": "kW",
+        "description": "Total Real Power Max Demand Import"
+      },
+      {
+        "dis": "KVAR_Max_Demand_Import",
+        "bacnetAddr": "AI23",
+        "units": "kVAR",
+        "description": "Total Reactive Power Max Demand Import"
+      },
+      {
+        "dis": "KVA_Max_Demand_Import",
+        "bacnetAddr": "AI24",
+        "units": "kVA",
+        "description": "Total Apparent Power Max Demand Import"
+      },
+      {
+        "dis": "KW_Max_Demand_Export",
+        "bacnetAddr": "AI25",
+        "units": "kW",
+        "description": "Total Real Power Max Demand Export"
+      },
+      {
+        "dis": "KVAR_Max_Demand_Export",
+        "bacnetAddr": "AI26",
+        "units": "kVAR",
+        "description": "Total Reactive Power Max Demand Export"
+      },
+      {
+        "dis": "KVA_Max_Demand_Export",
+        "bacnetAddr": "AI27",
+        "units": "kVA",
+        "description": "Total Apparent Power Max Demand Export"
+      },
+      {
+        "dis": "Reserved_AI28",
+        "bacnetAddr": "AI28",
+        "description": "(Reserved_AI28)"
+      },
+      {
+        "dis": "E51H2: Pulse Count / E51H5: Pulse_Count_1",
+        "bacnetAddr": "AI29",
+        "description": "E51H2: Pulse Count; E51H5: Pulse Count 1"
+      },
+      {
+        "dis": "E51H2: Reserved / E51H5: Pulse_Count_2",
+        "bacnetAddr": "AI30",
+        "description": "E51H2: Reserved; E51H5: Pulse Count 2"
+      },
+      {
+        "dis": "KWh_Import_A",
+        "bacnetAddr": "AI31",
+        "units": "kWh",
+        "description": "Real Energy Import Phase A"
+      },
+      {
+        "dis": "KWh_Import_B",
+        "bacnetAddr": "AI32",
+        "units": "kWh",
+        "description": "Real Energy Import Phase B"
+      },
+      {
+        "dis": "KWh_Import_C",
+        "bacnetAddr": "AI33",
+        "units": "kWh",
+        "description": "Real Energy Import Phase C"
+      },
+      {
+        "dis": "KWh_Export_A",
+        "bacnetAddr": "AI34",
+        "units": "kWh",
+        "description": "Real Energy Export Phase A"
+      },
+      {
+        "dis": "KWh_Export_B",
+        "bacnetAddr": "AI35",
+        "units": "kWh",
+        "description": "Real Energy Export Phase B"
+      },
+      {
+        "dis": "KWh_Export_C",
+        "bacnetAddr": "AI36",
+        "units": "kWh",
+        "description": "Real Energy Export Phase C"
+      },
+      {
+        "dis": "KVARh_Q1_A",
+        "bacnetAddr": "AI37",
+        "units": "kVARh",
+        "description": "Reactive Energy Q1 Phase A"
+      },
+      {
+        "dis": "KVARh_Q1_B",
+        "bacnetAddr": "AI38",
+        "units": "kVARh",
+        "description": "Reactive Energy Q1 Phase b"
+      },
+      {
+        "dis": "KVARh_Q1_C",
+        "bacnetAddr": "AI39",
+        "units": "kVARh",
+        "description": "Reactive Energy Q1 Phase C"
+      },
+      {
+        "dis": "KVARh_Q2_A",
+        "bacnetAddr": "AI40",
+        "units": "kVARh",
+        "description": "Reactive Energy Q2 Phase A"
+      },
+      {
+        "dis": "KVARh_Q2_B",
+        "bacnetAddr": "AI41",
+        "units": "kVARh",
+        "description": "Reactive Energy Q2 Phase B"
+      },
+      {
+        "dis": "KVARh_Q2_C",
+        "bacnetAddr": "AI42",
+        "units": "kVARh",
+        "description": "Reactive Energy Q2 Phase C"
+      },
+      {
+        "dis": "KVARh_Q3_A",
+        "bacnetAddr": "AI43",
+        "units": "kVARh",
+        "description": "Reactive Energy Q3 Phase A"
+      },
+      {
+        "dis": "KVARh_Q3_B",
+        "bacnetAddr": "AI44",
+        "units": "kVARh",
+        "description": "Reactive Energy Q3 Phase B"
+      },
+      {
+        "dis": "KVARh_Q3_C",
+        "bacnetAddr": "AI45",
+        "units": "kVARh",
+        "description": "Reactive Energy Q3 Phase C"
+      },
+      {
+        "dis": "KVARh_Q4_A",
+        "bacnetAddr": "AI46",
+        "units": "kVARh",
+        "description": "Reactive Energy Q4 Phase A"
+      },
+      {
+        "dis": "KVARh_Q4_B",
+        "bacnetAddr": "AI47",
+        "units": "kVARh",
+        "description": "Reactive Energy Q4 Phase b"
+      },
+      {
+        "dis": "KVARh_Q4_C",
+        "bacnetAddr": "AI48",
+        "units": "kVARh",
+        "description": "Reactive Energy Q4 Phase C"
+      },
+      {
+        "dis": "KVAh_Import_A",
+        "bacnetAddr": "AI49",
+        "units": "kVAh",
+        "description": "Apparent Energy Import Phase A"
+      },
+      {
+        "dis": "KVAh_Import_B",
+        "bacnetAddr": "AI50",
+        "units": "kVAh",
+        "description": "Apparent Energy Import Phase B"
+      },
+      {
+        "dis": "KVAh_Import_C",
+        "bacnetAddr": "AI51",
+        "units": "kVAh",
+        "description": "Apparent Energy Import Phase C"
+      },
+      {
+        "dis": "KVAh_Export_A",
+        "bacnetAddr": "AI52",
+        "units": "kVAh",
+        "description": "Apparent Energy Export Phase A"
+      },
+      {
+        "dis": "KVAh_Export_B",
+        "bacnetAddr": "AI53",
+        "units": "kVAh",
+        "description": "Apparent Energy Export Phase B"
+      },
+      {
+        "dis": "KVAh_Export_C",
+        "bacnetAddr": "AI54",
+        "units": "kVAh",
+        "description": "Apparent Energy Export Phase C"
+      },
+      {
+        "dis": "KW_A",
+        "bacnetAddr": "AI55",
+        "units": "kW",
+        "description": "Real Power Phase A"
+      },
+      {
+        "dis": "KW_B",
+        "bacnetAddr": "AI56",
+        "units": "kW",
+        "description": "Real Power Phase B"
+      },
+      {
+        "dis": "KW_C",
+        "bacnetAddr": "AI57",
+        "units": "kW",
+        "description": "Real Power Phase C"
+      },
+      {
+        "dis": "KVAR_A",
+        "bacnetAddr": "AI58",
+        "units": "kVAR",
+        "description": "Reactive Power Phase A"
+      },
+      {
+        "dis": "KVAR_B",
+        "bacnetAddr": "AI59",
+        "units": "kVAR",
+        "description": "Reactive Power Phase B"
+      },
+      {
+        "dis": "KVAR_C",
+        "bacnetAddr": "AI60",
+        "units": "kVAR",
+        "description": "Reactive Power Phase C"
+      },
+      {
+        "dis": "KVA_A",
+        "bacnetAddr": "AI61",
+        "units": "kVA",
+        "description": "Apparent Power Phase A"
+      },
+      {
+        "dis": "KVA_B",
+        "bacnetAddr": "AI62",
+        "units": "kVA",
+        "description": "Apparent Power Phase B"
+      },
+      {
+        "dis": "KVA_C",
+        "bacnetAddr": "AI63",
+        "units": "kVA",
+        "description": "Apparent Power Phase C"
+      },
+      {
+        "dis": "PF_A",
+        "bacnetAddr": "AI64",
+        "description": "Power Factor Phase A"
+      },
+      {
+        "dis": "PF_B",
+        "bacnetAddr": "AI65",
+        "description": "Power Factor Phase B"
+      },
+      {
+        "dis": "PF_C",
+        "bacnetAddr": "AI66",
+        "description": "Power Factor Phase C"
+      },
+      {
+        "dis": "Volts_AB",
+        "bacnetAddr": "AI67",
+        "units": "Volts",
+        "description": "Voltage Phase A-B"
+      },
+      {
+        "dis": "Volts_BC",
+        "bacnetAddr": "AI68",
+        "units": "Volts",
+        "description": "Voltage Phase B-C"
+      },
+      {
+        "dis": "Volts_AC",
+        "bacnetAddr": "AI69",
+        "units": "Volts",
+        "description": "Voltage Phase A-C"
+      },
+      {
+        "dis": "Volts_AN",
+        "bacnetAddr": "AI70",
+        "units": "Volts",
+        "description": "Voltage Phase A-N"
+      },
+      {
+        "dis": "Volts_BN",
+        "bacnetAddr": "AI71",
+        "units": "Volts",
+        "description": "Voltage Phase B-N"
+      },
+      {
+        "dis": "Volts_CN",
+        "bacnetAddr": "AI72",
+        "units": "Volts",
+        "description": "Voltage Phase C-N"
+      },
+      {
+        "dis": "Current_A",
+        "bacnetAddr": "AI73",
+        "units": "Amps",
+        "description": "Current Phase A"
+      },
+      {
+        "dis": "Current_B",
+        "bacnetAddr": "AI74",
+        "units": "Amps",
+        "description": "Current Phase B"
+      },
+      {
+        "dis": "Current_C",
+        "bacnetAddr": "AI75",
+        "units": "Amps",
+        "description": "Current Phase C"
+      },
+      {
+        "dis": "Max_Power",
+        "bacnetAddr": "AI76",
+        "units": "kW",
+        "description": "Max Power"
+      },
+      {
+        "dis": "Reserved_AI77",
+        "bacnetAddr": "AI77",
+        "description": "(Reserved AI77)"
+      },
+      {
+        "dis": "Energy_Resets",
+        "bacnetAddr": "AI78",
+        "description": "Count of Energy_Resets"
+      },
+      {
+        "dis": "Reserved_AI79",
+        "bacnetAddr": "AI79",
+        "description": "(Reserved AI79)"
+      },
+      {
+        "dis": "Reserved_AI80",
+        "bacnetAddr": "AI80",
+        "description": "(Reserved AI80)"
+      },
+      {
+        "dis": "Power_Up_Count",
+        "bacnetAddr": "AI81",
+        "description": "Count of Power Up Cycles"
+      },
+      {
+        "dis": "Output_Config",
+        "bacnetAddr": "AI82",
+        "description": "Output Configuration"
+      },
+      {
+        "dis": "Alarm_Bitmap",
+        "bacnetAddr": "AI83",
+        "description": "Alarm Bitmap (all of BI1-BI15)"
+      }
+    ],
+    "ao": [],
+    "av": [
+      {
+        "dis": "Config",
+        "bacnetAddr": "AV1",
+        "description": "Configuration"
+      },
+      {
+        "dis": "System_Type",
+        "bacnetAddr": "AV2",
+        "description": "System Type"
+      },
+      {
+        "dis": "CT_Ratio_Primary",
+        "bacnetAddr": "AV3",
+        "units": "Amps",
+        "description": "CT Ratio - Primary"
+      },
+      {
+        "dis": "CT_Ratio_Secondary",
+        "bacnetAddr": "AV4",
+        "units": "1/Volts",
+        "description": "CT Ratio - Secondary"
+      },
+      {
+        "dis": "PT_Ratio",
+        "bacnetAddr": "AV5",
+        "units": "Value",
+        "description": "PT Ratio"
+      },
+      {
+        "dis": "System_Voltage",
+        "bacnetAddr": "AV6",
+        "units": "Volts",
+        "description": "System Voltage"
+      },
+      {
+        "dis": "Display_Units",
+        "bacnetAddr": "AV7",
+        "description": "Display Units"
+      },
+      {
+        "dis": "Phase_Loss_Voltage_Threshold",
+        "bacnetAddr": "AV8",
+        "units": "Percent",
+        "description": "Phase Loss Voltage Threshold"
+      },
+      {
+        "dis": "Phase_Loss_Imbalance_Threshold",
+        "bacnetAddr": "AV9",
+        "units": "Percent",
+        "description": "Phase Loss Imbalance Threshold"
+      },
+      {
+        "dis": "Subintervals",
+        "bacnetAddr": "AV10",
+        "description": "Number of Subintervals Per Demand Interval"
+      },
+      {
+        "dis": "Subinterval_Length",
+        "bacnetAddr": "AV11",
+        "units": "hundreths of a second",
+        "description": "Subinterval Length"
+      }
+    ],
+    "bi": [
+      {
+        "dis": "Volts_Error_A",
+        "bacnetAddr": "BI1",
+        "description": "Voltage Out of Range Phase A"
+      },
+      {
+        "dis": "Volts_Error_B",
+        "bacnetAddr": "BI2",
+        "description": "Voltage Out of Range Phase B"
+      },
+      {
+        "dis": "Volts_Error_C",
+        "bacnetAddr": "BI3",
+        "description": "Voltage Out of Range Phase C"
+      },
+      {
+        "dis": "Current_Error_A",
+        "bacnetAddr": "BI4",
+        "description": "Current Out of Range Phase A"
+      },
+      {
+        "dis": "Current_Error_B",
+        "bacnetAddr": "BI5",
+        "description": "Current Out of Range Phase B"
+      },
+      {
+        "dis": "Current_Error_C",
+        "bacnetAddr": "BI6",
+        "description": "Current Out of Range Phase C"
+      },
+      {
+        "dis": "Frequency_Error",
+        "bacnetAddr": "BI7",
+        "description": "Frequency Error"
+      },
+      {
+        "dis": "Reserved_BI8",
+        "bacnetAddr": "BI8",
+        "description": "Reserved"
+      },
+      {
+        "dis": "Phase_Loss_A",
+        "bacnetAddr": "BI9",
+        "description": "Phase Loss Phase A"
+      },
+      {
+        "dis": "Phase_Loss_B",
+        "bacnetAddr": "BI10",
+        "description": "Phase Loss Phase B"
+      },
+      {
+        "dis": "Phase_Loss_C",
+        "bacnetAddr": "BI11",
+        "description": "Phase Loss Phase C"
+      },
+      {
+        "dis": "Power_Factor_A",
+        "bacnetAddr": "BI12",
+        "description": "Low Power Factor Phase A"
+      },
+      {
+        "dis": "Power_Factor_B",
+        "bacnetAddr": "BI13",
+        "description": "Low Power Factor Phase B"
+      },
+      {
+        "dis": "Power_Factor_C",
+        "bacnetAddr": "BI14",
+        "description": "Low Power Factor Phase C"
+      },
+      {
+        "dis": "RTC_Reset",
+        "bacnetAddr": "BI15",
+        "description": "RTC Reset"
+      }
+    ],
+    "bo": [],
+    "bv": [],
+    "msi": [],
+    "mso": [],
+    "msv": []
+  },
+  "modbus_registers": []
+}

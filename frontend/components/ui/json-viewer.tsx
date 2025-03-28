@@ -7,15 +7,17 @@ import { useTheme } from 'next-themes'
 interface JsonViewerProps {
   content: string
   height?: string
+  className?: string
 }
 
-export function JsonViewer({ content, height = "500px" }: JsonViewerProps) {
+export function JsonViewer({ content, height = "100%", className = "" }: JsonViewerProps) {
   const { theme } = useTheme()
   
   return (
-    <Editor
-      height={height}
-      language="json"
+    <div className={`h-full ${className}`}>
+      <Editor
+        height="100%"
+        language="json"
       value={content}
       theme={theme === 'dark' ? 'vs-dark' : 'vs'}
       options={{
@@ -28,6 +30,7 @@ export function JsonViewer({ content, height = "500px" }: JsonViewerProps) {
         formatOnPaste: true,
         formatOnType: true,
       }}
-    />
+      />
+    </div>
   )
 }

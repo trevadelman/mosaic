@@ -6,12 +6,14 @@ This module provides API endpoints for processing PDF files with Gemini.
 
 import os
 import json
-from typing import Dict, Any
-from fastapi import APIRouter, UploadFile, File, HTTPException
-from pydantic import BaseModel
+from typing import Dict, Any, List, Union
+from fastapi import APIRouter, UploadFile, File, HTTPException, Body, Response
+from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field
 from google import genai
 import uuid
 import dotenv
+import shutil
 
 router = APIRouter(prefix="/api/apps/pdf-ingestion", tags=["applications"])
 
@@ -27,9 +29,13 @@ MODELS = {
     "Google/Gemini-1.5-Pro": "models/gemini-1.5-pro"
 }
 
-# Temporary file storage
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "temp_uploads")
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# File storage paths
+TEMP_UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "temp_uploads")
+DOCUMENT_STORAGE = os.path.join(os.path.dirname(__file__), "document_storage")
+
+# Create directories if they don't exist
+os.makedirs(TEMP_UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(DOCUMENT_STORAGE, exist_ok=True)
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'pdf'}
@@ -123,7 +129,7 @@ Your ONLY response should be a valid JSON object with the following structure:
   },
   "modbus_registers": [
     {
-      "register_address": "string (use decimal addredss if available)",
+      "register_address": "string",
       "register_type": "string",
       "description": "string",
       "units": "string"
@@ -141,11 +147,105 @@ Group all BACnet objects by their type (AI, AO, AV, BI, BO, BV, MSI, MSO, MSV, O
 
 If certain properties or sections are not found in the documentation, include them as empty objects or arrays. Only output the JSON structure with no additional explanation or commentary. Do not hallucinate any values."""
 
+class JsonData(BaseModel):
+    """Request model for saving JSON data"""
+    manufacturer: str
+    data: str = Field(..., description="JSON string to save")
+
 class ProcessResponse(BaseModel):
     """Response model for file processing"""
     success: bool
     response: str = ""
     error: str = ""
+    manufacturer: str = ""
+    model: str = ""
+
+class ManufacturerCreate(BaseModel):
+    """Request model for creating a manufacturer"""
+    name: str
+
+class ManufacturerResponse(BaseModel):
+    """Response model for manufacturer operations"""
+    success: bool
+    name: str = ""
+    error: str = ""
+
+class DeviceInfo(BaseModel):
+    """Model for device information"""
+    name: str
+    manufacturer: str
+    type: str  # 'file' or 'directory'
+    path: str
+
+class DeviceList(BaseModel):
+    """Response model for device listing"""
+    devices: List[DeviceInfo]
+
+def get_manufacturers() -> List[str]:
+    """Get list of all manufacturers"""
+    try:
+        return [d for d in os.listdir(DOCUMENT_STORAGE) 
+                if os.path.isdir(os.path.join(DOCUMENT_STORAGE, d))]
+    except Exception:
+        return []
+
+def get_device_files(manufacturer: str, device: str) -> List[Dict[str, str]]:
+    """Get list of files for a device"""
+    try:
+        device_dir = os.path.join(DOCUMENT_STORAGE, manufacturer, device)
+        if not os.path.exists(device_dir):
+            return []
+
+        files = []
+        # Add productInfo.json if it exists
+        json_path = os.path.join(device_dir, "productInfo.json")
+        if os.path.exists(json_path):
+            files.append({
+                "name": "productInfo.json",
+                "type": "file",
+                "path": os.path.relpath(json_path, os.path.join(DOCUMENT_STORAGE, manufacturer))
+            })
+
+        # Add raw_docs directory and its contents if they exist
+        raw_docs_dir = os.path.join(device_dir, "raw_docs")
+        if os.path.exists(raw_docs_dir):
+            files.append({
+                "name": "raw_docs",
+                "type": "directory",
+                "path": os.path.relpath(raw_docs_dir, os.path.join(DOCUMENT_STORAGE, manufacturer))
+            })
+            for pdf in os.listdir(raw_docs_dir):
+                if pdf.endswith('.pdf'):
+                    files.append({
+                        "name": pdf,
+                        "type": "file",
+                        "path": os.path.relpath(os.path.join(raw_docs_dir, pdf), 
+                                              os.path.join(DOCUMENT_STORAGE, manufacturer))
+                    })
+        return files
+    except Exception:
+        return []
+
+def get_devices(manufacturer: str) -> List[Dict[str, Union[str, List[Dict[str, str]]]]]:
+    """Get list of devices and their files for a manufacturer"""
+    try:
+        manufacturer_dir = os.path.join(DOCUMENT_STORAGE, manufacturer)
+        if not os.path.exists(manufacturer_dir):
+            return []
+        
+        devices = []
+        for device in os.listdir(manufacturer_dir):
+            device_path = os.path.join(manufacturer_dir, device)
+            if os.path.isdir(device_path):
+                files = get_device_files(manufacturer, device)
+                devices.append({
+                    "name": device,
+                    "type": "directory",
+                    "files": files
+                })
+        return devices
+    except Exception:
+        return []
 
 async def process_file_with_gemini(file_path: str, prompt: str, model_name: str) -> Dict[str, Any]:
     """Process a file with the Gemini model"""
@@ -170,26 +270,159 @@ async def process_file_with_gemini(file_path: str, prompt: str, model_name: str)
                 if end_idx != -1:
                     response_text = response_text[start_idx + 1:end_idx].strip()
         
-        return {
-            "success": True,
-            "response": response_text
-        }
+        # Parse the response to extract manufacturer and model
+        try:
+            parsed = json.loads(response_text)
+            device_info = parsed.get("device", {})
+            return {
+                "success": True,
+                "response": response_text,
+                "manufacturer": device_info.get("manufacturer", ""),
+                "model": device_info.get("model", "")
+            }
+        except json.JSONDecodeError:
+            return {
+                "success": True,
+                "response": response_text,
+                "manufacturer": "",
+                "model": ""
+            }
     except Exception as e:
         return {
             "success": False,
-            "error": str(e)
+            "error": str(e),
+            "manufacturer": "",
+            "model": ""
         }
 
+@router.get("/manufacturers", response_model=List[str])
+async def list_manufacturers():
+    """List all manufacturers"""
+    return get_manufacturers()
+
+@router.post("/manufacturers", response_model=ManufacturerResponse)
+async def create_manufacturer(data: ManufacturerCreate):
+    """Create a new manufacturer directory"""
+    try:
+        manufacturer_dir = os.path.join(DOCUMENT_STORAGE, data.name)
+        if os.path.exists(manufacturer_dir):
+            return ManufacturerResponse(
+                success=False,
+                error=f"Manufacturer '{data.name}' already exists"
+            )
+        
+        os.makedirs(manufacturer_dir)
+        return ManufacturerResponse(success=True, name=data.name)
+    except Exception as e:
+        return ManufacturerResponse(success=False, error=str(e))
+
+@router.get("/manufacturers/{manufacturer}/devices", response_model=DeviceList)
+async def list_devices(manufacturer: str):
+    """List all devices and their files for a manufacturer"""
+    devices = []
+    for device in get_devices(manufacturer):
+        # Add the device directory
+        devices.append(DeviceInfo(
+            name=device["name"],
+            manufacturer=manufacturer,
+            type="directory",
+            path=device["name"]
+        ))
+        # Add all files
+        for file in device["files"]:
+            devices.append(DeviceInfo(
+                name=file["name"],
+                manufacturer=manufacturer,
+                type=file["type"],
+                path=file["path"]
+            ))
+    return DeviceList(devices=devices)
+
+@router.post("/save", response_model=ProcessResponse)
+async def save_json(data: JsonData) -> ProcessResponse:
+    """Save edited JSON data"""
+    try:
+        # Validate JSON
+        json_data = json.loads(data.data)
+        device_info = json_data.get("device", {})
+        model = device_info.get("model", "")
+
+        if not model:
+            raise HTTPException(status_code=400, detail="JSON must contain device.model")
+
+        # Create device directory
+        device_dir = os.path.join(DOCUMENT_STORAGE, data.manufacturer, model)
+        os.makedirs(device_dir, exist_ok=True)
+
+        # Save the JSON file
+        json_path = os.path.join(device_dir, "productInfo.json")
+        with open(json_path, "w") as f:
+            json.dump(json_data, f, indent=2)
+
+        return ProcessResponse(
+            success=True,
+            manufacturer=device_info.get("manufacturer", ""),
+            model=model
+        )
+
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON data")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/manufacturers/{manufacturer}/devices/{device}/info")
+async def get_device_info(manufacturer: str, device: str):
+    """Get device information JSON"""
+    try:
+        json_path = os.path.join(DOCUMENT_STORAGE, manufacturer, device, "productInfo.json")
+        if not os.path.exists(json_path):
+            raise HTTPException(status_code=404, detail="Device information not found")
+
+        with open(json_path, "r") as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Invalid JSON file")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/manufacturers/{manufacturer}/{path:path}")
+async def get_file(manufacturer: str, path: str):
+    """Get a file from the document storage"""
+    try:
+        file_path = os.path.join(DOCUMENT_STORAGE, manufacturer, path)
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="File not found")
+
+        # For PDF files, return them directly
+        if file_path.endswith('.pdf'):
+            return FileResponse(
+                file_path,
+                media_type='application/pdf',
+                filename=os.path.basename(file_path),
+                headers={"Content-Disposition": "inline"}
+            )
+
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/process", response_model=ProcessResponse)
-async def process_pdf(file: UploadFile = File(...)) -> ProcessResponse:
+async def process_pdf(
+    file: UploadFile = File(...),
+    manufacturer: str = Body(...)
+) -> ProcessResponse:
     """Process a PDF file and extract information"""
     if not file.filename or not allowed_file(file.filename):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
     
+    # Verify manufacturer exists
+    if not os.path.exists(os.path.join(DOCUMENT_STORAGE, manufacturer)):
+        raise HTTPException(status_code=404, detail=f"Manufacturer '{manufacturer}' not found")
+    
     try:
         # Create a unique filename
         temp_filename = f"{uuid.uuid4()}.pdf"
-        temp_filepath = os.path.join(UPLOAD_FOLDER, temp_filename)
+        temp_filepath = os.path.join(TEMP_UPLOAD_FOLDER, temp_filename)
         
         # Save the uploaded file temporarily
         with open(temp_filepath, "wb") as buffer:
@@ -197,12 +430,37 @@ async def process_pdf(file: UploadFile = File(...)) -> ProcessResponse:
             buffer.write(content)
         
         # Process the file
-        # Always use the specialized prompt and default model
         result = await process_file_with_gemini(
             temp_filepath, 
             PDF_PROMPT, 
             MODELS["Google/Gemini-2.5"]
         )
+        
+        if result["success"] and result["manufacturer"] and result["model"]:
+            # Create device directory structure
+            device_dir = os.path.join(DOCUMENT_STORAGE, manufacturer, result["model"])
+            raw_docs_dir = os.path.join(device_dir, "raw_docs")
+            os.makedirs(raw_docs_dir, exist_ok=True)
+            
+            # Save the JSON response
+            json_path = os.path.join(device_dir, "productInfo.json")
+            with open(json_path, "w") as f:
+                json.dump(json.loads(result["response"]), f, indent=2)
+            
+            # Move the PDF to raw_docs directory with original filename
+            # If file exists, append a number
+            pdf_filename = file.filename
+            pdf_path = os.path.join(raw_docs_dir, pdf_filename)
+            counter = 1
+            
+            # If file exists, append a number until we find a unique name
+            while os.path.exists(pdf_path):
+                name, ext = os.path.splitext(file.filename)
+                pdf_filename = f"{name}_{counter}{ext}"
+                pdf_path = os.path.join(raw_docs_dir, pdf_filename)
+                counter += 1
+            
+            shutil.copy2(temp_filepath, pdf_path)  # Use copy2 to preserve metadata
         
         # Delete the temporary file
         os.remove(temp_filepath)
