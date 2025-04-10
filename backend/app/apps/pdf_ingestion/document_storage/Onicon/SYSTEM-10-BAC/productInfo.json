@@ -1,0 +1,138 @@
+{
+  "device": {
+    "manufacturer": "ONICON",
+    "model": "SYSTEM-10-BAC",
+    "type": "BTU Meter",
+    "dimensions": {
+      "width": "",
+      "height": "",
+      "depth": "",
+      "units": ""
+    },
+    "power": {
+      "voltage": "24/120 VAC",
+      "frequency": "",
+      "power_consumption": ""
+    },
+    "operating_conditions": {
+      "temp_min": "",
+      "temp_max": "",
+      "humidity_range": ""
+    },
+    "communication_protocols": [
+      "BACnet MS/TP",
+      "BACnet/IP"
+    ],
+    "firmware_version": "v1.01fA",
+    "certifications": []
+  },
+  "bacnet": {
+    "ai": [
+      {
+        "dis": "Energy Rate",
+        "bacnetAddr": "AI1",
+        "units": "Btu/Hr, kW or Tons",
+        "description": ""
+      },
+      {
+        "dis": "Volume Rate",
+        "bacnetAddr": "AI2",
+        "units": "L/Sec, L/Min, L/Hr, M\u00b3/Hr, GPM, CFS or CFM",
+        "description": ""
+      },
+      {
+        "dis": "Supply Temperature",
+        "bacnetAddr": "AI3",
+        "units": "Degrees C or F",
+        "description": ""
+      },
+      {
+        "dis": "Return Temperature",
+        "bacnetAddr": "AI4",
+        "units": "Degrees C or F",
+        "description": ""
+      }
+    ],
+    "ao": [],
+    "av": [
+      {
+        "dis": "Mode 1 Energy Total",
+        "bacnetAddr": "AV1",
+        "units": "Btu, TonHrs or kWHrs",
+        "description": ""
+      },
+      {
+        "dis": "Mode 1 Volume Total",
+        "bacnetAddr": "AV2",
+        "units": "Liters, M\u00b3, Gallons or Ft\u00b3",
+        "description": ""
+      },
+      {
+        "dis": "Mode 2 Energy Total",
+        "bacnetAddr": "AV3",
+        "units": "Btu, TonHrs or kWHrs",
+        "description": "Only used in dual-mode applications."
+      },
+      {
+        "dis": "Mode 2 Volume Total",
+        "bacnetAddr": "AV4",
+        "units": "Liters, M\u00b3 or Gallons",
+        "description": "Only used in dual-mode applications."
+      },
+      {
+        "dis": "Auxiliary Input Total (Di3)",
+        "bacnetAddr": "AV5",
+        "units": "None",
+        "description": "BACnet will not report engineering units for this object."
+      },
+      {
+        "dis": "Operating Mode (Single, Dual or Bi-directional)",
+        "bacnetAddr": "AV6",
+        "description": "None = 0 Single = 1 Dual = 2 BiDir = 3"
+      },
+      {
+        "dis": "Mode 1 Mode 2 Indication",
+        "bacnetAddr": "AV12",
+        "description": "Mode 1 = 1 Mode 2 = 2"
+      },
+      {
+        "dis": "BACnet Instance",
+        "bacnetAddr": "AV13",
+        "description": ""
+      }
+    ],
+    "bi": [],
+    "bo": [],
+    "bv": [
+      {
+        "dis": "Zero Mode 1 Energy Total",
+        "bacnetAddr": "BV11",
+        "description": "Changing this property from the (0) inactive state to the (1) active state will reset the total to zero. (Must be priority 8 manual operator)."
+      },
+      {
+        "dis": "Zero Mode 1 Volume Total",
+        "bacnetAddr": "BV12",
+        "description": "Changing this property from the (0) inactive state to the (1) active state will reset the total to zero. (Must be priority 8 manual operator)."
+      },
+      {
+        "dis": "Zero Mode 2 Energy Total",
+        "bacnetAddr": "BV13",
+        "description": "Changing this property from the (0) inactive state to the (1) active state will reset the total to zero. (Must be priority 8 manual operator)."
+      },
+      {
+        "dis": "Zero Mode 2 Volume Total",
+        "bacnetAddr": "BV14",
+        "description": "Changing this property from the (0) inactive state to the (1) active state will reset the total to zero. (Must be priority 8 manual operator)."
+      },
+      {
+        "dis": "Zero Auxiliary Input Total",
+        "bacnetAddr": "BV15",
+        "description": "Changing this property from the (0) inactive state to the (1) active state will reset the total to zero. (Must be priority 8 manual operator)."
+      }
+    ],
+    "msi": [],
+    "mso": [],
+    "msv": []
+  },
+  "modbus_registers": []
+}

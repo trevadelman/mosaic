@@ -1,0 +1,916 @@
+{
+  "device": {
+    "manufacturer": "Accuenergy",
+    "model": "Acuvim II",
+    "type": "Advanced Power & Energy Meter"
+  },
+  "bacnet": {
+    "ai": [
+      {
+        "dis": "Frequency",
+        "bacnetAddr": "AI1",
+        "units": "Hz"
+      },
+      {
+        "dis": "Phase A Voltage",
+        "bacnetAddr": "AI2",
+        "units": "V"
+      },
+      {
+        "dis": "Phase B Voltage",
+        "bacnetAddr": "AI3",
+        "units": "V"
+      },
+      {
+        "dis": "Phase C Voltage",
+        "bacnetAddr": "AI4",
+        "units": "V"
+      },
+      {
+        "dis": "Average Line Voltage",
+        "bacnetAddr": "AI5",
+        "units": "V"
+      },
+      {
+        "dis": "Line Voltage AB",
+        "bacnetAddr": "AI6",
+        "units": "V"
+      },
+      {
+        "dis": "Line Voltage BC",
+        "bacnetAddr": "AI7",
+        "units": "V"
+      },
+      {
+        "dis": "Line Voltage CA",
+        "bacnetAddr": "AI8",
+        "units": "V"
+      },
+      {
+        "dis": "Average Line Voltage",
+        "bacnetAddr": "AI9",
+        "units": "V"
+      },
+      {
+        "dis": "Phase A Current",
+        "bacnetAddr": "AI10",
+        "units": "A"
+      },
+      {
+        "dis": "Phase B Current",
+        "bacnetAddr": "AI11",
+        "units": "A"
+      },
+      {
+        "dis": "Phase C Current",
+        "bacnetAddr": "AI12",
+        "units": "A"
+      },
+      {
+        "dis": "Average Current",
+        "bacnetAddr": "AI13",
+        "units": "A"
+      },
+      {
+        "dis": "Neutral Current",
+        "bacnetAddr": "AI14",
+        "units": "A"
+      },
+      {
+        "dis": "Phase A Active Power",
+        "bacnetAddr": "AI15",
+        "units": "kW"
+      },
+      {
+        "dis": "Phase B Active Power",
+        "bacnetAddr": "AI16",
+        "units": "kW"
+      },
+      {
+        "dis": "Phase C Active Power",
+        "bacnetAddr": "AI17",
+        "units": "kW"
+      },
+      {
+        "dis": "Total Active Power",
+        "bacnetAddr": "AI18",
+        "units": "kW"
+      },
+      {
+        "dis": "Phase A Reactive Power",
+        "bacnetAddr": "AI19",
+        "units": "kvar"
+      },
+      {
+        "dis": "Phase B Reactive Power",
+        "bacnetAddr": "AI20",
+        "units": "kvar"
+      },
+      {
+        "dis": "Phase C Reactive Power",
+        "bacnetAddr": "AI21",
+        "units": "kvar"
+      },
+      {
+        "dis": "Total Reactive Power",
+        "bacnetAddr": "AI22",
+        "units": "kvar"
+      },
+      {
+        "dis": "Phase A Apparent Power",
+        "bacnetAddr": "AI23",
+        "units": "kVA"
+      },
+      {
+        "dis": "Phase B Apparent Power",
+        "bacnetAddr": "AI24",
+        "units": "kVA"
+      },
+      {
+        "dis": "Phase C Apparent Power",
+        "bacnetAddr": "AI25",
+        "units": "kVA"
+      },
+      {
+        "dis": "Total Apparent Power",
+        "bacnetAddr": "AI26",
+        "units": "kVA"
+      },
+      {
+        "dis": "Phase A Power Factor",
+        "bacnetAddr": "AI27"
+      },
+      {
+        "dis": "Phase B Power Factor",
+        "bacnetAddr": "AI28"
+      },
+      {
+        "dis": "Phase C Power Factor",
+        "bacnetAddr": "AI29"
+      },
+      {
+        "dis": "Total Power Factor",
+        "bacnetAddr": "AI30"
+      },
+      {
+        "dis": "Voltage Unbalance Factor",
+        "bacnetAddr": "AI31",
+        "units": "%"
+      },
+      {
+        "dis": "Current Unbalance Factor",
+        "bacnetAddr": "AI32",
+        "units": "%"
+      },
+      {
+        "dis": "Load Type",
+        "bacnetAddr": "AI33"
+      },
+      {
+        "dis": "Active Power Demand",
+        "bacnetAddr": "AI34",
+        "units": "kW"
+      },
+      {
+        "dis": "Reactive Power Demand",
+        "bacnetAddr": "AI35",
+        "units": "kvar"
+      },
+      {
+        "dis": "Apparent Power Demand",
+        "bacnetAddr": "AI36",
+        "units": "kVA"
+      },
+      {
+        "dis": "Phase A Current Demand",
+        "bacnetAddr": "AI37",
+        "units": "A"
+      },
+      {
+        "dis": "Phase B Current Demand",
+        "bacnetAddr": "AI38",
+        "units": "A"
+      },
+      {
+        "dis": "Phase C Current Demand",
+        "bacnetAddr": "AI39",
+        "units": "A"
+      },
+      {
+        "dis": "Import Active Energy",
+        "bacnetAddr": "AI40",
+        "units": "kWh"
+      },
+      {
+        "dis": "Export Active Energy",
+        "bacnetAddr": "AI41",
+        "units": "kWh"
+      },
+      {
+        "dis": "Import Reactive Energy",
+        "bacnetAddr": "AI42",
+        "units": "kWh"
+      },
+      {
+        "dis": "Export Reactive Energy",
+        "bacnetAddr": "AI43",
+        "units": "kWh"
+      },
+      {
+        "dis": "Energy Total",
+        "bacnetAddr": "AI44",
+        "units": "kWh"
+      },
+      {
+        "dis": "Energy Net",
+        "bacnetAddr": "AI45",
+        "units": "kWh"
+      },
+      {
+        "dis": "Reactive Energy Total",
+        "bacnetAddr": "AI46",
+        "units": "kvarh"
+      },
+      {
+        "dis": "Reactive Energy Net",
+        "bacnetAddr": "AI47",
+        "units": "kvarh"
+      },
+      {
+        "dis": "Apparent Energy",
+        "bacnetAddr": "AI48",
+        "units": "kVAh"
+      },
+      {
+        "dis": "Phase A Import Active Energy",
+        "bacnetAddr": "AI49",
+        "units": "kWh"
+      },
+      {
+        "dis": "Phase A Export Active Energy",
+        "bacnetAddr": "AI50",
+        "units": "kWh"
+      },
+      {
+        "dis": "Phase B Export Active Energy",
+        "bacnetAddr": "AI51",
+        "units": "kWh"
+      },
+      {
+        "dis": "Phase B Export Active Energy",
+        "bacnetAddr": "AI52",
+        "units": "kWh"
+      },
+      {
+        "dis": "Phase C Import Active Energy",
+        "bacnetAddr": "AI53",
+        "units": "kWh"
+      },
+      {
+        "dis": "Phase C Export Active Energy",
+        "bacnetAddr": "AI54",
+        "units": "kWh"
+      },
+      {
+        "dis": "Phase A Import Reactive Energy",
+        "bacnetAddr": "AI55",
+        "units": "kvarh"
+      },
+      {
+        "dis": "Phase A Export Reactive Energy",
+        "bacnetAddr": "AI56",
+        "units": "kvarh"
+      },
+      {
+        "dis": "Phase B Import Reactive Energy",
+        "bacnetAddr": "AI57",
+        "units": "kvarh"
+      },
+      {
+        "dis": "Phase B Export Reactive Energy",
+        "bacnetAddr": "AI58",
+        "units": "kvarh"
+      },
+      {
+        "dis": "Phase C Import Reactive Energy",
+        "bacnetAddr": "AI59",
+        "units": "kvarh"
+      },
+      {
+        "dis": "Phase C Export Reactive Energy",
+        "bacnetAddr": "AI60",
+        "units": "kvarh"
+      },
+      {
+        "dis": "Phase A Apparent Energy",
+        "bacnetAddr": "AI61",
+        "units": "kVAh"
+      },
+      {
+        "dis": "Phase B Apparent Energy",
+        "bacnetAddr": "AI62",
+        "units": "kVAh"
+      },
+      {
+        "dis": "Phase C Apparent Energy",
+        "bacnetAddr": "AI63",
+        "units": "kVAh"
+      },
+      {
+        "dis": "Phase A Voltage THD",
+        "bacnetAddr": "AI64",
+        "units": "%"
+      },
+      {
+        "dis": "Phase B Voltage THD",
+        "bacnetAddr": "AI65",
+        "units": "%"
+      },
+      {
+        "dis": "Phase C Voltage THD",
+        "bacnetAddr": "AI66",
+        "units": "%"
+      },
+      {
+        "dis": "Average Voltage THD",
+        "bacnetAddr": "AI67",
+        "units": "%"
+      },
+      {
+        "dis": "Phase A Current THD",
+        "bacnetAddr": "AI68",
+        "units": "%"
+      },
+      {
+        "dis": "Phase B Current THD",
+        "bacnetAddr": "AI69",
+        "units": "%"
+      },
+      {
+        "dis": "Phase C Current THD",
+        "bacnetAddr": "AI70",
+        "units": "%"
+      },
+      {
+        "dis": "Average Current THD",
+        "bacnetAddr": "AI71",
+        "units": "%"
+      },
+      {
+        "dis": "IO21-AI1",
+        "bacnetAddr": "AI1001",
+        "units": "mA/Volts"
+      },
+      {
+        "dis": "IO21-AI2",
+        "bacnetAddr": "AI1002",
+        "units": "mA/Volts"
+      },
+      {
+        "dis": "IO22-AI3",
+        "bacnetAddr": "AI1003",
+        "units": "mA/Volts"
+      },
+      {
+        "dis": "IO22-AI4",
+        "bacnetAddr": "AI1004",
+        "units": "mA/Volts"
+      },
+      {
+        "dis": "IO31-AI1",
+        "bacnetAddr": "AI1005",
+        "units": "mA/Volts"
+      },
+      {
+        "dis": "IO31-AI2",
+        "bacnetAddr": "AI1006",
+        "units": "mA/Volts"
+      },
+      {
+        "dis": "IO32-AI3",
+        "bacnetAddr": "AI1007",
+        "units": "mA/Volts"
+      },
+      {
+        "dis": "IO32-AI4",
+        "bacnetAddr": "AI1008",
+        "units": "mA/Volts"
+      },
+      {
+        "dis": "IO11-DI1-Counter",
+        "bacnetAddr": "AI2001"
+      },
+      {
+        "dis": "I011-DI2-Counter",
+        "bacnetAddr": "AI2002"
+      },
+      {
+        "dis": "IO11-DI3-Counter",
+        "bacnetAddr": "AI2003"
+      },
+      {
+        "dis": "IO11-DI4-Counter",
+        "bacnetAddr": "AI2004"
+      },
+      {
+        "dis": "IO11-DI5-Counter",
+        "bacnetAddr": "AI2005"
+      },
+      {
+        "dis": "IO11-DI6-Counter",
+        "bacnetAddr": "AI2006"
+      },
+      {
+        "dis": "IO21-DI1-Counter",
+        "bacnetAddr": "AI2007"
+      },
+      {
+        "dis": "IO21-DI2-Counter",
+        "bacnetAddr": "AI2008"
+      },
+      {
+        "dis": "IO21-DI3-Counter",
+        "bacnetAddr": "AI2009"
+      },
+      {
+        "dis": "IO21-DI4-Counter",
+        "bacnetAddr": "AI2010"
+      },
+      {
+        "dis": "IO31-DI1-Counter",
+        "bacnetAddr": "AI2011"
+      },
+      {
+        "dis": "IO31-DI2-Counter",
+        "bacnetAddr": "AI2012"
+      },
+      {
+        "dis": "IO31-DI3-Counter",
+        "bacnetAddr": "AI2013"
+      },
+      {
+        "dis": "IO31-DI4-Counter",
+        "bacnetAddr": "AI2014"
+      },
+      {
+        "dis": "IO12-DI1-Counter",
+        "bacnetAddr": "AI2015"
+      },
+      {
+        "dis": "IO12-D2-Counter",
+        "bacnetAddr": "AI2016"
+      },
+      {
+        "dis": "IO12-DI3-Counter",
+        "bacnetAddr": "AI2017"
+      },
+      {
+        "dis": "IO12-DI4-Counter",
+        "bacnetAddr": "AI2018"
+      },
+      {
+        "dis": "IO12-DI5-Counter",
+        "bacnetAddr": "AI2019"
+      },
+      {
+        "dis": "IO12-DI6-Counter",
+        "bacnetAddr": "AI2020"
+      },
+      {
+        "dis": "IO22-DI1-Counter",
+        "bacnetAddr": "AI2021"
+      },
+      {
+        "dis": "IO22-DI2-Counter",
+        "bacnetAddr": "AI2022"
+      },
+      {
+        "dis": "IO22-DI3-Counter",
+        "bacnetAddr": "AI2023"
+      },
+      {
+        "dis": "IO22-DI4-Counter",
+        "bacnetAddr": "AI2024"
+      },
+      {
+        "dis": "IO32-DI1-Counter",
+        "bacnetAddr": "AI2025"
+      },
+      {
+        "dis": "IO32-DI2-Counter",
+        "bacnetAddr": "AI2026"
+      },
+      {
+        "dis": "IO32-DI3-Counter",
+        "bacnetAddr": "AI2027"
+      },
+      {
+        "dis": "IO32-DI4-Counter",
+        "bacnetAddr": "AI2028"
+      }
+    ],
+    "ao": [],
+    "av": [
+      {
+        "dis": "Freq_rms",
+        "bacnetAddr": "AV0",
+        "description": "Frequency"
+      },
+      {
+        "dis": "Ua_rms",
+        "bacnetAddr": "AV1",
+        "description": "Voltage A"
+      },
+      {
+        "dis": "Ub_rms",
+        "bacnetAddr": "AV2",
+        "description": "Voltage B"
+      },
+      {
+        "dis": "Uc_rms",
+        "bacnetAddr": "AV3",
+        "description": "Voltage C"
+      },
+      {
+        "dis": "Uvag_rms",
+        "bacnetAddr": "AV4",
+        "description": "Average Phase Voltage"
+      },
+      {
+        "dis": "Uab_rms",
+        "bacnetAddr": "AV5",
+        "description": "Voltage A-B"
+      },
+      {
+        "dis": "Ubc_rms",
+        "bacnetAddr": "AV6",
+        "description": "Voltage B-C"
+      },
+      {
+        "dis": "Uca_rms",
+        "bacnetAddr": "AV7",
+        "description": "Voltage C-A"
+      },
+      {
+        "dis": "Ulavg_rms",
+        "bacnetAddr": "AV8",
+        "description": "Average Line Voltage"
+      },
+      {
+        "dis": "la_rms",
+        "bacnetAddr": "AV9",
+        "description": "Current A"
+      },
+      {
+        "dis": "Ib_rms",
+        "bacnetAddr": "AV10",
+        "description": "Current B"
+      },
+      {
+        "dis": "Ic_rms",
+        "bacnetAddr": "AV11",
+        "description": "Current C"
+      },
+      {
+        "dis": "lavg_rms",
+        "bacnetAddr": "AV12",
+        "description": "Average Current"
+      },
+      {
+        "dis": "In_rms",
+        "bacnetAddr": "AV13",
+        "description": "Neutral Current"
+      },
+      {
+        "dis": "Pa_rms",
+        "bacnetAddr": "AV14",
+        "description": "Pa"
+      },
+      {
+        "dis": "Pb_rms",
+        "bacnetAddr": "AV15",
+        "description": "Pb"
+      },
+      {
+        "dis": "Pc_rms",
+        "bacnetAddr": "AV16",
+        "description": "Pc"
+      },
+      {
+        "dis": "P_rms",
+        "bacnetAddr": "AV17",
+        "description": "Total Active Power"
+      },
+      {
+        "dis": "Qa_rms",
+        "bacnetAddr": "AV18",
+        "description": "Qa"
+      },
+      {
+        "dis": "Qb_rms",
+        "bacnetAddr": "AV19",
+        "description": "Qb"
+      },
+      {
+        "dis": "Qc_rms",
+        "bacnetAddr": "AV20",
+        "description": "Qc"
+      },
+      {
+        "dis": "Q_rms",
+        "bacnetAddr": "AV21",
+        "description": "Total Reactive Power"
+      },
+      {
+        "dis": "Sa_rms",
+        "bacnetAddr": "AV22",
+        "description": "Sa"
+      },
+      {
+        "dis": "Sb_rms",
+        "bacnetAddr": "AV23",
+        "description": "Sb"
+      },
+      {
+        "dis": "Sc_rms",
+        "bacnetAddr": "AV24",
+        "description": "Sc"
+      },
+      {
+        "dis": "S_rms",
+        "bacnetAddr": "AV25",
+        "description": "Total Apparent Power"
+      },
+      {
+        "dis": "PFa_rms",
+        "bacnetAddr": "AV26",
+        "description": "PFa"
+      },
+      {
+        "dis": "PFb_rms",
+        "bacnetAddr": "AV27",
+        "description": "PFb"
+      },
+      {
+        "dis": "PFc_rms",
+        "bacnetAddr": "AV28",
+        "description": "PFc"
+      },
+      {
+        "dis": "PF_rms",
+        "bacnetAddr": "AV29",
+        "description": "Total Power Factor"
+      },
+      {
+        "dis": "Unbl_u2",
+        "bacnetAddr": "AV30",
+        "description": "Voltage Imbalance"
+      },
+      {
+        "dis": "Unbl_i2",
+        "bacnetAddr": "AV31",
+        "description": "Current Imbalance"
+      },
+      {
+        "dis": "Rlc_val",
+        "bacnetAddr": "AV32",
+        "description": "Load Characteristics"
+      },
+      {
+        "dis": "P_dema",
+        "bacnetAddr": "AV33",
+        "description": "P Demand"
+      },
+      {
+        "dis": "Q_dema",
+        "bacnetAddr": "AV34",
+        "description": "Q Demand"
+      },
+      {
+        "dis": "S_dema",
+        "bacnetAddr": "AV35",
+        "description": "S Demand"
+      },
+      {
+        "dis": "la_Demand",
+        "bacnetAddr": "AV36",
+        "description": "la Demand"
+      },
+      {
+        "dis": "Ib_Demand",
+        "bacnetAddr": "AV37",
+        "description": "Ib Demand"
+      },
+      {
+        "dis": "Ic_Demand",
+        "bacnetAddr": "AV38",
+        "description": "Ic Demand"
+      },
+      {
+        "dis": "Active_Energy_IMP",
+        "bacnetAddr": "AV39",
+        "description": "Active_Energy_IMP"
+      },
+      {
+        "dis": "Active_Energy_EXP",
+        "bacnetAddr": "AV40",
+        "description": "Active_Energy_EXP"
+      },
+      {
+        "dis": "Reactive_Energy_IMP",
+        "bacnetAddr": "AV41",
+        "description": "Reactive_Energy_IMP"
+      },
+      {
+        "dis": "Reactive_Energy_EXP",
+        "bacnetAddr": "AV42",
+        "description": "Reactive_Energy_EXP"
+      },
+      {
+        "dis": "Active_Energy_TOTAL",
+        "bacnetAddr": "AV43",
+        "description": "Active_Energy_TOTAL"
+      },
+      {
+        "dis": "Active_Energy_NET",
+        "bacnetAddr": "AV44",
+        "description": "Active_Energy_NET"
+      },
+      {
+        "dis": "Reactive_Energy_TOTAL",
+        "bacnetAddr": "AV45",
+        "description": "Reactive_Energy_TOTAL"
+      },
+      {
+        "dis": "Reactive_Energy_NETS",
+        "bacnetAddr": "AV46",
+        "description": "Reactive_Energy_NET"
+      },
+      {
+        "dis": "Apparent_Energy",
+        "bacnetAddr": "AV47",
+        "description": "Apparent_Energy"
+      },
+      {
+        "dis": "THD_V1",
+        "bacnetAddr": "AV48",
+        "description": "THD_V1"
+      },
+      {
+        "dis": "THD_V2",
+        "bacnetAddr": "AV49",
+        "description": "THD_V2"
+      },
+      {
+        "dis": "THD_V3",
+        "bacnetAddr": "AV50",
+        "description": "THD_V3"
+      },
+      {
+        "dis": "THD_V",
+        "bacnetAddr": "AV51",
+        "description": "THD_V"
+      },
+      {
+        "dis": "THD_11",
+        "bacnetAddr": "AV52",
+        "description": "THD_I1"
+      },
+      {
+        "dis": "THD_12",
+        "bacnetAddr": "AV53",
+        "description": "THD_I2"
+      },
+      {
+        "dis": "THD_13",
+        "bacnetAddr": "AV54",
+        "description": "THD_I3"
+      },
+      {
+        "dis": "THD_I",
+        "bacnetAddr": "AV55",
+        "description": "THD_I"
+      }
+    ],
+    "bi": [
+      {
+        "dis": "IO11-DI1",
+        "bacnetAddr": "BI1"
+      },
+      {
+        "dis": "IO11-DI2",
+        "bacnetAddr": "BI2"
+      },
+      {
+        "dis": "IO11-D13",
+        "bacnetAddr": "BI3"
+      },
+      {
+        "dis": "IO11-D14",
+        "bacnetAddr": "BI4"
+      },
+      {
+        "dis": "IO11-D15",
+        "bacnetAddr": "BI5"
+      },
+      {
+        "dis": "IO11-D16",
+        "bacnetAddr": "BI6"
+      },
+      {
+        "dis": "IO21-DI1",
+        "bacnetAddr": "BI7"
+      },
+      {
+        "dis": "IO21-D12",
+        "bacnetAddr": "BI8"
+      },
+      {
+        "dis": "IO21-D13",
+        "bacnetAddr": "BI9"
+      },
+      {
+        "dis": "IO21-D14",
+        "bacnetAddr": "BI10"
+      },
+      {
+        "dis": "IO31-DI1",
+        "bacnetAddr": "BI11"
+      },
+      {
+        "dis": "IO31-D12",
+        "bacnetAddr": "BI12"
+      },
+      {
+        "dis": "IO31-D13",
+        "bacnetAddr": "BI13"
+      },
+      {
+        "dis": "IO31-D14",
+        "bacnetAddr": "BI14"
+      },
+      {
+        "dis": "IO12-DI1",
+        "bacnetAddr": "BI15"
+      },
+      {
+        "dis": "IO12-D2",
+        "bacnetAddr": "BI16"
+      },
+      {
+        "dis": "IO12-D13",
+        "bacnetAddr": "BI17"
+      },
+      {
+        "dis": "IO12-D14",
+        "bacnetAddr": "BI18"
+      },
+      {
+        "dis": "IO12-D15",
+        "bacnetAddr": "BI19"
+      },
+      {
+        "dis": "IO12-DI6",
+        "bacnetAddr": "BI20"
+      },
+      {
+        "dis": "IO22-DI1",
+        "bacnetAddr": "BI21"
+      },
+      {
+        "dis": "IO22-D12",
+        "bacnetAddr": "BI22"
+      },
+      {
+        "dis": "IO22-D13",
+        "bacnetAddr": "BI23"
+      },
+      {
+        "dis": "IO22-D14",
+        "bacnetAddr": "BI24"
+      },
+      {
+        "dis": "IO32-DI1",
+        "bacnetAddr": "BI25"
+      },
+      {
+        "dis": "IO32-D12",
+        "bacnetAddr": "BI26"
+      },
+      {
+        "dis": "IO32-D13",
+        "bacnetAddr": "BI27"
+      },
+      {
+        "dis": "IO32-D14",
+        "bacnetAddr": "BI28"
+      }
+    ],
+    "bo": [],
+    "bv": [],
+    "msi": [],
+    "mso": [],
+    "msv": []
+  },
+  "modbus_registers": []
+}

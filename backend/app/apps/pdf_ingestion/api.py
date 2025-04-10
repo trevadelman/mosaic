@@ -6,6 +6,7 @@ This module provides API endpoints for processing PDF files with Gemini.
 
 import os
 import json
+import logging
 from typing import Dict, Any, List, Union
 from fastapi import APIRouter, UploadFile, File, HTTPException, Body, Response
 from fastapi.responses import FileResponse
@@ -14,6 +15,23 @@ from google import genai
 import uuid
 import dotenv
 import shutil
+
+# Configure logging
+logger = logging.getLogger("mosaic.apps.pdf_ingestion")
+logger.setLevel(logging.DEBUG)
+
+# Add file handler if it doesn't exist
+if not logger.handlers:
+    # Create logs directory if it doesn't exist
+    log_dir = os.path.join(os.path.dirname(__file__), "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    
+    # Add file handler
+    fh = logging.FileHandler(os.path.join(log_dir, "pdf_ingestion.log"))
+    fh.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
 
 router = APIRouter(prefix="/api/apps/pdf-ingestion", tags=["applications"])
 
@@ -54,12 +72,7 @@ Your ONLY response should be a valid JSON object with the following structure:
     "manufacturer": "string",
     "model": "string",
     "type": "string",
-    "dimensions": {"width": "string", "height": "string", "depth": "string", "units": "string"},
-    "power": {"voltage": "string", "frequency": "string", "power_consumption": "string"},
-    "operating_conditions": {"temp_min": "string", "temp_max": "string", "humidity_range": "string"},
-    "communication_protocols": ["string"],
-    "firmware_version": "string",
-    "certifications": ["string"]
+    "add_any_other_device_properties_here": "Add properties as you find the, but DO NOT HALLUCINATE ANYTHING HERE."
   },
   "bacnet": {
     "ai": [
@@ -146,6 +159,89 @@ For each BACnet object:
 Group all BACnet objects by their type (AI, AO, AV, BI, BO, BV, MSI, MSO, MSV, OTHER) into their respective arrays.
 
 If certain properties or sections are not found in the documentation, include them as empty objects or arrays. Only output the JSON structure with no additional explanation or commentary. Do not hallucinate any values."""
+
+# Follow-up prompt for subsequent documents
+FOLLOW_UP_PROMPT = """You are a specialized PDF parsing agent for HVAC device documentation. We have already extracted information from previous documents, provided below. Your task is to enhance this information with any new details found in the current document.
+
+EXISTING INFORMATION:
+{existing_json}
+
+Your response must be a valid JSON object with EXACTLY this structure:
+
+{
+  "device": {
+    "manufacturer": "string",
+    "model": "string",
+    "type": "string",
+    "add_any_other_device_properties_here": "Add properties as you find the, but DO NOT HALLUCINATE ANYTHING HERE."
+  },
+  "bacnet": {
+    "ai": [
+      {
+        "dis": "String Name",
+        "bacnetAddr": "AI1",
+        "units": "String if exists",
+        "description": "String if it exists in the doc"
+      }
+    ],
+    "ao": [{"dis": "String Name", "bacnetAddr": "AO1", "units": "String if exists"}],
+    "av": [{"dis": "String Name", "bacnetAddr": "AV1", "units": "String if exists"}],
+    "bi": [{"dis": "String Name", "bacnetAddr": "BI1", "units": "String if exists"}],
+    "bo": [{"dis": "String Name", "bacnetAddr": "BO1", "units": "String if exists"}],
+    "bv": [{"dis": "String Name", "bacnetAddr": "BV1", "units": "String if exists"}],
+    "msi": [{"dis": "String Name", "bacnetAddr": "MSI1", "units": "String if exists"}],
+    "mso": [{"dis": "String Name", "bacnetAddr": "MSO1", "units": "String if exists"}],
+    "msv": [{"dis": "String Name", "bacnetAddr": "MSV1", "units": "String if exists"}]
+  },
+  "modbus_registers": [
+    {
+      "register_address": "string",
+      "register_type": "string",
+      "description": "string",
+      "units": "string"
+    }
+  ]
+}
+
+Critical Rules:
+1. Device Section:
+   - Preserve ALL existing device information
+   - ONLY add new information to empty fields
+   - If a field has existing data, keep it unless new data is clearly more complete and you are VERY confident of the accuracy.
+   - Never remove or blank out existing fields
+
+2. BACnet Objects:
+   - Keep ALL existing BACnet objects
+   - Add ANY new BACnet objects found
+   - Use exact bacnetAddr format (e.g., "AI1", "BO3")
+   - Include units ONLY if specifically mentioned
+   - Copy descriptions word-for-word from documentation
+
+3. Modbus Registers:
+   - Keep ALL existing registers
+   - Add ANY new registers found
+   - Never modify existing register information
+   - Add new registers with complete information only
+
+4. Output Format:
+   - Return ONLY the JSON structure
+   - No additional text or explanations
+   - Maintain exact field names and structure
+   - Keep all arrays even if empty ([])
+
+For each BACnet object:
+    - The "dis" field should contain the object's name
+    - The "bacnetAddr" field should follow the format of object type abbreviation + instance number (e.g., "AI1", "BO3")
+    - The "units" field should only be included if unit information exists
+    - The "description" field should be pulled word for word from the doc if available. Left blank otherwise. 
+
+Group all BACnet objects by their type (AI, AO, AV, BI, BO, BV, MSI, MSO, MSV, OTHER) into their respective arrays.
+
+If avlue does not exist, do not include it. Do not include it with an empty string. Do not include it with a null value. 
+
+If certain properties or sections are not found in the documentation, include them as empty objects or arrays. Only output the JSON structure with no additional explanation or commentary. Do not hallucinate any values.
+
+If certain properties or sections are not found in the new documentation, preserve the existing values. Only output the JSON structure with no additional explanation or commentary. Do not hallucinate any values."""
 
 class JsonData(BaseModel):
     """Request model for saving JSON data"""
@@ -251,43 +347,60 @@ async def process_file_with_gemini(file_path: str, prompt: str, model_name: str)
     """Process a file with the Gemini model"""
     try:
         # Upload the file to Gemini API
-        file_ref = client.files.upload(file=file_path)
+        try:
+            file_ref = client.files.upload(file=file_path)
+        except Exception as e:
+            logger.error(f"Error uploading file to Gemini: {str(e)}", exc_info=True)
+            raise
         
         # Generate content with the file reference
-        response = client.models.generate_content(
-            model=model_name,
-            contents=[prompt, file_ref]
-        )
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=[prompt, file_ref]
+            )
+        except Exception as e:
+            logger.error(f"Error generating content with Gemini: {str(e)}", exc_info=True)
+            raise
         
         # Clean the response text to remove markdown code block syntax
-        response_text = response.text
-        
-        # Remove markdown code block syntax if present
-        if response_text.startswith("```json") or response_text.startswith("```JSON"):
-            start_idx = response_text.find("\n")
-            if start_idx != -1:
-                end_idx = response_text.rfind("```")
-                if end_idx != -1:
-                    response_text = response_text[start_idx + 1:end_idx].strip()
-        
-        # Parse the response to extract manufacturer and model
         try:
-            parsed = json.loads(response_text)
-            device_info = parsed.get("device", {})
-            return {
-                "success": True,
-                "response": response_text,
-                "manufacturer": device_info.get("manufacturer", ""),
-                "model": device_info.get("model", "")
-            }
-        except json.JSONDecodeError:
-            return {
-                "success": True,
-                "response": response_text,
-                "manufacturer": "",
-                "model": ""
-            }
+            response_text = response.text
+            
+            # Remove markdown code block syntax if present
+            if response_text.startswith("```json") or response_text.startswith("```JSON"):
+                start_idx = response_text.find("\n")
+                if start_idx != -1:
+                    end_idx = response_text.rfind("```")
+                    if end_idx != -1:
+                        response_text = response_text[start_idx + 1:end_idx].strip()
+        
+            # Parse the response to extract manufacturer and model
+            try:
+                parsed = json.loads(response_text)
+                device_info = parsed.get("device", {})
+                
+                result = {
+                    "success": True,
+                    "response": response_text,
+                    "manufacturer": device_info.get("manufacturer", ""),
+                    "model": device_info.get("model", "")
+                }
+                return result
+                
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse JSON response: {str(e)}")
+                return {
+                    "success": True,
+                    "response": response_text,
+                    "manufacturer": "",
+                    "model": ""
+                }
+        except Exception as e:
+            logger.error(f"Error processing Gemini response: {str(e)}", exc_info=True)
+            raise
     except Exception as e:
+        logger.error(f"Unexpected error in process_file_with_gemini: {str(e)}", exc_info=True)
         return {
             "success": False,
             "error": str(e),
@@ -368,6 +481,7 @@ async def save_json(data: JsonData) -> ProcessResponse:
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON data")
     except Exception as e:
+        logger.error(f"Error in process_pdf endpoint: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/manufacturers/{manufacturer}/devices/{device}/info")
@@ -408,67 +522,143 @@ async def get_file(manufacturer: str, path: str):
 
 @router.post("/process", response_model=ProcessResponse)
 async def process_pdf(
-    file: UploadFile = File(...),
+    files: List[UploadFile] = File(...),
     manufacturer: str = Body(...)
 ) -> ProcessResponse:
-    """Process a PDF file and extract information"""
-    if not file.filename or not allowed_file(file.filename):
-        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+    """Process multiple PDF files and extract combined information"""
+    # Validate files
+    for file in files:
+        if not file.filename or not allowed_file(file.filename):
+            raise HTTPException(status_code=400, detail="Only PDF files are allowed")
     
     # Verify manufacturer exists
     if not os.path.exists(os.path.join(DOCUMENT_STORAGE, manufacturer)):
         raise HTTPException(status_code=404, detail=f"Manufacturer '{manufacturer}' not found")
     
     try:
-        # Create a unique filename
-        temp_filename = f"{uuid.uuid4()}.pdf"
-        temp_filepath = os.path.join(TEMP_UPLOAD_FOLDER, temp_filename)
+        # Process files sequentially
+        result = await process_multiple_pdfs(files, manufacturer)
         
-        # Save the uploaded file temporarily
-        with open(temp_filepath, "wb") as buffer:
-            content = await file.read()
-            buffer.write(content)
+        return ProcessResponse(**result)
         
-        # Process the file
-        result = await process_file_with_gemini(
-            temp_filepath, 
-            PDF_PROMPT, 
-            MODELS["Google/Gemini-2.5"]
-        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def process_multiple_pdfs(files: List[UploadFile], manufacturer: str) -> Dict[str, Any]:
+    """Process multiple PDF files sequentially, combining their information"""
+    temp_filepaths = []
+    try:
+        logger.info(f"Starting to process {len(files)} files for manufacturer {manufacturer}")
+        
+        # Save all files temporarily
+        for i, file in enumerate(files, 1):
+            logger.info(f"Processing file {i}/{len(files)}: {file.filename}")
+            temp_filename = f"{uuid.uuid4()}.pdf"
+            temp_filepath = os.path.join(TEMP_UPLOAD_FOLDER, temp_filename)
+            temp_filepaths.append((temp_filepath, file.filename))
+            
+            try:
+                with open(temp_filepath, "wb") as buffer:
+                    content = await file.read()
+                    buffer.write(content)
+            except Exception as e:
+                logger.error(f"Error saving file {file.filename} to temp location: {str(e)}", exc_info=True)
+                raise
+        
+        # Process first file with original prompt
+        first_file_path = temp_filepaths[0][0]
+        logger.info(f"Processing first file {temp_filepaths[0][1]} with original prompt")
+        try:
+            result = await process_file_with_gemini(
+                first_file_path,
+                PDF_PROMPT,
+                MODELS["Google/Gemini-2.5"]
+            )
+        except Exception as e:
+            logger.error(f"Error processing first file: {str(e)}", exc_info=True)
+            raise
+        
+        if not result["success"]:
+            logger.error(f"Failed to process first file: {result.get('error', 'Unknown error')}")
+            return result
+        
+        logger.info("Successfully processed first file")
+        
+        # Process remaining files with context
+        for i, (temp_filepath, original_filename) in enumerate(temp_filepaths[1:], 2):
+            logger.info(f"Processing file {i}/{len(files)}: {original_filename}")
+            try:
+                # Create context-aware prompt with escaped JSON template
+                follow_up_prompt = FOLLOW_UP_PROMPT.replace(
+                    "{existing_json}",
+                    result["response"]
+                )
+                
+                # Process with context
+                new_result = await process_file_with_gemini(
+                    temp_filepath,
+                    follow_up_prompt,
+                    MODELS["Google/Gemini-2.5"]
+                )
+                
+                if new_result["success"]:
+                    result = new_result
+                    logger.info(f"Successfully processed file {i}/{len(files)}")
+                else:
+                    # Log error but continue processing
+                    logger.error(f"Error processing file {original_filename}: {new_result['error']}")
+            except Exception as e:
+                logger.error(f"Unexpected error processing file {original_filename}: {str(e)}", exc_info=True)
+                # Continue processing remaining files
         
         if result["success"] and result["manufacturer"] and result["model"]:
+            logger.info(f"Processing successful. Saving results for model: {result['model']}")
             # Create device directory structure
             device_dir = os.path.join(DOCUMENT_STORAGE, manufacturer, result["model"])
             raw_docs_dir = os.path.join(device_dir, "raw_docs")
             os.makedirs(raw_docs_dir, exist_ok=True)
             
-            # Save the JSON response
+            # Save the final JSON response
             json_path = os.path.join(device_dir, "productInfo.json")
-            with open(json_path, "w") as f:
-                json.dump(json.loads(result["response"]), f, indent=2)
+            try:
+                with open(json_path, "w") as f:
+                    json.dump(json.loads(result["response"]), f, indent=2)
+                logger.info(f"Successfully saved JSON to {json_path}")
+            except Exception as e:
+                logger.error(f"Error saving JSON file: {str(e)}", exc_info=True)
+                raise
             
-            # Move the PDF to raw_docs directory with original filename
-            # If file exists, append a number
-            pdf_filename = file.filename
-            pdf_path = os.path.join(raw_docs_dir, pdf_filename)
-            counter = 1
-            
-            # If file exists, append a number until we find a unique name
-            while os.path.exists(pdf_path):
-                name, ext = os.path.splitext(file.filename)
-                pdf_filename = f"{name}_{counter}{ext}"
+            # Copy all PDFs to raw_docs
+            logger.info("Copying PDFs to raw_docs directory")
+            for temp_filepath, original_filename in temp_filepaths:
+                # Handle filename conflicts
+                pdf_filename = original_filename
                 pdf_path = os.path.join(raw_docs_dir, pdf_filename)
-                counter += 1
-            
-            shutil.copy2(temp_filepath, pdf_path)  # Use copy2 to preserve metadata
+                counter = 1
+                
+                while os.path.exists(pdf_path):
+                    name, ext = os.path.splitext(original_filename)
+                    pdf_filename = f"{name}_{counter}{ext}"
+                    pdf_path = os.path.join(raw_docs_dir, pdf_filename)
+                    counter += 1
+                
+                try:
+                    shutil.copy2(temp_filepath, pdf_path)
+                except Exception as e:
+                    logger.error(f"Error copying file {original_filename}: {str(e)}", exc_info=True)
+                    raise
         
-        # Delete the temporary file
-        os.remove(temp_filepath)
-        
-        return ProcessResponse(**result)
+        return result
         
     except Exception as e:
-        # Ensure temp file is deleted even if processing fails
-        if os.path.exists(temp_filepath):
-            os.remove(temp_filepath)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Unexpected error in process_multiple_pdfs: {str(e)}", exc_info=True)
+        raise
+    finally:
+        # Clean up temporary files
+        logger.info("Cleaning up temporary files")
+        for temp_filepath, original_filename in temp_filepaths:
+            try:
+                if os.path.exists(temp_filepath):
+                    os.remove(temp_filepath)
+            except Exception as e:
+                logger.error(f"Error removing temporary file {temp_filepath}: {str(e)}", exc_info=True)

@@ -1,0 +1,49 @@
+{
+  "device": {
+    "manufacturer": "Dynasonics / Badger Meter",
+    "model": "TFX-5000",
+    "type": "Transit Time Ultrasonic Flow Meter",
+    "dimensions": {
+      "width": "6.50",
+      "height": "6.50",
+      "depth": "3.63",
+      "units": "in"
+    },
+    "power": {
+      "voltage": "9...28V DC / 20...26V AC / 85...264V AC",
+      "frequency": "47...63 Hz (AC)",
+      "power_consumption": "8W max (DC/Low AC) / 24VA max (Mains AC)"
+    },
+    "operating_conditions": {
+      "temp_min": "-4 F / -20 C",
+      "temp_max": "140 F / 60 C",
+      "humidity_range": "0...85% non-condensing"
+    },
+    "communication_protocols": [
+      "Modbus RTU",
+      "BACnet MS/TP",
+      "AquaCUE/BEACON",
+      "Modbus TCP/IP (Optional)",
+      "BACnet/IP (Optional)",
+      "EtherNet/IP (Optional)"
+    ],
+    "firmware_version": null,
+    "certifications": [
+      "CCSAus",
+      "CE",
+      "Pollution Degree 2"
+    ]
+  },
+  "bacnet": {
+    "ai": [],
+    "ao": [],
+    "av": [],
+    "bi": [],
+    "bo": [],
+    "bv": [],
+    "msi": [],
+    "mso": [],
+    "msv": []
+  },
+  "modbus_registers": []
+}

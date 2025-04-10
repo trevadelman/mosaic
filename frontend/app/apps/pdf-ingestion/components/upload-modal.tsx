@@ -17,7 +17,7 @@ interface UploadModalProps {
 }
 
 export function UploadModal({ open, onClose, manufacturers, onSave }: UploadModalProps) {
-  const [file, setFile] = useState<File | null>(null)
+  const [files, setFiles] = useState<File[]>([])
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [result, setResult] = useState<string>("")
@@ -26,18 +26,30 @@ export function UploadModal({ open, onClose, manufacturers, onSave }: UploadModa
   const [step, setStep] = useState<"upload" | "edit">("upload")
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0]
-    if (selectedFile && selectedFile.type === "application/pdf") {
-      setFile(selectedFile)
-      setError("")
-    } else {
-      setFile(null)
-      setError("Please select a valid PDF file")
+    const selectedFiles = Array.from(e.target.files || [])
+    const validFiles = selectedFiles.filter(file => file.type === "application/pdf")
+    
+    if (validFiles.length === 0) {
+      setError("Please select valid PDF files")
+      return
     }
+    
+    if (validFiles.length !== selectedFiles.length) {
+      setError("Some files were skipped. Only PDF files are supported.")
+    } else {
+      setError("")
+    }
+    
+    setFiles(prev => [...prev, ...validFiles])
+  }
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index))
+    setError("")
   }
 
   const handleUpload = async () => {
-    if (!file || !selectedManufacturer) return
+    if (files.length === 0 || !selectedManufacturer) return
 
     setLoading(true)
     setError("")
@@ -45,7 +57,9 @@ export function UploadModal({ open, onClose, manufacturers, onSave }: UploadModa
     setProgress(0)
 
     const formData = new FormData()
-    formData.append("file", file)
+    files.forEach((file, index) => {
+      formData.append("files", file)
+    })
     formData.append("manufacturer", selectedManufacturer)
 
     try {
@@ -104,7 +118,7 @@ export function UploadModal({ open, onClose, manufacturers, onSave }: UploadModa
   }
 
   const handleClose = () => {
-    setFile(null)
+    setFiles([])
     setLoading(false)
     setProgress(0)
     setResult("")
@@ -114,43 +128,45 @@ export function UploadModal({ open, onClose, manufacturers, onSave }: UploadModa
     onClose()
   }
 
-  const renderFileInfo = () => {
-    if (!file) return null
+  const renderFileList = () => {
+    if (files.length === 0) return null
 
     return (
-      <div className="flex items-center gap-4">
-        <FileJson className="h-8 w-8 text-primary" />
-        <div>
-          <p className="font-medium">{file.name}</p>
-          <p className="text-sm text-muted-foreground">
-            {(file.size / 1024 / 1024).toFixed(2)} MB
-          </p>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="ml-4"
-          onClick={(e) => {
-            e.stopPropagation()
-            setFile(null)
-            setResult("")
-          }}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+      <div className="space-y-2">
+        {files.map((file, index) => (
+          <div key={index} className="flex items-center gap-4 p-2 bg-background/50 rounded-lg">
+            <FileJson className="h-6 w-6 text-primary" />
+            <div className="flex-1">
+              <p className="font-medium">{file.name}</p>
+              <p className="text-sm text-muted-foreground">
+                {(file.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation()
+                removeFile(index)
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
       </div>
     )
   }
 
   const renderLoadingState = () => {
-    if (!file) return null
+    if (files.length === 0) return null
 
     return (
       <div className="w-full space-y-4">
         <div className="flex items-center gap-4">
           <Clock className="h-8 w-8 text-primary animate-pulse" />
           <div className="flex-1">
-            <p className="font-medium">Processing {file.name}</p>
+            <p className="font-medium">Processing {files.length} file(s)</p>
             <Progress value={progress} className="mt-2" />
           </div>
         </div>
@@ -197,12 +213,12 @@ export function UploadModal({ open, onClose, manufacturers, onSave }: UploadModa
                     border-2 border-dashed rounded-lg p-8
                     flex flex-col items-center justify-center gap-4
                     transition-colors
-                    ${file ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}
+                    ${files.length > 0 ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}
                     ${!loading && 'hover:border-primary hover:bg-primary/5 cursor-pointer'}
                   `}
                   onClick={() => !loading && document.getElementById('file-input')?.click()}
                 >
-                  {!file && (
+                  {files.length === 0 && (
                     <>
                       <Upload className="h-12 w-12 text-muted-foreground" />
                       <div className="text-center">
@@ -211,12 +227,13 @@ export function UploadModal({ open, onClose, manufacturers, onSave }: UploadModa
                       </div>
                     </>
                   )}
-                  {file && !loading && renderFileInfo()}
+                  {files.length > 0 && !loading && renderFileList()}
                   {loading && renderLoadingState()}
                   <input
                     id="file-input"
                     type="file"
                     accept=".pdf"
+                    multiple
                     onChange={handleFileChange}
                     className="hidden"
                   />
@@ -234,7 +251,7 @@ export function UploadModal({ open, onClose, manufacturers, onSave }: UploadModa
               </Button>
               <Button
                 onClick={handleUpload}
-                disabled={!file || !selectedManufacturer || loading}
+                disabled={files.length === 0 || !selectedManufacturer || loading}
               >
                 {loading ? "Processing..." : "Process PDF"}
               </Button>
