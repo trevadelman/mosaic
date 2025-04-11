@@ -11,6 +11,9 @@ from typing import Dict, Any, List, Union
 from fastapi import APIRouter, UploadFile, File, HTTPException, Body, Response
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+
+from .services.xeto_service import XetoService
+from .services.json_converter import JsonConverterService
 from google import genai
 import uuid
 import dotenv
@@ -72,7 +75,12 @@ Your ONLY response should be a valid JSON object with the following structure:
     "manufacturer": "string",
     "model": "string",
     "type": "string",
-    "add_any_other_device_properties_here": "Add properties as you find the, but DO NOT HALLUCINATE ANYTHING HERE."
+    "dimensions": {"width": "string", "height": "string", "depth": "string", "units": "string"},
+    "power": {"voltage": "string", "frequency": "string", "power_consumption": "string"},
+    "operating_conditions": {"temp_min": "string", "temp_max": "string", "humidity_range": "string"},
+    "communication_protocols": ["string"],
+    "firmware_version": "string",
+    "certifications": ["string"]
   },
   "bacnet": {
     "ai": [
@@ -173,7 +181,12 @@ Your response must be a valid JSON object with EXACTLY this structure:
     "manufacturer": "string",
     "model": "string",
     "type": "string",
-    "add_any_other_device_properties_here": "Add properties as you find the, but DO NOT HALLUCINATE ANYTHING HERE."
+    "dimensions": {"width": "string", "height": "string", "depth": "string", "units": "string"},
+    "power": {"voltage": "string", "frequency": "string", "power_consumption": "string"},
+    "operating_conditions": {"temp_min": "string", "temp_max": "string", "humidity_range": "string"},
+    "communication_protocols": ["string"],
+    "firmware_version": "string",
+    "certifications": ["string"]
   },
   "bacnet": {
     "ai": [
@@ -207,7 +220,7 @@ Critical Rules:
 1. Device Section:
    - Preserve ALL existing device information
    - ONLY add new information to empty fields
-   - If a field has existing data, keep it unless new data is clearly more complete and you are VERY confident of the accuracy.
+   - If a field has existing data, keep it unless new data is clearly more complete
    - Never remove or blank out existing fields
 
 2. BACnet Objects:
@@ -229,18 +242,6 @@ Critical Rules:
    - Maintain exact field names and structure
    - Keep all arrays even if empty ([])
 
-For each BACnet object:
-    - The "dis" field should contain the object's name
-    - The "bacnetAddr" field should follow the format of object type abbreviation + instance number (e.g., "AI1", "BO3")
-    - The "units" field should only be included if unit information exists
-    - The "description" field should be pulled word for word from the doc if available. Left blank otherwise. 
-
-Group all BACnet objects by their type (AI, AO, AV, BI, BO, BV, MSI, MSO, MSV, OTHER) into their respective arrays.
-
-If avlue does not exist, do not include it. Do not include it with an empty string. Do not include it with a null value. 
-
-If certain properties or sections are not found in the documentation, include them as empty objects or arrays. Only output the JSON structure with no additional explanation or commentary. Do not hallucinate any values.
-
 If certain properties or sections are not found in the new documentation, preserve the existing values. Only output the JSON structure with no additional explanation or commentary. Do not hallucinate any values."""
 
 class JsonData(BaseModel):
@@ -255,6 +256,35 @@ class ProcessResponse(BaseModel):
     error: str = ""
     manufacturer: str = ""
     model: str = ""
+
+class XetoConvertRequest(BaseModel):
+    """Request model for converting JSON to Xeto"""
+    json_path: str
+    manufacturer: str
+    model: str
+
+class XetoCompileRequest(BaseModel):
+    """Request model for compiling Xeto library"""
+    lib_content: str
+    specs_content: str
+    manufacturer: str
+    model: str
+
+class XetoSaveRequest(BaseModel):
+    """Request model for saving Xeto files"""
+    lib_content: str
+    specs_content: str
+    manufacturer: str
+    model: str
+
+class XetoResponse(BaseModel):
+    """Response model for Xeto operations"""
+    success: bool
+    lib_content: str = ""
+    specs_content: str = ""
+    output: str = ""
+    error: str = ""
+    paths: Dict[str, str] = {}
 
 class ManufacturerCreate(BaseModel):
     """Request model for creating a manufacturer"""
@@ -293,7 +323,30 @@ def get_device_files(manufacturer: str, device: str) -> List[Dict[str, str]]:
             return []
 
         files = []
-        # Add productInfo.json if it exists
+        
+        # Special handling for xeto directory
+        if manufacturer == 'xeto':
+            # List all files and directories recursively
+            for root, dirs, filenames in os.walk(device_dir):
+                # Add directories
+                for d in dirs:
+                    dir_path = os.path.join(root, d)
+                    files.append({
+                        "name": d,
+                        "type": "directory",
+                        "path": os.path.relpath(dir_path, os.path.join(DOCUMENT_STORAGE, manufacturer))
+                    })
+                # Add files
+                for f in filenames:
+                    file_path = os.path.join(root, f)
+                    files.append({
+                        "name": f,
+                        "type": "file",
+                        "path": os.path.relpath(file_path, os.path.join(DOCUMENT_STORAGE, manufacturer))
+                    })
+            return files
+            
+        # Regular device handling
         json_path = os.path.join(device_dir, "productInfo.json")
         if os.path.exists(json_path):
             files.append({
@@ -330,6 +383,29 @@ def get_devices(manufacturer: str) -> List[Dict[str, Union[str, List[Dict[str, s
             return []
         
         devices = []
+        
+        # Special handling for xeto directory - just recursively list all files and directories
+        if manufacturer == 'xeto':
+            for root, dirs, files in os.walk(manufacturer_dir):
+                # Add directories
+                for d in dirs:
+                    dir_path = os.path.join(root, d)
+                    devices.append({
+                        "name": d,
+                        "type": "directory",
+                        "path": os.path.relpath(dir_path, os.path.join(DOCUMENT_STORAGE, manufacturer))
+                    })
+                # Add files
+                for f in files:
+                    file_path = os.path.join(root, f)
+                    devices.append({
+                        "name": f,
+                        "type": "file",
+                        "path": os.path.relpath(file_path, os.path.join(DOCUMENT_STORAGE, manufacturer))
+                    })
+            return devices
+        
+        # Regular manufacturer handling
         for device in os.listdir(manufacturer_dir):
             device_path = os.path.join(manufacturer_dir, device)
             if os.path.isdir(device_path):
@@ -433,22 +509,44 @@ async def create_manufacturer(data: ManufacturerCreate):
 async def list_devices(manufacturer: str):
     """List all devices and their files for a manufacturer"""
     devices = []
-    for device in get_devices(manufacturer):
-        # Add the device directory
-        devices.append(DeviceInfo(
-            name=device["name"],
-            manufacturer=manufacturer,
-            type="directory",
-            path=device["name"]
-        ))
-        # Add all files
-        for file in device["files"]:
+    device_list = get_devices(manufacturer)
+    
+    # Special handling for xeto directory
+    if manufacturer == 'xeto':
+        for device in device_list:
+            # Add the directory itself
             devices.append(DeviceInfo(
-                name=file["name"],
+                name=device["name"],
                 manufacturer=manufacturer,
-                type=file["type"],
-                path=file["path"]
+                type=device["type"],
+                path=device["path"]
             ))
+            # Add its contents
+            for file in device.get("files", []):
+                devices.append(DeviceInfo(
+                    name=file["name"],
+                    manufacturer=manufacturer,
+                    type=file["type"],
+                    path=file["path"]
+                ))
+    else:
+        # Regular manufacturer handling
+        for device in device_list:
+            # Add the device directory
+            devices.append(DeviceInfo(
+                name=device["name"],
+                manufacturer=manufacturer,
+                type="directory",
+                path=device["name"]
+            ))
+            # Add all files
+            for file in device["files"]:
+                devices.append(DeviceInfo(
+                    name=file["name"],
+                    manufacturer=manufacturer,
+                    type=file["type"],
+                    path=file["path"]
+                ))
     return DeviceList(devices=devices)
 
 @router.post("/save", response_model=ProcessResponse)
@@ -499,6 +597,120 @@ async def get_device_info(manufacturer: str, device: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Initialize services
+xeto_service = XetoService()
+json_converter = JsonConverterService()
+
+@router.post("/convert-to-xeto", response_model=XetoResponse)
+async def convert_to_xeto(request: XetoConvertRequest) -> XetoResponse:
+    """Convert JSON data to Xeto format"""
+    try:
+        # Resolve JSON path relative to DOCUMENT_STORAGE
+        json_path = os.path.join(DOCUMENT_STORAGE, request.json_path)
+        
+        # Check if file exists
+        if not os.path.exists(json_path):
+            return XetoResponse(
+                success=False,
+                error=f"JSON file not found. Please save the JSON data first."
+            )
+            
+        try:
+            # Read JSON file
+            with open(json_path, 'r') as f:
+                json_data = json.load(f)
+        except json.JSONDecodeError:
+            return XetoResponse(
+                success=False,
+                error="Invalid JSON file format"
+            )
+        
+        # Get PDF name from JSON path
+        pdf_name = os.path.basename(json_path).replace('.json', '.pdf')
+        
+        # Convert JSON to Xeto
+        lib_content, specs_content = json_converter.convert_json_to_xeto(
+            json_data,
+            pdf_name,
+            mode='simple'  # Start with simple mode
+        )
+        
+        return XetoResponse(
+            success=True,
+            lib_content=lib_content,
+            specs_content=specs_content
+        )
+        
+    except Exception as e:
+        logger.error(f"Error converting to Xeto: {str(e)}")
+        return XetoResponse(
+            success=False,
+            error=str(e)
+        )
+
+@router.post("/compile-xeto", response_model=XetoResponse)
+async def compile_xeto(request: XetoCompileRequest) -> XetoResponse:
+    """Compile Xeto library"""
+    try:
+        # Create library name
+        lib_name = f"{request.manufacturer}.{request.model}".lower()
+        lib_name = "".join(c if c.isalnum() or c == '.' else '_' for c in lib_name)
+        
+        # Compile library with content directly
+        compile_result = await xeto_service.compile_library(
+            lib_name,
+            lib_content=request.lib_content,
+            specs_content=request.specs_content
+        )
+        
+        # Always include output if available
+        response = XetoResponse(
+            success=compile_result["success"],
+            output=compile_result.get("output", "")
+        )
+        
+        # Add error if compilation failed
+        if not compile_result["success"]:
+            response.error = compile_result["error"]
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error compiling Xeto: {str(e)}")
+        return XetoResponse(
+            success=False,
+            error=str(e)
+        )
+
+@router.post("/save-xeto", response_model=XetoResponse)
+async def save_xeto(request: XetoSaveRequest) -> XetoResponse:
+    """Save Xeto library files"""
+    try:
+        result = await xeto_service.save_library_files(
+            request.manufacturer,
+            request.model,
+            request.lib_content,
+            request.specs_content
+        )
+        
+        if not result["success"]:
+            return XetoResponse(
+                success=False,
+                error=result["error"]
+            )
+        
+        return XetoResponse(
+            success=True,
+            paths=result["paths"]
+        )
+        
+    except Exception as e:
+        logger.error(f"Error saving Xeto files: {str(e)}")
+        return XetoResponse(
+            success=False,
+            error=str(e)
+        )
+
 @router.get("/manufacturers/{manufacturer}/{path:path}")
 async def get_file(manufacturer: str, path: str):
     """Get a file from the document storage"""
@@ -507,7 +719,7 @@ async def get_file(manufacturer: str, path: str):
         if not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail="File not found")
 
-        # For PDF files, return them directly
+        # Handle different file types
         if file_path.endswith('.pdf'):
             return FileResponse(
                 file_path,
@@ -515,6 +727,11 @@ async def get_file(manufacturer: str, path: str):
                 filename=os.path.basename(file_path),
                 headers={"Content-Disposition": "inline"}
             )
+        elif file_path.endswith('.xeto') or file_path.endswith('.xetolib'):
+            # Return xeto files as text
+            with open(file_path, 'r') as f:
+                content = f.read()
+            return Response(content=content, media_type='text/plain')
 
         raise HTTPException(status_code=400, detail="Invalid file type")
     except Exception as e:

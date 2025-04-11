@@ -16,7 +16,7 @@ interface TreeItem {
   id: string
   name: string
   children?: TreeItem[]
-  type: 'folder' | 'file' | 'directory'
+  type: 'folder' | 'file' | 'directory' | 'divider'
   manufacturer?: string
   path?: string
 }
@@ -51,7 +51,11 @@ export default function PdfIngestionPage() {
 
       const items: TreeItem[] = []
       
-      for (const manufacturer of manufacturers) {
+      // Filter out 'xeto' from manufacturers list
+      const regularManufacturers = manufacturers.filter((m: string) => m !== 'xeto')
+      
+      // Add regular manufacturers
+      for (const manufacturer of regularManufacturers) {
         const devicesResponse = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/apps/pdf-ingestion/manufacturers/${manufacturer}/devices`
         )
@@ -133,6 +137,69 @@ export default function PdfIngestionPage() {
         })
       }
 
+        // Add xeto directory as a special section with a divider
+      if (manufacturers.includes('xeto')) {
+        items.push({
+          id: 'xeto-divider',
+          name: '──────────',
+          type: 'divider',
+          children: []
+        })
+        
+        // Load xeto directory contents
+        const xetoResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/apps/pdf-ingestion/manufacturers/xeto/devices`
+        )
+        const { devices: xetoDevices } = await xetoResponse.json()
+        
+        // Create xeto libraries node
+        const xetoNode: TreeItem = {
+          id: 'xeto',
+          name: 'Xeto Libraries',
+          type: 'folder',
+          children: []
+        }
+
+        // Build tree structure from flat list of files/directories
+        const buildTree = (devices: DeviceInfo[]) => {
+          const tree: { [key: string]: TreeItem } = {}
+          
+          devices.forEach(device => {
+            const parts = device.path.split('/')
+            let currentPath = ''
+            let currentNode = xetoNode.children
+            
+            parts.forEach((part, i) => {
+              currentPath = currentPath ? `${currentPath}/${part}` : part
+              
+              if (!tree[currentPath]) {
+                const newNode: TreeItem = {
+                  id: `xeto-${currentPath}`,
+                  name: part,
+                  type: device.type,
+                  manufacturer: 'xeto',
+                  path: currentPath,
+                  children: []
+                }
+                
+                tree[currentPath] = newNode
+                if (currentNode) {
+                  currentNode.push(newNode)
+                }
+              }
+              
+              currentNode = tree[currentPath].children
+            })
+          })
+        }
+        
+        if (xetoDevices) {
+          buildTree(xetoDevices)
+        }
+        
+        items.push(xetoNode)
+      }
+      
       setTreeItems(items)
     } catch (err) {
       console.error("Error loading tree data:", err)
@@ -150,6 +217,18 @@ export default function PdfIngestionPage() {
 
       if (path.endsWith('.pdf')) {
         setSelectedPdfUrl(`${process.env.NEXT_PUBLIC_API_URL}/apps/pdf-ingestion/manufacturers/${manufacturer}/${path}`)
+        return
+      }
+
+      if (path.endsWith('.xeto') || path.endsWith('.xetolib')) {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/apps/pdf-ingestion/manufacturers/${manufacturer}/${path}`
+        )
+        if (!response.ok) {
+          throw new Error("Failed to load xeto file")
+        }
+        const content = await response.text()
+        setDeviceJson(content)
         return
       }
 
@@ -247,9 +326,21 @@ export default function PdfIngestionPage() {
               <TreeView
                 items={treeItems}
                 onSelect={(item) => {
-                  if (item.type === 'file' && item.manufacturer && item.path) {
-                    setSelectedDevice({ manufacturer: item.manufacturer, name: item.name })
-                    loadDeviceInfo(item.manufacturer, item.path)
+                  if (item.type === 'divider') return
+                  
+                  if (item.type === 'file') {
+                    if (item.manufacturer && item.path) {
+                      setSelectedDevice({ manufacturer: item.manufacturer, name: item.name })
+                      loadDeviceInfo(item.manufacturer, item.path)
+                    }
+                  }
+                  
+                  // Handle directory clicks for xeto directories
+                  if (item.type === 'directory' && item.manufacturer === 'xeto') {
+                    if (item.path) {
+                      setSelectedDevice({ manufacturer: item.manufacturer, name: item.name })
+                      loadDeviceInfo(item.manufacturer, item.path)
+                    }
                   }
                 }}
               />

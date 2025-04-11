@@ -2,13 +2,23 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including Node.js
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
     python3-dev \
+    curl \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Create package.json for Xeto tooling
+RUN mkdir -p /app/xeto && cd /app/xeto && \
+    npm init -y && \
+    npm pkg set type="module" && \
+    npm install @haxall/haxall && \
+    mkdir -p src/xeto lib/xeto
 
 # Copy requirements and setup files
 COPY backend/requirements.txt .
@@ -21,6 +31,11 @@ RUN pip install -e .
 
 # Copy source code
 COPY backend/ ./backend/
+
+# Create Xeto project structure
+RUN mkdir -p /app/backend/app/apps/pdf_ingestion/xeto/src \
+    /app/backend/app/apps/pdf_ingestion/xeto/lib \
+    /app/backend/app/apps/pdf_ingestion/templates/xeto
 
 # Expose port
 EXPOSE 8000

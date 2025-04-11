@@ -24,32 +24,34 @@
       "BACnet/IP"
     ],
     "firmware_version": "v1.01fA",
-    "certifications": []
+    "certifications": [
+      "ANSI X3.4"
+    ]
   },
   "bacnet": {
     "ai": [
       {
         "dis": "Energy Rate",
         "bacnetAddr": "AI1",
-        "units": "Btu/Hr, kW or Tons",
+        "units": "Btu/h, tons, kW",
         "description": ""
       },
       {
         "dis": "Volume Rate",
         "bacnetAddr": "AI2",
-        "units": "L/Sec, L/Min, L/Hr, M\u00b3/Hr, GPM, CFS or CFM",
+        "units": "l/s, l/m, l/hr, m3/h, gpm, ft3/s, ft3/m",
         "description": ""
       },
       {
         "dis": "Supply Temperature",
         "bacnetAddr": "AI3",
-        "units": "Degrees C or F",
+        "units": "\u00b0F or \u00b0C",
         "description": ""
       },
       {
         "dis": "Return Temperature",
         "bacnetAddr": "AI4",
-        "units": "Degrees C or F",
+        "units": "\u00b0F or \u00b0C",
         "description": ""
       }
     ],
@@ -58,41 +60,43 @@
       {
         "dis": "Mode 1 Energy Total",
         "bacnetAddr": "AV1",
-        "units": "Btu, TonHrs or kWHrs",
+        "units": "Btu, ton-hours, KW-hours",
         "description": ""
       },
       {
         "dis": "Mode 1 Volume Total",
         "bacnetAddr": "AV2",
-        "units": "Liters, M\u00b3, Gallons or Ft\u00b3",
+        "units": "gallons, liters, ft3 or m3",
         "description": ""
       },
       {
         "dis": "Mode 2 Energy Total",
         "bacnetAddr": "AV3",
-        "units": "Btu, TonHrs or kWHrs",
+        "units": "Btu, ton-hours, KW-hours",
         "description": "Only used in dual-mode applications."
       },
       {
         "dis": "Mode 2 Volume Total",
         "bacnetAddr": "AV4",
-        "units": "Liters, M\u00b3 or Gallons",
+        "units": "gallons, liters, ft3 or m3",
         "description": "Only used in dual-mode applications."
       },
       {
         "dis": "Auxiliary Input Total (Di3)",
         "bacnetAddr": "AV5",
-        "units": "None",
+        "units": "No units (counts)",
         "description": "BACnet will not report engineering units for this object."
       },
       {
         "dis": "Operating Mode (Single, Dual or Bi-directional)",
         "bacnetAddr": "AV6",
+        "units": "Not Applicable",
         "description": "None = 0 Single = 1 Dual = 2 BiDir = 3"
       },
       {
         "dis": "Mode 1 Mode 2 Indication",
         "bacnetAddr": "AV12",
+        "units": "Not Applicable",
         "description": "Mode 1 = 1 Mode 2 = 2"
       },
       {
@@ -120,12 +124,12 @@
         "description": "Changing this property from the (0) inactive state to the (1) active state will reset the total to zero. (Must be priority 8 manual operator)."
       },
       {
-        "dis": "Zero Mode 2 Volume Total",
+        "dis": "Zero Mode 2 VolumeTotal",
         "bacnetAddr": "BV14",
         "description": "Changing this property from the (0) inactive state to the (1) active state will reset the total to zero. (Must be priority 8 manual operator)."
       },
       {
-        "dis": "Zero Auxiliary Input Total",
+        "dis": "Zero Mode Aux Input Total",
         "bacnetAddr": "BV15",
         "description": "Changing this property from the (0) inactive state to the (1) active state will reset the total to zero. (Must be priority 8 manual operator)."
       }

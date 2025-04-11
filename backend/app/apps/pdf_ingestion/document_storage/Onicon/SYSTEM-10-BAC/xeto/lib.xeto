@@ -1,0 +1,16 @@
+// Generated on 2025-04-11 15:50:08
+
+pragma: Lib <
+  doc: "UnknownLib library"
+  version: "1.0.0"
+  depends: {
+    { lib: "sys", versions: "0.1.x" }
+    { lib: "ph", versions: "0.1.x" }
+    { lib: "ph.resources", versions: "0.1.x" }
+  }
+  org: {
+    dis: "Unknown"
+    uri: "https://example.com"
+  }
+>
+

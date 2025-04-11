@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { XetoEditorModal } from "@/components/xeto-editor-modal"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -20,10 +21,20 @@ export function UploadModal({ open, onClose, manufacturers, onSave }: UploadModa
   const [files, setFiles] = useState<File[]>([])
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState(0)
-  const [result, setResult] = useState<string>("")
+  interface DeviceInfo {
+    device?: {
+      manufacturer: string;
+      model: string;
+    };
+  }
+
+  const [result, setResult] = useState<string>("");
+  const [parsedResult, setParsedResult] = useState<DeviceInfo | null>(null);
   const [error, setError] = useState<string>("")
   const [selectedManufacturer, setSelectedManufacturer] = useState<string>("")
-  const [step, setStep] = useState<"upload" | "edit">("upload")
+  const [step, setStep] = useState<"upload" | "edit" | "xeto">("upload")
+  const [xetoModalOpen, setXetoModalOpen] = useState(false)
+  const [jsonSaved, setJsonSaved] = useState(false)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || [])
@@ -91,8 +102,9 @@ export function UploadModal({ open, onClose, manufacturers, onSave }: UploadModa
       if (data.success) {
         // Try to format the JSON response
         try {
-          const parsedJson = JSON.parse(data.response)
-          setResult(JSON.stringify(parsedJson, null, 2))
+          const parsedJson = JSON.parse(data.response);
+          setResult(JSON.stringify(parsedJson, null, 2));
+          setParsedResult(parsedJson);
           setStep("edit")
         } catch {
           // If parsing fails, show the raw response
@@ -111,7 +123,7 @@ export function UploadModal({ open, onClose, manufacturers, onSave }: UploadModa
   const handleSave = async () => {
     try {
       await onSave(selectedManufacturer, result)
-      handleClose()
+      setJsonSaved(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save")
     }
@@ -125,6 +137,7 @@ export function UploadModal({ open, onClose, manufacturers, onSave }: UploadModa
     setError("")
     setSelectedManufacturer("")
     setStep("upload")
+    setJsonSaved(false)
     onClose()
   }
 
@@ -277,10 +290,27 @@ export function UploadModal({ open, onClose, manufacturers, onSave }: UploadModa
               >
                 Back
               </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setXetoModalOpen(true)}
+                disabled={!jsonSaved}
+                title={!jsonSaved ? "Save JSON first to enable Xeto conversion" : ""}
+              >
+                Convert to Xeto
+              </Button>
               <Button onClick={handleSave}>
                 Save to Storage
               </Button>
             </div>
+
+            {/* Xeto Editor Modal */}
+            <XetoEditorModal
+              isOpen={xetoModalOpen}
+              onClose={() => setXetoModalOpen(false)}
+              jsonPath={`${selectedManufacturer}/${parsedResult?.device?.model}/productInfo.json`}
+              manufacturer={selectedManufacturer}
+              model={parsedResult?.device?.model || ''}
+            />
 
             {error && (
               <Alert variant="destructive">
